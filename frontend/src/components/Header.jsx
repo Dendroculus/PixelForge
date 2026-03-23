@@ -2,7 +2,7 @@ export default function Header() {
   return (
     <div className="space-y-4">
           <img 
-          src="/PixelForgeAI_Black.png" 
+          src="../public/PixelForgeAI_Black.png" 
           alt="Pixel Forge Logo" 
           className="mx-auto h-8 sm:h-10 md:h-40 w-auto object-contain"
         />

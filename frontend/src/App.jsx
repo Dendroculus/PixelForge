@@ -18,8 +18,8 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <img src="/PixelForge.png" alt="Pixel Forge Logo" className="h-8 sm:h-10 md:h-8 w-auto object-contain block" />
-              <img src="/PixelForgeAI_BlackText.png" alt="Pixel Forge Text" className="h-6 sm:h-7 md:h-4 w-auto object-contain block translate-y-[2px]" />
+              <img src="../public/PixelForgeAI.png" alt="Pixel Forge Logo" className="h-8 sm:h-10 md:h-8 w-auto object-contain block" />
+              <img src="../public/PixelForgeAI_BlackText.png" alt="Pixel Forge Text" className="h-6 sm:h-7 md:h-4 w-auto object-contain block translate-y-[2px]" />
             </div>
           </div>
           <div className="hidden sm:flex items-center gap-8 text-sm text-slate-700">
