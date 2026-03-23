@@ -7,15 +7,11 @@ for AI processing, saving the finalized upscaled images to a public container, a
 generating public URLs for the frontend.
 """
 
-import os
 import logging
-from dotenv import load_dotenv
 from fastapi import UploadFile, HTTPException, status
 from azure.storage.blob.aio import BlobServiceClient
-from core.config import MAX_FILE_SIZE_BYTES
+from core.config import MAX_FILE_SIZE_BYTES, AZURE_CONNECTION_STRING
 
-load_dotenv()
-AZURE_CONNECTION_STRING = os.getenv("AZURE_CONNECTION_STRING")
 
 # Setup logging for storage operations
 logger = logging.getLogger(__name__)
