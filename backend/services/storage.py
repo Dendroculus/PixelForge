@@ -56,7 +56,7 @@ class StorageService:
             async with BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING) as client:
                 blob_client = client.get_blob_client(container="uploads", blob=safe_filename)
                 await blob_client.upload_blob(file_data, overwrite=True)
-                logger.info(f"✅ Successfully saved raw upload to Azure: {safe_filename}")
+                logger.info(f"Successfully saved raw upload to Azure: {safe_filename}")
                 return safe_filename
         except Exception as e:
             logger.error(f"Azure upload failed for {safe_filename}: {str(e)}")
