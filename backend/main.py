@@ -4,6 +4,7 @@ from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.routes import router as api_router 
+from core.config import ALLOWED_ORIGINS
 
 LOG_DIR = Path(os.path.dirname(__file__)) / "logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True) # Create if not exists else ignore
@@ -18,17 +19,15 @@ logging.basicConfig(
 )
 
 app = FastAPI(
+    root_path=("/api"),
     title="AI Image Upscaler API",
     description="Production-ready FastAPI backend for Real-ESRGAN",
     version="1.1.0"
 )
-
-allowed_origins_str = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000, http://localhost:5173")
-origins = [origin.strip() for origin in allowed_origins_str.split(",")]
-
+        
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,  
+    allow_origins=ALLOWED_ORIGINS,  
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  
     allow_headers=["*"],  

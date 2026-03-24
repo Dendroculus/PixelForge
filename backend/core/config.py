@@ -4,8 +4,9 @@ from dotenv import load_dotenv
 load_dotenv() 
 
 AZURE_CONNECTION_STRING = os.getenv("AZURE_CONNECTION_STRING")
+ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv("ALLOWED_ORIGINS", "http://localhost:3000, http://localhost:5173").split(",")]
+# Hardcoded constants which are just local development defaults. Can be overridden by environment variables for production deployments.
 
-# Hardcoded constants - change them here if you ever need to!
 MAX_FILE_SIZE_MB = 10
 MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
