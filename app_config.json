@@ -1,6 +1,0 @@
-{
-  "MAX_FILE_SIZE_MB": 10,
-  "MAX_MEGAPIXELS": 3,
-  "MAX_IMAGE_DIMENSION": 2500,
-  "ALLOWED_EXTENSIONS": ["jpg", "jpeg", "png", "webp"]
-}
