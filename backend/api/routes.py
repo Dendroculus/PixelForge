@@ -10,7 +10,7 @@ from core.config import PIXELFORGE_SECRET_KEY
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api", tags=["upscale"])
+router = APIRouter(tags=["upscale"])
 
 """ These are the Security Setup for the API. The API key is expected to be sent in the 'X-API-Key' header. The get_api_key function checks the provided API key against the expected value and raises an HTTP 403 error if it doesn't match. This ensures that only authorized clients can access the API endpoints. """
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=True)

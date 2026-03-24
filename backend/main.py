@@ -19,7 +19,6 @@ logging.basicConfig(
 )
 
 app = FastAPI(
-    root_path=("/api"),
     title="AI Image Upscaler API",
     description="Production-ready FastAPI backend for Real-ESRGAN",
     version="1.1.0"
