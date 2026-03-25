@@ -19,7 +19,7 @@ export default function App() {
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <img src={img.darkLogo} alt="Pixel Forge Logo" className="h-8 sm:h-10 md:h-8 w-auto object-contain block" />
+              <img src={img.icon} alt="Pixel Forge Logo" className="h-8 sm:h-10 md:h-8 w-auto object-contain block" />
               <img src={img.textBlack} alt="Pixel Forge Text" className="h-6 sm:h-7 md:h-4 w-auto object-contain block translate-y-[2px]" />
             </div>
           </div>
