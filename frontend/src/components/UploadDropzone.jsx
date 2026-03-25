@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { validateImageUpload } from '../utils/fileValidation'; 
-import { APP_CONFIG as config } from '../../config.js';
+import { APP_CONFIG as config } from '../config';
 
 
 const AllowedFormatsText = config.ALLOWED_EXTENSIONS.map(e => e.toUpperCase()).join(', ');

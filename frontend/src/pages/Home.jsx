@@ -6,7 +6,7 @@ import ProgressBar from '../components/ProgressBar';
 import ActionControls from '../components/ActionControls';
 import { useUpscalePipeline } from '../hooks/useUpscalePipeline';
 import { useSimulatedProgress } from '../hooks/useSimulatedProgress';
-import { APP_CONFIG as config } from '../../config.js';
+import { APP_CONFIG as config } from '../config';
 
 export default function Home() {
   const [progress, setProgress] = useState(0);
