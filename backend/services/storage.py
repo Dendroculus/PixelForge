@@ -11,6 +11,8 @@ import io
 import logging
 from fastapi import HTTPException, status
 from azure.storage.blob.aio import BlobServiceClient
+from datetime import timedelta, timezone, datetime
+from azure.storage.blob import generate_blob_sas, BlobSasPermissions
 from core.config import AZURE_CONNECTION_STRING
 
 logger = logging.getLogger(__name__)
@@ -105,18 +107,33 @@ class StorageService:
     @staticmethod
     def get_result_url(result_filename: str) -> str:
         """
-        Generates the public Azure URL for the frontend without making a network request.
+        Generates a secure, short-lived SAS URL for the frontend to download the result.
+        The URL automatically expires after 10 minutes.
         
         Args:
             result_filename (str): The name of the result file.
             
         Returns:
-            str: The full HTTPS URL to access the public image.
+            str: The full HTTPS URL with the appended SAS token.
         """
         if not AZURE_CONNECTION_STRING:
             return ""
             
-        parts = {k: v for k, v in (item.split("=", 1) for item in AZURE_CONNECTION_STRING.split(";") if "=" in item)}
-        account_name = parts.get("AccountName")
+        parts = {k.lower(): v for k, v in (item.split("=", 1) for item in AZURE_CONNECTION_STRING.split(";") if "=" in item)}
+        account_name = parts.get("accountname")
+        account_key = parts.get("accountkey")
         
-        return f"https://{account_name}.blob.core.windows.net/results/{result_filename}"
+        if not account_name or not account_key:
+            logger.error("Failed to parse Azure Connection String for SAS generation.")
+            return ""
+
+        sas_token = generate_blob_sas(
+            account_name=account_name,
+            container_name="results",
+            blob_name=result_filename,
+            account_key=account_key,
+            permission=BlobSasPermissions(read=True),
+            expiry=datetime.now(timezone.utc) + timedelta(minutes=10)
+        )
+        
+        return f"https://{account_name}.blob.core.windows.net/results/{result_filename}?{sas_token}"
