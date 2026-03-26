@@ -6,17 +6,16 @@ const ERROR_MESSAGES = {
   SVG: "SVGs are math! They already have infinite resolution 🤓",
   OTHER_IMAGE: "Nice picture, but we only support static PNG, JPG, and WEBP right now 🎨",
   VIDEO: "Why do you even try to upload a video to an image upscaler web? 🤔",
+  TIMEOUT: "The file took too long to process. Is it corrupted? ⏳",
   DEFAULT: "Uh oh! This file is not supported.",
   TOO_LARGE: `File size exceeds the ${config.MAX_FILE_SIZE_MB}MB limit.`
 };
 
 const MaxFileSizeBytes = config.MAX_FILE_SIZE_MB * 1024 * 1024;
 
-const allowedForRegex = config.ALLOWED_EXTENSIONS
-  .map(ext => ext === 'jpg' ? 'jpeg' : ext) 
-  .filter((value, index, array) => array.indexOf(value) === index); 
-const supportedMimeRegex = new RegExp(`^image/(${allowedForRegex.join('|')})$`);
-
+const allowedMimeTypes = new Set(
+  config.ALLOWED_EXTENSIONS.map(ext => `image/${ext === 'jpg' ? 'jpeg' : ext}`)
+);
 
 /**
  * Validates a file's MIME type, size limits, and performs a pre-flight 
@@ -36,41 +35,42 @@ export const validateImageUpload = (file) => {
     }
 
     const fileType = file.type || "";
-    const isSupportedImage = supportedMimeRegex.test(fileType);
-    const isSvg = fileType === 'image/svg+xml';
-    const isOtherImage = fileType.startsWith('image/') && !isSupportedImage && !isSvg;
-    const isVideo = fileType.startsWith('video/');
-
-    if (isSupportedImage) {
-      const img = new Image();
-      const objectUrl = URL.createObjectURL(file);
-
-      img.onload = () => {
-        URL.revokeObjectURL(objectUrl);
-        resolve({ isValid: true, file }); 
-      };
-
-      img.onerror = () => {
-        URL.revokeObjectURL(objectUrl);
-        resolve({ isValid: false, error: ERROR_MESSAGES.SPOOFED }); 
-      };
-
-      img.src = objectUrl;
-      return;
-    }
-
-    if (isSvg) {
+    
+    // Check specific file families
+    if (fileType === 'image/svg+xml') {
       return resolve({ isValid: false, error: ERROR_MESSAGES.SVG });
     }
-    
-    if (isOtherImage) {
-      return resolve({ isValid: false, error: ERROR_MESSAGES.OTHER_IMAGE });
-    }
-    
-    if (isVideo) {
+    if (fileType.startsWith('video/')) {
       return resolve({ isValid: false, error: ERROR_MESSAGES.VIDEO });
     }
+    if (fileType.startsWith('image/') && !allowedMimeTypes.has(fileType)) {
+      return resolve({ isValid: false, error: ERROR_MESSAGES.OTHER_IMAGE });
+    }
+    if (!allowedMimeTypes.has(fileType)) {
+      return resolve({ isValid: false, error: ERROR_MESSAGES.ATTACK });
+    }
 
-    return resolve({ isValid: false, error: ERROR_MESSAGES.ATTACK });
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    
+    const timeoutId = setTimeout(() => {
+      URL.revokeObjectURL(objectUrl);
+      img.src = ""; 
+      resolve({ isValid: false, error: ERROR_MESSAGES.TIMEOUT });
+    }, 5000); 
+
+    img.onload = () => {
+      clearTimeout(timeoutId);
+      URL.revokeObjectURL(objectUrl);
+      resolve({ isValid: true, file }); 
+    };
+
+    img.onerror = () => {
+      clearTimeout(timeoutId);
+      URL.revokeObjectURL(objectUrl);
+      resolve({ isValid: false, error: ERROR_MESSAGES.SPOOFED }); 
+    };
+
+    img.src = objectUrl;
   });
 };

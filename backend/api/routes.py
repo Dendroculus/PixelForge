@@ -1,7 +1,7 @@
 import logging
 from fastapi import APIRouter, UploadFile, File, Depends, BackgroundTasks, HTTPException, status, Request
 
-from core.security import validate_and_sanitize_upload
+from core.security import process_and_sanitize_image
 from core.rate_limiter import limiter
 from services.storage import StorageService
 from services.esrgan import ai_upscaler
@@ -38,14 +38,18 @@ async def upload_image(
     model_type: str = Depends(valid_model_type),
 ):
     try:
-        job_id, safe_filename = validate_and_sanitize_upload(file)
-        await StorageService.save_upload(file, safe_filename)
-    except ValueError as ve:
-        logger.warning(f"Validation error on upload: {str(ve)}")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
+        job_id, safe_filename, image_stream = process_and_sanitize_image(file)
+        
+        await StorageService.save_upload(image_stream, safe_filename)
+        
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Upload handling failed: {str(e)}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to process upload")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail="Failed to process upload"
+        )
     
     background_tasks.add_task(process_image_task, job_id, safe_filename, model_type)
     
@@ -80,4 +84,7 @@ async def get_result(
         return {"status": "processing"}
     except Exception as e:
         logger.error(f"Error checking result for job {job_id}: {str(e)}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Error retrieving job status")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            detail="Error retrieving job status"
+        )

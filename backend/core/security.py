@@ -1,109 +1,86 @@
+import io
 import uuid
-import logging
 from typing import Tuple
 from fastapi import HTTPException, UploadFile, status
 from PIL import Image, UnidentifiedImageError
 from core.config import MAX_FILE_SIZE_MB, MAX_FILE_SIZE_BYTES, MAX_MEGAPIXELS, MAX_PIXELS
 
-logger = logging.getLogger(__name__)
+ALLOWED_FORMATS = {"jpeg", "png", "webp"}
 
-ALLOWED_MIME_TYPES = ["image/jpeg", "image/png", "image/webp", "image/jpg"]
-
-
-def _validate_mime_and_size(file: UploadFile) -> None:
+def process_and_sanitize_image(file: UploadFile) -> Tuple[str, str, io.BytesIO]:
     """
-    Validate uploaded file's MIME type and size.
+    Validates, sanitizes, and re-encodes an uploaded image to neutralize 
+    polyglots and strip EXIF data.
 
     Args:
         file (UploadFile): The uploaded file object.
 
-    Raises:
-        HTTPException: If file type is not allowed.
-        HTTPException: If file size exceeds the maximum limit.
-    """
-    if file.content_type not in ALLOWED_MIME_TYPES:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid file type. Only JPG, PNG, and WEBP are allowed."
-        )
+    Returns:
+        Tuple[str, str, io.BytesIO]:
+            - job_id (str): Unique identifier for the job.
+            - safe_filename (str): Generated safe filename with the correct extension.
+            - image_stream (io.BytesIO): The sanitized, re-encoded image data ready for saving.
 
+    Raises:
+        HTTPException: If the file exceeds size limits, has an invalid format, 
+                       or fails security verification.
+    """
     if file.size and file.size > MAX_FILE_SIZE_BYTES:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"File too large. Maximum allowed file size is {MAX_FILE_SIZE_MB}MB."
+            detail=f"File exceeds the {MAX_FILE_SIZE_MB}MB limit."
         )
 
-
-def _validate_image_resolution(file: UploadFile) -> None:
-    """
-    Validate uploaded image resolution to prevent overly large images.
-
-    Args:
-        file (UploadFile): The uploaded file object.
-
-    Raises:
-        HTTPException: If image resolution exceeds the maximum allowed pixels.
-        HTTPException: If the file is not a valid image.
-    """
     try:
-        with Image.open(file.file) as img:
-            width, height = img.size
-            total_pixels = width * height
+        file_bytes = file.file.read()
+        
+        with Image.open(io.BytesIO(file_bytes)) as img:
+            img.verify()
 
-            if total_pixels > MAX_PIXELS:
+        with Image.open(io.BytesIO(file_bytes)) as img:
+            img_format = img.format.lower() if img.format else None
+            
+            if img_format not in ALLOWED_FORMATS:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid or unsupported image format."
+                )
+
+            width, height = img.size
+            if (width * height) > MAX_PIXELS:
                 raise HTTPException(
                     status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                    detail=f"Image resolution too high. Maximum allowed is {MAX_MEGAPIXELS} Megapixels."
+                    detail=f"Resolution exceeds {MAX_MEGAPIXELS} megapixels."
                 )
+
+            ext = "jpg" if img_format == "jpeg" else img_format
+            
+            if img.mode in ("RGBA", "LA", "P") and ext in ("png", "webp"):
+                clean_img = img.convert("RGBA")
+            else:
+                clean_img = img.convert("RGB")
+                ext = "jpg"
+
+            output_stream = io.BytesIO()
+            save_format = "JPEG" if ext == "jpg" else ext.upper()
+            
+            clean_img.save(output_stream, format=save_format, quality=90, optimize=True)
+            output_stream.seek(0)
+
+            job_id = uuid.uuid4().hex
+            safe_filename = f"{job_id}.{ext}"
+
+            return job_id, safe_filename, output_stream
+
     except UnidentifiedImageError:
-        logger.warning("Security: Blocked fake or corrupted image.")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Are you trying to attack the web? Well that's unfortunate 😝"
         )
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Image processing failed due to file corruption or invalid data."
+        )
     finally:
         file.file.seek(0)
-
-
-def _generate_secure_filename(content_type: str) -> Tuple[str, str]:
-    """
-    Generate a secure filename using UUID based on content type.
-
-    Args:
-        content_type (str): MIME type of the uploaded file.
-
-    Returns:
-        Tuple[str, str]:
-            - job_id (str): Unique identifier for the upload.
-            - safe_filename (str): Generated safe filename with extension.
-    """
-    ext = content_type.split("/")[1]
-    if ext == "jpeg":
-        ext = "jpg"
-
-    job_id = uuid.uuid4().hex
-    safe_filename = f"{job_id}.{ext}"
-    return job_id, safe_filename
-
-
-def validate_and_sanitize_upload(file: UploadFile) -> Tuple[str, str]:
-    """
-    Validate and sanitize an uploaded file.
-
-    This includes checking MIME type, file size, image resolution,
-    and generating a secure filename.
-
-    Args:
-        file (UploadFile): The uploaded file object.
-
-    Returns:
-        Tuple[str, str]:
-            - job_id (str): Unique identifier for the upload.
-            - safe_filename (str): Generated safe filename.
-
-    Raises:
-        HTTPException: If any validation step fails.
-    """
-    _validate_mime_and_size(file)
-    _validate_image_resolution(file)
-    return _generate_secure_filename(file.content_type)
