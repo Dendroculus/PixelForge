@@ -1,32 +1,19 @@
 import logging
-from fastapi import APIRouter, UploadFile, File, Depends, BackgroundTasks, HTTPException, status, Security
-from fastapi.security.api_key import APIKeyHeader
+from fastapi import APIRouter, UploadFile, File, Depends, BackgroundTasks, HTTPException, status, Request
 
 from core.security import validate_and_sanitize_upload
+from core.rate_limiter import limiter
 from services.storage import StorageService
 from services.esrgan import ai_upscaler
 from api.dependencies import valid_model_type
-from core.config import PIXELFORGE_SECRET_KEY
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["upscale"])
 
-""" These are the Security Setup for the API. The API key is expected to be sent in the 'X-API-Key' header. The get_api_key function checks the provided API key against the expected value and raises an HTTP 403 error if it doesn't match. This ensures that only authorized clients can access the API endpoints. """
-api_key_header = APIKeyHeader(name="X-API-Key", auto_error=True)
-
-async def get_api_key(api_key: str = Security(api_key_header)):
-    if api_key != PIXELFORGE_SECRET_KEY:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, 
-            detail="Could not validate API Key"
-        )
-    return api_key
-
 failed_jobs = set()
 
 async def process_image_task(job_id: str, safe_filename: str, model_type: str):
-    """Background task to process the uploaded image using the AI upscaler."""
     logger.info(f"🚀 Background task started for Job {job_id} [{model_type}]")
     try:
         success = await ai_upscaler.run_upscale(safe_filename=safe_filename, job_id=job_id)
@@ -42,10 +29,10 @@ async def process_image_task(job_id: str, safe_filename: str, model_type: str):
     status_code=status.HTTP_202_ACCEPTED,
     summary="Upload an image for upscaling",
     response_description="Returns the job ID for tracking the upscale process",
-    dependencies=[Depends(get_api_key)]  
 )
-
+@limiter.limit("5/minute")
 async def upload_image(
+    request: Request,
     background_tasks: BackgroundTasks, 
     file: UploadFile = File(...),
     model_type: str = Depends(valid_model_type),
@@ -68,9 +55,10 @@ async def upload_image(
     "/result/{job_id}",
     summary="Check upscaling result",
     response_description="Returns the status of the job and the URL if ready",
-    dependencies=[Depends(get_api_key)]
 )
+@limiter.limit("30/minute")
 async def get_result(
+    request: Request,
     job_id: str,
 ):
     if not job_id or not job_id.isalnum():
@@ -78,7 +66,7 @@ async def get_result(
 
     if job_id in failed_jobs:
         return {"status": "failed", "message": "AI processing failed or ran out of memory."}
-
+        
     result_filename = f"{job_id}.png"
     
     try:

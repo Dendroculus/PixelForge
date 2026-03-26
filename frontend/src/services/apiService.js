@@ -1,5 +1,4 @@
 const ApiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
-const apiKey = import.meta.env.VITE_PIXELFORGE_SECRET_KEY;
 
 export const apiService = {
   async uploadImage(file, modelType) {
@@ -9,9 +8,6 @@ export const apiService = {
 
     const response = await fetch(`${ApiBaseUrl}/upscale`, {
       method: 'POST',
-      headers: {
-        'X-API-Key': apiKey 
-      },
       body: formData,
     });
 
@@ -25,11 +21,7 @@ export const apiService = {
 
   async pollResult(jobId) {
     try {
-      const res = await fetch(`${ApiBaseUrl}/result/${jobId}`, {
-        headers: {
-          'X-API-Key': apiKey
-        }
-      });
+      const res = await fetch(`${ApiBaseUrl}/result/${jobId}`); 
       
       if (!res.ok) {
         return { success: false, error: true };

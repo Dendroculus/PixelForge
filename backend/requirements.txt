@@ -7,3 +7,4 @@ python-dotenv==1.2.2
 replicate==1.0.7
 uvicorn
 python-multipart
+slowapi
