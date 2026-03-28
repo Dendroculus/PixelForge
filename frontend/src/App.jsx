@@ -1,11 +1,31 @@
 import { useState } from 'react';
+import { Turnstile } from '@marsidev/react-turnstile';
 import Home from './pages/Home';
 import LegalModal from './components/LegalModal';
 import { legalModalData } from './data/legalModalData';
 import { IMAGES as img } from './config';
+import { useUpscalePipeline } from './hooks/useUpscalePipeline';
 
 export default function App() {
   const [modalState, setModalState] = useState({ isOpen: false, type: 'privacy' }); 
+  const [progress, setProgress] = useState(0);
+
+  // Assumption: Because you provided App.jsx (the global layout), I have elevated 
+  // the hook here so the Turnstile component has access to its state. You will 
+  // need to update your <Home /> component to accept these variables as props.
+  const {
+    selectedFile,
+    previewUrl,
+    isProcessing,
+    resultUrl,
+    modelType,
+    setModelType,
+    setTurnstileToken,
+    turnstileRef,
+    handleFileSelect,
+    handleCancel,
+    handleUpscale
+  } = useUpscalePipeline(setProgress);
 
   const openModal = (type) => setModalState({ isOpen: true, type });
   const closeModal = () => setModalState(prev => ({ ...prev, isOpen: false }));
@@ -37,7 +57,28 @@ export default function App() {
       <main className="flex-1 flex flex-col items-center relative">
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-white/40 blur-[150px] rounded-full pointer-events-none"></div>
         <div className="absolute top-[400px] right-0 w-[400px] h-[400px] bg-white/30 blur-[120px] rounded-full pointer-events-none"></div>
-        <Home />
+        
+        {/* Secure Cloudflare Turnstile Injection */}
+        <div className="z-10 mt-8">
+          <Turnstile
+            ref={turnstileRef}
+            siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+            onSuccess={(token) => setTurnstileToken(token)}
+          />
+        </div>
+
+        <Home 
+          selectedFile={selectedFile}
+          previewUrl={previewUrl}
+          isProcessing={isProcessing}
+          resultUrl={resultUrl}
+          modelType={modelType}
+          setModelType={setModelType}
+          handleFileSelect={handleFileSelect}
+          handleCancel={handleCancel}
+          handleUpscale={handleUpscale}
+          progress={progress}
+        />
       </main>
 
       <footer className="w-full border-t border-white/30 bg-white/20 backdrop-blur-md">

@@ -8,7 +8,7 @@ export const legalModalData = {
         <ul className="list-disc pl-5 space-y-2 mt-2">
           <li><strong>Zero Storage:</strong> Uploaded images are securely temporarily stored in Azure Blob Storage solely for the duration of the upscaling process.</li>
           <li><strong>Instant Deletion:</strong> The moment the AI finishes processing and you download your result, your original image and the upscaled result are permanently deleted from our servers.</li>
-          <li><strong>No Tracking:</strong> We do not use tracking cookies, we do not log your IP address to your uploads, and we do not use your images to train future AI models.</li>
+          <li><strong>No Tracking:</strong> We do not permanently store your IP address or link it to your images. IP addresses are only used temporarily to enforce daily usage limits and prevent abuse.</li>
         </ul>
         <p>As this is an open-source project, you can view our exact backend code on GitHub to verify how your data is handled.</p>
       </>

@@ -1,10 +1,15 @@
 const ApiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
 
 export const apiService = {
-  async uploadImage(file, modelType) {
+  /**
+   * Uploads an image with model selection and Turnstile token.
+   * Returns the server response or throws on failure.
+   */
+  async uploadImage(file, modelType, turnstileToken) {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('model_type', modelType);
+    formData.append('cf_turnstile_response', turnstileToken);
 
     const response = await fetch(`${ApiBaseUrl}/upscale`, {
       method: 'POST',
@@ -19,6 +24,10 @@ export const apiService = {
     return response.json();
   },
 
+  /**
+   * Polls the backend for job status and result.
+   * Returns structured state indicating success or failure.
+   */
   async pollResult(jobId) {
     try {
       const res = await fetch(`${ApiBaseUrl}/result/${jobId}`); 
