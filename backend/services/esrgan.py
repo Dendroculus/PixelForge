@@ -1,4 +1,3 @@
-import os
 import asyncio
 import aiohttp
 import tempfile
@@ -7,7 +6,6 @@ import replicate
 import aiofiles
 from PIL import Image
 from services.storage import StorageService
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -23,15 +21,19 @@ class AIUpscaler:
         """
         Orchestrates the upscaling workflow.
         """
-        temp_input_path = None
         try:
-            # 1. Download & Optimize the image locally
-            temp_input_path = await self._prepare_local_image(safe_filename, job_id)
+            ext = safe_filename.split('.')[-1]
+            
+            # Context manager delegates cleanup to the OS automatically upon block exit
+            with tempfile.NamedTemporaryFile(suffix=f".{ext}", delete=True) as temp_file:
+                # 1. Download & Optimize the image locally
+                await self._prepare_local_image(safe_filename, job_id, temp_file.name)
 
-            # 2. Send to Replicate AI for processing
-            output_url = await self._process_with_ai(temp_input_path, job_id)
+                # 2. Send to Replicate AI for processing
+                output_url = await self._process_with_ai(temp_file.name, job_id)
 
             # 3. Download the finished 4K image from Replicate
+            # (Executed outside the context block; the temp file is already deleted here)
             result_bytes = await self._download_ai_result(output_url, job_id)
 
             # 4. Upload the final result to Azure Storage
@@ -45,27 +47,17 @@ class AIUpscaler:
         except Exception as e:
             logger.error(f"❌ Critical Error in AI Engine (Job #{job_id}): {e}")
             return False
-            
-        finally:
-            self._cleanup_temp_file(temp_input_path)
 
-
-    async def _prepare_local_image(self, safe_filename: str, job_id: str) -> str:
-        """Downloads from Azure, saves to /tmp, and optimizes resolution if needed."""
+    async def _prepare_local_image(self, safe_filename: str, job_id: str, file_path: str) -> None:
+        """Downloads from Azure, saves to the managed temp file, and optimizes resolution if needed."""
         logger.info(f"📥 Job #{job_id} - Downloading raw image from Azure...")
         raw_bytes = await StorageService.get_upload_bytes(safe_filename)
 
-        ext = safe_filename.split('.')[-1]
-        temp_dir = tempfile.gettempdir()
-        temp_input_path = os.path.join(temp_dir, f"{job_id}.{ext}")
-
-        async with aiofiles.open(temp_input_path, 'wb') as temp_input:
+        async with aiofiles.open(file_path, 'wb') as temp_input:
             await temp_input.write(raw_bytes)
 
         # Run PIL operations in a background thread to prevent blocking
-        await asyncio.to_thread(self._optimize_image_sync, temp_input_path, job_id)
-        
-        return temp_input_path
+        await asyncio.to_thread(self._optimize_image_sync, file_path, job_id)
 
     def _optimize_image_sync(self, file_path: str, job_id: str):
         """Synchronous CPU-bound task to resize large images before AI processing."""
@@ -111,13 +103,5 @@ class AIUpscaler:
                 if resp.status != 200:
                     raise ValueError(f"Failed to download result: Status {resp.status}")
                 return await resp.read()
-
-    def _cleanup_temp_file(self, file_path: Optional[str]):
-        """Silently deletes the local temporary file to free up Vercel memory."""
-        if file_path and os.path.exists(file_path):
-            try:
-                os.remove(file_path)
-            except Exception:
-                pass
 
 ai_upscaler = AIUpscaler()
