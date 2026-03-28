@@ -1,13 +1,26 @@
 import io
 import uuid
+import logging
 from typing import Tuple
+
 from fastapi import HTTPException, UploadFile, status
 from PIL import Image, UnidentifiedImageError
-from core.config import MAX_FILE_SIZE_MB, MAX_FILE_SIZE_BYTES, MAX_MEGAPIXELS, MAX_PIXELS
 
-ALLOWED_FORMATS = {"jpeg", "png", "webp"}
+from core.config import (
+    MAX_FILE_SIZE_MB, 
+    MAX_FILE_SIZE_BYTES, 
+    MAX_MEGAPIXELS, 
+    MAX_PIXELS,
+    ALLOWED_MIME_TYPES
+)
 
-def process_and_sanitize_image(file: UploadFile) -> Tuple[str, str, io.BytesIO]:
+Image.MAX_IMAGE_PIXELS = MAX_PIXELS
+
+logger = logging.getLogger(__name__)
+
+ALLOWED_FORMATS = frozenset(["jpeg", "png", "webp"])
+
+async def process_and_sanitize_image(file: UploadFile) -> Tuple[str, str, io.BytesIO]:
     """
     Validates, sanitizes, and re-encodes an uploaded image to neutralize 
     polyglots and strip EXIF data.
@@ -25,15 +38,36 @@ def process_and_sanitize_image(file: UploadFile) -> Tuple[str, str, io.BytesIO]:
         HTTPException: If the file exceeds size limits, has an invalid format, 
                        or fails security verification.
     """
-    if file.size and file.size > MAX_FILE_SIZE_BYTES:
+    if file.content_type not in ALLOWED_MIME_TYPES:
         raise HTTPException(
-            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"File exceeds the {MAX_FILE_SIZE_MB}MB limit."
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Unsupported media type."
         )
 
+    file_bytes = bytearray()
+    chunk_size = 1024 * 1024  # 1MB
+
     try:
-        file_bytes = file.file.read()
-        
+        while True:
+            chunk = await file.read(chunk_size)
+            if not chunk:
+                break
+            
+            file_bytes.extend(chunk)
+            
+            if len(file_bytes) > MAX_FILE_SIZE_BYTES:
+                logger.warning(f"Upload aborted: File exceeded {MAX_FILE_SIZE_MB}MB limit during streaming.")
+                raise HTTPException(
+                    status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                    detail=f"File exceeds the {MAX_FILE_SIZE_MB}MB limit."
+                )
+
+        if not file_bytes:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Uploaded file is empty."
+            )
+
         with Image.open(io.BytesIO(file_bytes)) as img:
             img.verify()
 
@@ -72,15 +106,19 @@ def process_and_sanitize_image(file: UploadFile) -> Tuple[str, str, io.BytesIO]:
 
             return job_id, safe_filename, output_stream
 
+    except HTTPException:
+        raise
     except UnidentifiedImageError:
+        logger.warning("Unidentified image format. Possible malicious polyglot attempt.")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Are you trying to attack the web? Well that's unfortunate 😝"
+            detail="Invalid image data."
         )
-    except Exception:
+    except Exception as e:
+        logger.error(f"Image processing failed: {e}")
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Image processing failed due to file corruption or invalid data."
         )
     finally:
-        file.file.seek(0)
+        await file.close()

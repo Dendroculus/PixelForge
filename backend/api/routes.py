@@ -5,13 +5,11 @@ from core.security import process_and_sanitize_image
 from core.rate_limiter import limiter
 from services.storage import StorageService
 from services.esrgan import ai_upscaler
-from api.dependencies import valid_model_type
+from api.dependencies import valid_model_type, verify_turnstile
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["upscale"])
-
-failed_jobs = set()
 
 async def process_image_task(job_id: str, safe_filename: str, model_type: str):
     logger.info(f"🚀 Background task started for Job {job_id} [{model_type}]")
@@ -19,10 +17,10 @@ async def process_image_task(job_id: str, safe_filename: str, model_type: str):
         success = await ai_upscaler.run_upscale(safe_filename=safe_filename, job_id=job_id)
         if not success:
             logger.error(f"❌ Background task failed for Job {job_id}")
-            failed_jobs.add(job_id)
+            await StorageService.mark_job_failed(job_id)
     except Exception as e:
         logger.error(f"❌ Exception in background task for Job {job_id}: {str(e)}")
-        failed_jobs.add(job_id) 
+        await StorageService.mark_job_failed(job_id)
 
 @router.post(
     "/upscale", 
@@ -36,9 +34,10 @@ async def upload_image(
     background_tasks: BackgroundTasks, 
     file: UploadFile = File(...),
     model_type: str = Depends(valid_model_type),
+    _token: str = Depends(verify_turnstile),
 ):
     try:
-        job_id, safe_filename, image_stream = process_and_sanitize_image(file)
+        job_id, safe_filename, image_stream = await process_and_sanitize_image(file)
         
         await StorageService.save_upload(image_stream, safe_filename)
         
@@ -68,20 +67,21 @@ async def get_result(
     if not job_id or not job_id.isalnum():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid job ID")
 
-    if job_id in failed_jobs:
-        return {"status": "failed", "message": "AI processing failed or ran out of memory."}
-        
-    result_filename = f"{job_id}.png"
-    
     try:
+        is_failed = await StorageService.check_job_failed(job_id)
+        if is_failed:
+            return {"status": "failed", "message": "AI processing failed or ran out of memory."}
+            
+        result_filename = f"{job_id}.png"
         exists = await StorageService.check_result_exists(result_filename)
         
         if exists:
-            failed_jobs.discard(job_id)
             url = StorageService.get_result_url(result_filename)
             return {"status": "ready", "url": url}
         
         return {"status": "processing"}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error checking result for job {job_id}: {str(e)}")
         raise HTTPException(
