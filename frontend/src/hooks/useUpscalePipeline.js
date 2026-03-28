@@ -69,7 +69,6 @@ export function useUpscalePipeline(setProgress) {
     if (!selectedFile) return;
     
     if (!turnstileToken) {
-      alert("Please wait for security verification to complete.");
       return;
     }
 

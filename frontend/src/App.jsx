@@ -10,9 +10,6 @@ export default function App() {
   const [modalState, setModalState] = useState({ isOpen: false, type: 'privacy' }); 
   const [progress, setProgress] = useState(0);
 
-  // Assumption: Because you provided App.jsx (the global layout), I have elevated 
-  // the hook here so the Turnstile component has access to its state. You will 
-  // need to update your <Home /> component to accept these variables as props.
   const {
     selectedFile,
     previewUrl,

@@ -8,6 +8,7 @@ import { useUpscalePipeline } from '../hooks/useUpscalePipeline';
 import { useSimulatedProgress } from '../hooks/useSimulatedProgress';
 import { APP_CONFIG as config } from '../config';
 
+
 export default function Home() {
   const [progress, setProgress] = useState(0);
   
@@ -20,7 +21,10 @@ export default function Home() {
     setModelType,
     handleFileSelect,
     handleCancel,
-    handleUpscale
+    handleUpscale,
+    turnstileRef,        
+    setTurnstileToken,
+    turnstileToken
   } = useUpscalePipeline(setProgress);
 
   useSimulatedProgress(isProcessing, setProgress);
@@ -36,7 +40,6 @@ export default function Home() {
         
         <Header />
 
-        {/* Upload Area */}
         <div className="mt-12">
           {!selectedFile && (
             <div className="bg-white/40 backdrop-blur-2xl p-2 rounded-2xl border border-white/50 shadow-xl shadow-slate-900/5">
@@ -75,6 +78,9 @@ export default function Home() {
                     isProcessing={isProcessing}
                     handleCancel={handleCancel}
                     handleUpscale={handleUpscale}
+                    turnstileRef={turnstileRef}
+                    setTurnstileToken={setTurnstileToken}
+                    turnstileToken={turnstileToken}
                   />
                 </div>
               )}

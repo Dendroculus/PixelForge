@@ -1,8 +1,28 @@
 import PropTypes from 'prop-types';
+import { Turnstile } from '@marsidev/react-turnstile';
 
-export default function ActionControls({ modelType, setModelType, isProcessing, handleCancel, handleUpscale }) {
+/**
+ * Provides model selection, action controls, and bot protection verification.
+ */
+export default function ActionControls({ 
+  modelType, 
+  setModelType, 
+  isProcessing, 
+  handleCancel, 
+  handleUpscale,
+  turnstileRef,
+  setTurnstileToken,
+  turnstileToken
+}) {
   return (
     <div className="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto">
+      
+      <Turnstile
+        ref={turnstileRef}
+        siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+        onSuccess={(token) => setTurnstileToken(token)}
+      />
+
       <select 
         value={modelType}
         onChange={(e) => setModelType(e.target.value)}
@@ -20,9 +40,10 @@ export default function ActionControls({ modelType, setModelType, isProcessing, 
       >
         Cancel
       </button>
+
       <button 
         onClick={handleUpscale}
-        disabled={isProcessing}
+        disabled={isProcessing || !turnstileToken}
         className="flex items-center justify-center min-w-[140px] px-6 py-2.5 text-sm font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-colors shadow-md disabled:opacity-50 disabled:shadow-none"
       >
         {isProcessing ? "Processing..." : "Upscale Image"}
@@ -37,4 +58,7 @@ ActionControls.propTypes = {
   isProcessing: PropTypes.bool.isRequired,
   handleCancel: PropTypes.func.isRequired,
   handleUpscale: PropTypes.func.isRequired,
+  turnstileRef: PropTypes.object.isRequired,
+  setTurnstileToken: PropTypes.func.isRequired,
+  turnstileToken: PropTypes.string,
 };
