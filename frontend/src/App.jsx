@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Turnstile } from '@marsidev/react-turnstile';
 import Home from './pages/Home';
 import LegalModal from './components/LegalModal';
 import { legalModalData } from './data/legalModalData';
@@ -17,8 +16,6 @@ export default function App() {
     resultUrl,
     modelType,
     setModelType,
-    setTurnstileToken,
-    turnstileRef,
     handleFileSelect,
     handleCancel,
     handleUpscale
@@ -55,15 +52,6 @@ export default function App() {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-white/40 blur-[150px] rounded-full pointer-events-none"></div>
         <div className="absolute top-[400px] right-0 w-[400px] h-[400px] bg-white/30 blur-[120px] rounded-full pointer-events-none"></div>
         
-        {/* Secure Cloudflare Turnstile Injection */}
-        <div className="z-10 mt-8">
-          <Turnstile
-            ref={turnstileRef}
-            siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-            onSuccess={(token) => setTurnstileToken(token)}
-          />
-        </div>
-
         <Home 
           selectedFile={selectedFile}
           previewUrl={previewUrl}

@@ -27,7 +27,7 @@ export default function Home() {
     turnstileToken
   } = useUpscalePipeline(setProgress);
 
-  useSimulatedProgress(isProcessing, setProgress);
+  useSimulatedProgress(isProcessing, setProgress, turnstileToken);
 
   return (
     <div className="w-full">
@@ -80,7 +80,6 @@ export default function Home() {
                     handleUpscale={handleUpscale}
                     turnstileRef={turnstileRef}
                     setTurnstileToken={setTurnstileToken}
-                    turnstileToken={turnstileToken}
                   />
                 </div>
               )}
@@ -118,7 +117,7 @@ export default function Home() {
 
       <section id="features" className="max-w-6xl mx-auto px-6 py-1">
         <h2 className="text-2xl font-bold text-center mb-2 text-slate-900">Why Pixel Forge?</h2>
-        <p className="text-slate-700 text-center mb-12 max-w-xl mx-auto font-medium">Enterprise-grade image enhancement powered by state-of-the-art AI models.</p>
+        <p className="text-slate-700 text-center mb-12 max-w-xl mx-auto font-medium">Advanced AI upscaling optimized for photos and digital art.</p>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[

@@ -1,11 +1,15 @@
 import PropTypes from 'prop-types';
 
 function getStatusLabel(progress) {
-  if (progress < 30) return "Uploading to Cloud...";
-  if (progress < 99) return "AI Enhancing Details...";
-  return "Finalizing...";
+  if (progress === 0) return "Verifying secure connection...";
+  if (progress < 15) return "Preparing image payload...";
+  if (progress < 30) return "Uploading to Cloud GPUs...";
+  if (progress < 50) return "Analyzing pixel structures...";
+  if (progress < 70) return "Running Real-ESRGAN model...";
+  if (progress < 90) return "Reconstructing fine details...";
+  if (progress < 99) return "Polishing final 4K output...";
+  return "Finalizing download...";
 }
-
 export default function ProgressBar({ progress }) {
   return (
     <div className="w-full space-y-2">
