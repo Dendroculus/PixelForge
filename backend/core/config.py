@@ -24,10 +24,26 @@ MAX_FILE_SIZE_BYTES: int = MAX_FILE_SIZE_MB * 1024 * 1024
 MAX_MEGAPIXELS: int = 3
 MAX_PIXELS: int = MAX_MEGAPIXELS * 1_000_000
 MAX_IMAGE_DIMENSION: int = 1700
+OPTIMIZATION_TARGET_PIXELS = 1_000_000
 
-ALLOWED_EXTENSIONS: FrozenSet[str] = frozenset(["jpg", "jpeg", "png", "webp"])
+
+FORMAT_MAP = {
+    "jpeg": "jpg",
+    "jpg": "jpg",
+    "png": "png",
+    "webp": "webp"
+}
+
+ALLOWED_EXTENSIONS: FrozenSet[str] = frozenset(FORMAT_MAP.keys())
 ALLOWED_MIME_TYPES: FrozenSet[str] = frozenset([
-    "image/jpeg", 
-    "image/png", 
-    "image/webp"
+    f"image/{'jpeg' if ext == 'jpg' else ext}" 
+    for ext in FORMAT_MAP.values()
 ])
+class ContainerNames:
+    UPLOAD_CONTAINER: str = "uploads"
+    RESULT_CONTAINER: str = "results"
+
+class LimitConfig:
+    UPLOAD_RATE_LIMIT: str = "5/minute"
+    POLL_RATE_LIMIT: str = "60/minute"
+    SAS_EXPIRATION_MINUTES: int = 10

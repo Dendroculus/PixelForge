@@ -8,12 +8,15 @@ generating public URLs for the frontend.
 """
 
 import io
+import os
 import logging
+from contextlib import asynccontextmanager
 from fastapi import HTTPException, status
 from azure.storage.blob.aio import BlobServiceClient
 from datetime import timedelta, timezone, datetime
 from azure.storage.blob import generate_blob_sas, BlobSasPermissions
-from core.config import AZURE_CONNECTION_STRING
+from core.config import AZURE_CONNECTION_STRING, ContainerNames as CN, LimitConfig as LC
+from helper.utils import get_marker_filename, parse_azure_credentials
 
 logger = logging.getLogger(__name__)
 
@@ -30,79 +33,91 @@ class StorageService:
     """
     Service class for managing Azure Blob Storage operations securely and asynchronously.
     """
+    UPLOAD_CONTAINER = CN.UPLOAD_CONTAINER
+    RESULT_CONTAINER = CN.RESULT_CONTAINER
 
-    @staticmethod
-    async def save_upload(image_stream: io.BytesIO, safe_filename: str) -> str:
-        _ensure_azure_configured()
+    @classmethod
+    @asynccontextmanager
+    async def _get_blob_client(cls, container_name: str, blob_name: str):
+        """
+        Securely provisions an async blob client and ensures connection cleanup.
         
+        Args:
+            container_name: Name of the Azure Blob container
+            blob_name: Name of the blob (file) to access
+        
+        Yields:
+            An instance of BlobClient for the specified container and blob.
+        """
+        _ensure_azure_configured()
+        async with BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING) as client:
+            yield client.get_blob_client(container=container_name, blob=blob_name)
+
+    @classmethod
+    async def save_upload(cls, image_stream: io.BytesIO, safe_filename: str) -> str:
+        secure_name = os.path.basename(safe_filename)
         file_data = image_stream.getvalue()
             
         try:
-            async with BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING) as client:
-                blob_client = client.get_blob_client(container="uploads", blob=safe_filename)
+            async with cls._get_blob_client(cls.UPLOAD_CONTAINER, secure_name) as blob_client:
                 await blob_client.upload_blob(file_data, overwrite=True)
-                return safe_filename
+                return secure_name
         except Exception as e:
-            logger.error(f"Azure upload failed for {safe_filename}: {e}")
+            logger.error(f"Azure upload failed for {secure_name}: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail="Failed to save file to cloud storage."
             )
 
-    @staticmethod
-    async def get_upload_bytes(safe_filename: str) -> bytes:
-        _ensure_azure_configured()
+    @classmethod
+    async def get_upload_bytes(cls, safe_filename: str) -> bytes:
+        secure_name = os.path.basename(safe_filename)
         
         try:
-            async with BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING) as client:
-                blob_client = client.get_blob_client(container="uploads", blob=safe_filename)
+            async with cls._get_blob_client(cls.UPLOAD_CONTAINER, secure_name) as blob_client:
                 stream = await blob_client.download_blob()
                 return await stream.readall()
         except Exception as e:
-            logger.error(f"Azure download failed for {safe_filename}: {e}")
+            logger.error(f"Azure download failed for {secure_name}: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail="Failed to retrieve file from cloud storage."
             )
 
-    @staticmethod
-    async def save_result(image_bytes: bytes, result_filename: str) -> str:
-        _ensure_azure_configured()
+    @classmethod
+    async def save_result(cls, image_bytes: bytes, result_filename: str) -> str:
+        secure_name = os.path.basename(result_filename)
         
         try:
-            async with BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING) as client:
-                blob_client = client.get_blob_client(container="results", blob=result_filename)
+            async with cls._get_blob_client(cls.RESULT_CONTAINER, secure_name) as blob_client:
                 await blob_client.upload_blob(image_bytes, overwrite=True)
                 return blob_client.url
         except Exception as e:
-            logger.error(f"Azure result upload failed for {result_filename}: {e}")
+            logger.error(f"Azure result upload failed for {secure_name}: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail="Failed to save processed result to cloud storage."
             )
 
-    @staticmethod
-    async def check_result_exists(result_filename: str) -> bool:
-        _ensure_azure_configured()
+    @classmethod
+    async def check_result_exists(cls, result_filename: str) -> bool:
+        secure_name = os.path.basename(result_filename)
         
         try:
-            async with BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING) as client:
-                blob_client = client.get_blob_client(container="results", blob=result_filename)
+            async with cls._get_blob_client(cls.RESULT_CONTAINER, secure_name) as blob_client:
                 return await blob_client.exists()
         except Exception as e:
-            logger.error(f"Azure existence check failed for {result_filename}: {e}")
+            logger.error(f"Azure existence check failed for {secure_name}: {e}")
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail="Failed to check result status."
             )
 
-    @staticmethod
-    def get_result_url(result_filename: str) -> str:
+    @classmethod
+    def get_result_url(cls, result_filename: str) -> str:
         _ensure_azure_configured()
-            
-        parts = {k.lower(): v for k, v in (item.split("=", 1) for item in AZURE_CONNECTION_STRING.split(";") if "=" in item)}
-        account_name = parts.get("accountname")
-        account_key = parts.get("accountkey")
+        secure_name = os.path.basename(result_filename)
+        account_name, account_key = parse_azure_credentials(AZURE_CONNECTION_STRING)
         
         if not account_name or not account_key:
             logger.error("Failed to parse Azure Connection String for SAS generation.")
@@ -114,57 +129,40 @@ class StorageService:
         try:
             sas_token = generate_blob_sas(
                 account_name=account_name,
-                container_name="results",
-                blob_name=result_filename,
+                container_name=cls.RESULT_CONTAINER,
+                blob_name=secure_name,
                 account_key=account_key,
                 permission=BlobSasPermissions(read=True),
-                expiry=datetime.now(timezone.utc) + timedelta(minutes=10)
+                expiry=datetime.now(timezone.utc) + timedelta(minutes=LC.SAS_EXPIRATION_MINUTES)
             )
             
-            return f"https://{account_name}.blob.core.windows.net/results/{result_filename}?{sas_token}"
+            return f"https://{account_name}.blob.core.windows.net/{cls.RESULT_CONTAINER}/{secure_name}?{sas_token}"
         except Exception as e:
-             logger.error(f"SAS token generation failed for {result_filename}: {e}")
+             logger.error(f"SAS token generation failed for {secure_name}: {e}")
              raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail="Failed to generate secure access URL."
             )
 
-    @staticmethod
-    async def mark_job_failed(job_id: str) -> None:
-        """
-        Uploads a 0-byte marker file to Azure to indicate a failed job.
-        
-        Args:
-            job_id (str): The ID of the failed job.
-        """
-        _ensure_azure_configured()
-        marker_filename = f"failed/{job_id}.txt"
+    @classmethod
+    async def mark_job_failed(cls, job_id: str) -> None:
+        secure_job_id = os.path.basename(job_id)
+        marker_filename = get_marker_filename(secure_job_id)
         
         try:
-            async with BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING) as client:
-                blob_client = client.get_blob_client(container="results", blob=marker_filename)
+            async with cls._get_blob_client(cls.RESULT_CONTAINER, marker_filename) as blob_client:
                 await blob_client.upload_blob(b"", overwrite=True)
         except Exception as e:
-            logger.error(f"Failed to write failure marker for job {job_id} to Azure: {e}")
+            logger.error(f"Failed to write failure marker for job {secure_job_id} to Azure: {e}")
 
-    @staticmethod
-    async def check_job_failed(job_id: str) -> bool:
-        """
-        Checks if a failure marker exists for the given job ID.
-        
-        Args:
-            job_id (str): The ID of the job to check.
-            
-        Returns:
-            bool: True if the failure marker exists, False otherwise.
-        """
-        _ensure_azure_configured()
-        marker_filename = f"failed/{job_id}.txt"
+    @classmethod
+    async def check_job_failed(cls, job_id: str) -> bool:
+        secure_job_id = os.path.basename(job_id)
+        marker_filename = get_marker_filename(secure_job_id)
         
         try:
-            async with BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING) as client:
-                blob_client = client.get_blob_client(container="results", blob=marker_filename)
+            async with cls._get_blob_client(cls.RESULT_CONTAINER, marker_filename) as blob_client:
                 return await blob_client.exists()
         except Exception as e:
-             logger.error(f"Failed to check failure marker for job {job_id} in Azure: {e}")
-             return False   
+             logger.error(f"Failed to check failure marker for job {secure_job_id} in Azure: {e}")
+             return False

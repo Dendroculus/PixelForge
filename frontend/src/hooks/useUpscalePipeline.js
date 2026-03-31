@@ -79,7 +79,7 @@ export function useUpscalePipeline(setProgress) {
         setIsProcessing(false);
         resetTurnstile();
       }
-    }, 1500);
+    }, 3000);
   };
 
   /**
