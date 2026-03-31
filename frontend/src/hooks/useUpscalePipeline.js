@@ -1,67 +1,37 @@
-import { useState, useRef } from 'react';
+// hooks/useUpscalePipeline.js
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { apiService } from '../services/apiService';
+import { saveFileToIDB, loadFileFromIDB, clearIDB } from '../utils/idb';
 
-/**
- * Manages the full image upscaling pipeline including file handling,
- * Turnstile verification, upload, and result polling.
- *
- * @param {Function} setProgress - Updates progress state in the UI.
- */
 export function useUpscalePipeline(setProgress) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultUrl, setResultUrl] = useState(null);
+  const [jobId, setJobId] = useState(null);
   const [modelType, setModelType] = useState('general');
   const [turnstileToken, setTurnstileToken] = useState(null);
   const turnstileRef = useRef(null);
 
-  /**
-   * Resets Turnstile widget instance and clears associated token.
-   */
-  const resetTurnstile = () => {
+  const resetTurnstile = useCallback(() => {
     if (turnstileRef.current) {
       turnstileRef.current.reset();
     }
     setTurnstileToken(null);
-  };
+  }, []);
 
-  /**
-   * Stores selected file and creates a temporary preview URL.
-   *
-   * @param {File} file
-   */
-  const handleFileSelect = (file) => {
-    setSelectedFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
-    setResultUrl(null);
-  };
-
-  /**
-   * Clears pipeline state and aborts any ongoing process.
-   */
-  const handleCancel = () => {
-    setSelectedFile(null);
-    setPreviewUrl(null);
-    setResultUrl(null);
-    setIsProcessing(false);
-    resetTurnstile();
-  };
-
-  /**
-   * Polls backend until processing completes or fails.
-   *
-   * @param {string} jobId
-   */
-  const pollForResult = (jobId) => {
+  const pollForResult = useCallback((id) => {
+    setJobId(id);
     const interval = setInterval(async () => {
       try {
-        const result = await apiService.pollResult(jobId);
-
+        const result = await apiService.pollResult(id);
         if (result.success) {
           clearInterval(interval);
+          localStorage.removeItem('pf_job_id');
+          localStorage.removeItem('pf_progress');
+          localStorage.removeItem('pf_is_processing');
+          localStorage.setItem('pf_result_url', result.data.url);
           setProgress(100);
-
           setTimeout(() => {
             setResultUrl(result.data.url);
             setIsProcessing(false);
@@ -69,35 +39,94 @@ export function useUpscalePipeline(setProgress) {
           }, 400);
         } else if (result.error) {
           clearInterval(interval);
+          localStorage.removeItem('pf_job_id');
+          localStorage.removeItem('pf_progress');
+          localStorage.removeItem('pf_is_processing');
+          await clearIDB();
           setIsProcessing(false);
           resetTurnstile();
           alert("Server error processing image.");
         }
       } catch (err) {
-        console.error("Polling error:", err);
+        if (err && err.status === 429) return;
         clearInterval(interval);
+        localStorage.removeItem('pf_job_id');
+        localStorage.removeItem('pf_progress');
+        localStorage.removeItem('pf_is_processing');
+        await clearIDB();
         setIsProcessing(false);
         resetTurnstile();
+        alert(err?.message || "Error polling for result.");
       }
     }, 3000);
+  }, [setProgress, resetTurnstile]);
+
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        const savedFile = await loadFileFromIDB();
+        if (savedFile && savedFile instanceof Blob) {
+          setSelectedFile(savedFile);
+          setPreviewUrl(URL.createObjectURL(savedFile));
+          
+          const savedResult = localStorage.getItem('pf_result_url');
+          if (savedResult) {
+            setResultUrl(savedResult);
+            setIsProcessing(false);
+          } else {
+            const isProcessingStored = localStorage.getItem('pf_is_processing') === 'true';
+            if (isProcessingStored) setIsProcessing(true);
+
+            const savedJobId = localStorage.getItem('pf_job_id');
+            if (savedJobId) {
+              pollForResult(savedJobId);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Session restoration failed:", error);
+      }
+    };
+    restoreSession();
+  }, [pollForResult]);
+
+  const handleFileSelect = async (file) => {
+    localStorage.removeItem('pf_result_url');
+    localStorage.removeItem('pf_job_id');
+    localStorage.removeItem('pf_is_processing');
+    await saveFileToIDB(file);
+    setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
+    setResultUrl(null);
+    setJobId(null);
   };
 
-  /**
-   * Initiates upscale flow:
-   * - Ensures Turnstile verification
-   * - Uploads file securely
-   * - Starts result polling
-   */
+  const handleCancel = async () => {
+    try {
+      await clearIDB();
+    } catch (e) {
+      console.error(e);
+    }
+    localStorage.removeItem('pf_job_id');
+    localStorage.removeItem('pf_progress');
+    localStorage.removeItem('pf_result_url');
+    localStorage.removeItem('pf_is_processing');
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setResultUrl(null);
+    setJobId(null);
+    setIsProcessing(false);
+    resetTurnstile();
+  };
+
   const handleUpscale = async () => {
     if (!selectedFile) return;
-
     setIsProcessing(true);
-
+    localStorage.setItem('pf_is_processing', 'true');
     let currentToken = turnstileToken;
     if (!currentToken && turnstileRef.current) {
       currentToken = turnstileRef.current.getResponse();
     }
-
     if (!currentToken) {
       for (let i = 0; i < 20; i++) {
         await new Promise(resolve => setTimeout(resolve, 200));
@@ -110,21 +139,21 @@ export function useUpscalePipeline(setProgress) {
         }
       }
     }
-
     if (!currentToken) {
-      console.error("Security verification timed out.");
       setIsProcessing(false);
+      localStorage.removeItem('pf_is_processing');
       resetTurnstile();
       return;
     }
-
     try {
       const data = await apiService.uploadImage(selectedFile, modelType, currentToken);
+      localStorage.setItem('pf_job_id', data.job_id);
       pollForResult(data.job_id);
     } catch (error) {
-      console.error("Error:", error);
       alert(error.message);
       setIsProcessing(false);
+      localStorage.removeItem('pf_is_processing');
+      try { await clearIDB(); } catch (e) { console.error(e); }
       resetTurnstile();
     }
   };
@@ -134,6 +163,7 @@ export function useUpscalePipeline(setProgress) {
     previewUrl,
     isProcessing,
     resultUrl,
+    jobId,
     modelType,
     setModelType,
     turnstileToken,

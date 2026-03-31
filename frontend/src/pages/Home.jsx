@@ -8,7 +8,6 @@ import { useUpscalePipeline } from '../hooks/useUpscalePipeline';
 import { useSimulatedProgress } from '../hooks/useSimulatedProgress';
 import { APP_CONFIG as config } from '../config';
 
-
 export default function Home() {
   const [progress, setProgress] = useState(0);
   
@@ -17,6 +16,7 @@ export default function Home() {
     previewUrl,
     isProcessing,
     resultUrl,
+    jobId,
     modelType,
     setModelType,
     handleFileSelect,
@@ -31,7 +31,6 @@ export default function Home() {
 
   return (
     <div className="w-full">
-      
       <section className="max-w-4xl mx-auto px-6 pt-24 pb-16 text-center relative z-10">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/50 border border-white/60 text-slate-700 text-xs font-semibold mb-6 shadow-sm">
           <span className="w-1.5 h-1.5 rounded-full bg-[#EEAECA] animate-pulse" />
@@ -41,7 +40,7 @@ export default function Home() {
         <Header />
 
         <div className="mt-12">
-          {!selectedFile && (
+          {!selectedFile && !isProcessing && !jobId && (
             <div className="bg-white/40 backdrop-blur-2xl p-2 rounded-2xl border border-white/50 shadow-xl shadow-slate-900/5">
               <UploadDropzone onFileSelect={handleFileSelect} />
             </div>
@@ -49,7 +48,6 @@ export default function Home() {
 
           {selectedFile && (
             <div className="bg-white/50 backdrop-blur-2xl p-6 rounded-2xl shadow-xl border border-white/60 space-y-6">
-              
               {!resultUrl ? (
                 <div className="bg-white/50 rounded-xl p-2 border border-white/40 flex justify-center overflow-hidden">
                   <img 

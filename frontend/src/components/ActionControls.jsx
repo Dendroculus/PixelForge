@@ -2,6 +2,7 @@ import PropTypes from 'prop-types';
 import { Turnstile } from '@marsidev/react-turnstile';
 
 export default function ActionControls({ 
+  jobId,
   modelType, 
   setModelType, 
   isProcessing, 
@@ -13,10 +14,10 @@ export default function ActionControls({
   /**
    * Provides model selection, action controls, and bot verification state handling.
    */
-  const isSubmitDisabled = isProcessing;
+  const isSubmitDisabled = isProcessing || !!jobId;
 
   const renderButtonContent = () => {
-    if (isProcessing) return "Processing...";
+    if (isProcessing || jobId) return "Processing...";
     return "Upscale Image";
   };
 
@@ -62,6 +63,7 @@ export default function ActionControls({
 }
 
 ActionControls.propTypes = {
+  jobId: PropTypes.string,
   modelType: PropTypes.string.isRequired,
   setModelType: PropTypes.func.isRequired,
   isProcessing: PropTypes.bool.isRequired,

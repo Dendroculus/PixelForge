@@ -9,18 +9,24 @@ export function useSimulatedProgress(isProcessing, setProgress, turnstileToken) 
     let interval;
 
     if (isProcessing) {
-      if (!turnstileToken) {
+      const savedProgress = localStorage.getItem('pf_progress');
+      
+      if (savedProgress) {
+        setProgress(Number(savedProgress));
+      } else if (!turnstileToken && !localStorage.getItem('pf_job_id')) {
         setProgress(0);
         return;
+      } else {
+        setProgress(15);
       }
-
-      setProgress(15);
 
       interval = setInterval(() => {
         setProgress((prev) => {
           if (prev >= 95) return 95;
           const increment = (95 - prev) * 0.1;
-          return prev + increment;
+          const nextValue = prev + increment;
+          localStorage.setItem('pf_progress', nextValue.toString());
+          return nextValue;
         });
       }, 500);
     } else {
