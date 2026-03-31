@@ -8,3 +8,4 @@ replicate==1.0.7
 uvicorn
 python-multipart
 slowapi
+filetype

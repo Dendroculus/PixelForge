@@ -1,5 +1,5 @@
 import logging
-from fastapi import APIRouter, UploadFile, File, Depends, BackgroundTasks, HTTPException, status, Request
+from fastapi import APIRouter, Form, UploadFile, File, Depends, BackgroundTasks, HTTPException, status, Request
 
 from core.security import process_and_sanitize_image
 from core.rate_limiter import limiter
@@ -34,13 +34,15 @@ async def process_image_task(job_id: str, safe_filename: str, model_type: str):
 async def upload_image(
     request: Request,
     background_tasks: BackgroundTasks, 
+    cf_turnstile_response: str = Form(...),
     file: UploadFile = File(...),
     model_type: str = Depends(valid_model_type),
-    _token: str = Depends(verify_turnstile),
 ):
+    
+    await verify_turnstile(cf_turnstile_response)
+    
     try:
-        job_id, safe_filename, image_stream = await process_and_sanitize_image(file)
-        
+        job_id, safe_filename, image_stream = await process_and_sanitize_image(file)    
         await StorageService.save_upload(image_stream, safe_filename)
         
     except HTTPException:

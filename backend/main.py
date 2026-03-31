@@ -1,5 +1,6 @@
 import os
 import logging
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -11,6 +12,9 @@ from api.routes import router as api_router
 from core.config import ALLOWED_ORIGINS
 from core.rate_limiter import limiter
 
+if "*" in ALLOWED_ORIGINS:
+    raise ValueError("CRITICAL: Wildcard '*' is not permitted in ALLOWED_ORIGINS when credentials are allowed.")
+
 LOG_DIR = Path(os.path.dirname(__file__)) / "logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -18,7 +22,12 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[
-        logging.FileHandler(LOG_DIR / "upscaler_backend.log", encoding="utf-8"),  
+        RotatingFileHandler(
+            LOG_DIR / "upscaler_backend.log",
+            maxBytes=10485760,
+            backupCount=5,
+            encoding="utf-8"
+        ),
         logging.StreamHandler()                                         
     ]
 )

@@ -1,3 +1,4 @@
+# services/esrgan.py
 import asyncio
 import aiohttp
 import io
@@ -12,23 +13,9 @@ from helper.utils import get_result_filename
 
 logger = logging.getLogger(__name__)
 
-
 class AIUpscaler:
     """
     Executes an end-to-end AI image upscaling pipeline using Replicate.
-
-    Responsibilities:
-    - Retrieve and validate uploaded image bytes
-    - Optimize image for efficient AI processing
-    - Resolve model configuration via ModelRegistry
-    - Execute upscaling and store the result
-
-    Safety controls:
-    - Concurrency limiting via semaphore
-    - Payload size validation before decoding
-    - Model allowlisting through ModelRegistry
-    - HTTPS enforcement for external downloads
-    - Timeout-bound outbound requests
     """
 
     def __init__(self, max_concurrent_jobs: int = 5):
@@ -39,14 +26,6 @@ class AIUpscaler:
     async def run_upscale(self, safe_filename: str, job_id: str, model_type: str) -> bool:
         """
         Runs the full upscaling workflow for a single job.
-
-        Args:
-            safe_filename: Sanitized filename in storage
-            job_id: Unique identifier for tracking
-            model_type: Requested model key
-
-        Returns:
-            bool: True if successful, False otherwise
         """
         try:
             async with self._semaphore:
@@ -74,10 +53,6 @@ class AIUpscaler:
     def _optimize_image_sync(self, raw_bytes: bytes, job_id: str) -> io.BytesIO:
         """
         Validates and prepares the image for AI processing.
-
-        - Verifies image integrity
-        - Downscales large images to target pixel count
-        - Normalizes format to JPEG (RGB)
         """
         with io.BytesIO(raw_bytes) as img_stream:
             with Image.open(img_stream) as img:
@@ -113,14 +88,6 @@ class AIUpscaler:
     async def _process_with_ai(self, image_stream: io.BytesIO, job_id: str, model_type: str) -> str:
         """
         Executes AI upscaling using a model resolved from ModelRegistry.
-
-        Args:
-            image_stream: Optimized image stream
-            job_id: Job identifier
-            model_type: Model selection key
-
-        Returns:
-            str: URL of the processed image
         """
         logger.info(f" ⚒️ Job #{job_id} - Processing on Replicate GPUs using [{model_type}]...")
 
@@ -140,22 +107,19 @@ class AIUpscaler:
             finally:
                 image_stream.close()
 
-        output = await asyncio.to_thread(call_replicate)
+        output = await asyncio.wait_for(asyncio.to_thread(call_replicate), timeout=300)
         return str(output[0]) if isinstance(output, list) else str(output)
 
     async def _download_ai_result(self, url: str, job_id: str) -> bytes:
         """
         Retrieves the processed image from a secure external source.
-
-        Args:
-            url: Replicate output URL
-            job_id: Job identifier
-
-        Returns:
-            bytes: Image data
         """
-        if urllib.parse.urlparse(url).scheme != "https":
+        parsed_url = urllib.parse.urlparse(url)
+        if parsed_url.scheme != "https":
             raise ValueError("Insecure protocol: HTTPS required for output retrieval.")
+            
+        if parsed_url.netloc not in ("replicate.delivery", "pbxt.replicate.delivery"):
+            raise ValueError("Untrusted output URL domain.")
 
         logger.info(f"☁️ Job #{job_id} - Downloading result from Replicate...")
 
@@ -165,6 +129,5 @@ class AIUpscaler:
                 if resp.status != 200:
                     raise ValueError(f"Failed to download result: Status {resp.status}")
                 return await resp.read()
-
 
 ai_upscaler = AIUpscaler()
