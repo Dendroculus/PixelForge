@@ -65,7 +65,7 @@ export function useUpscalePipeline(setProgress) {
     const restoreSession = async () => {
       try {
         const savedFile = await loadFileFromIDB();
-        if (savedFile && savedFile instanceof Blob) {
+        if (savedFile) {
           setSelectedFile(savedFile);
           setPreviewUrl(URL.createObjectURL(savedFile));
           
@@ -73,14 +73,28 @@ export function useUpscalePipeline(setProgress) {
           if (savedResult) {
             setResultUrl(savedResult);
             setIsProcessing(false);
-          } else {
-            const isProcessingStored = localStorage.getItem('pf_is_processing') === 'true';
-            if (isProcessingStored) setIsProcessing(true);
+            localStorage.removeItem('pf_is_processing');
+            localStorage.removeItem('pf_progress');
+            return;
+          }
 
-            const savedJobId = localStorage.getItem('pf_job_id');
-            if (savedJobId) {
-              pollForResult(savedJobId);
-            }
+          const savedJobId = localStorage.getItem('pf_job_id');
+          const isProcessingStored = localStorage.getItem('pf_is_processing') === 'true';
+
+          if (savedJobId) {
+            setIsProcessing(true);
+            pollForResult(savedJobId);
+          } else if (isProcessingStored) {
+            // If processing was stored but there's no Job ID, the user refreshed 
+            // during the actual file upload before the server responded.
+            // Uploads cannot survive a refresh, so we must reset to prevent infinite hanging.
+            setIsProcessing(false);
+            localStorage.removeItem('pf_is_processing');
+            localStorage.removeItem('pf_progress');
+          } else {
+            setIsProcessing(false);
+            localStorage.removeItem('pf_is_processing');
+            localStorage.removeItem('pf_progress');
           }
         }
       } catch (error) {
@@ -94,6 +108,7 @@ export function useUpscalePipeline(setProgress) {
     localStorage.removeItem('pf_result_url');
     localStorage.removeItem('pf_job_id');
     localStorage.removeItem('pf_is_processing');
+    localStorage.removeItem('pf_progress');
     await saveFileToIDB(file);
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));

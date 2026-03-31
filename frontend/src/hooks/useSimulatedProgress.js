@@ -1,21 +1,21 @@
+// hooks/useSimulatedProgress.js
 import { useEffect } from 'react';
 
 export function useSimulatedProgress(isProcessing, setProgress, turnstileToken) {
-  /**
-   * Simulates upload/processing progress.
-   * Progress starts only after bot verification succeeds and caps at 95% until completion.
-   */
   useEffect(() => {
     let interval;
 
     if (isProcessing) {
+      const savedJobId = localStorage.getItem('pf_job_id');
       const savedProgress = localStorage.getItem('pf_progress');
       
-      if (savedProgress) {
-        setProgress(Number(savedProgress));
-      } else if (!turnstileToken && !localStorage.getItem('pf_job_id')) {
+      if (!turnstileToken && !savedJobId) {
         setProgress(0);
         return;
+      }
+
+      if (savedProgress) {
+        setProgress(Number(savedProgress));
       } else {
         setProgress(15);
       }
