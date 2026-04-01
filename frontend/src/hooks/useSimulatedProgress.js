@@ -1,4 +1,3 @@
-// hooks/useSimulatedProgress.js
 import { useEffect } from 'react';
 
 export function useSimulatedProgress(isProcessing, setProgress, turnstileToken) {
@@ -8,8 +7,9 @@ export function useSimulatedProgress(isProcessing, setProgress, turnstileToken) 
     if (isProcessing) {
       const savedJobId = localStorage.getItem('pf_job_id');
       const savedProgress = localStorage.getItem('pf_progress');
+      const isProcessingStored = localStorage.getItem('pf_is_processing') === 'true';
       
-      if (!turnstileToken && !savedJobId) {
+      if (!turnstileToken && !savedJobId && !isProcessingStored) {
         setProgress(0);
         return;
       }
@@ -17,7 +17,7 @@ export function useSimulatedProgress(isProcessing, setProgress, turnstileToken) 
       if (savedProgress) {
         setProgress(Number(savedProgress));
       } else {
-        setProgress(15);
+        setProgress(0);
       }
 
       interval = setInterval(() => {

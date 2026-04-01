@@ -2,7 +2,6 @@ import PropTypes from 'prop-types';
 
 function getStatusLabel(progress) {
   if (progress === 0) return "Verifying secure connection, don't refresh...";
-  if (progress < 15) return "Preparing image payload...";
   if (progress < 30) return "Uploading to Cloud GPUs...";
   if (progress < 50) return "Analyzing pixel structures...";
   if (progress < 70) return "Running Real-ESRGAN model...";

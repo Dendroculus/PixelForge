@@ -1,11 +1,14 @@
+// pages/Home.jsx
 import { useState } from 'react';
 import UploadDropzone from '../components/UploadDropzone';
 import ResultViewer from '../components/ResultViewer';
 import Header from '../components/Header';
 import ProgressBar from '../components/ProgressBar';
 import ActionControls from '../components/ActionControls';
+import LegalModal from '../components/LegalModal'; 
 import { useUpscalePipeline } from '../hooks/useUpscalePipeline';
 import { useSimulatedProgress } from '../hooks/useSimulatedProgress';
+import { clearAppSession } from '../utils/session';
 import { APP_CONFIG as config } from '../config';
 
 export default function Home() {
@@ -24,7 +27,9 @@ export default function Home() {
     handleUpscale,
     turnstileRef,        
     setTurnstileToken,
-    turnstileToken
+    turnstileToken,
+    appAlert,      
+    setAppAlert
   } = useUpscalePipeline(setProgress);
 
   useSimulatedProgress(isProcessing, setProgress, turnstileToken);
@@ -93,6 +98,10 @@ export default function Home() {
                   <a 
                     href={resultUrl}
                     download={`4K-${selectedFile.name}`}
+                    onClick={() => {
+                      clearAppSession(previewUrl);
+                      handleCancel();
+                    }}
                     className="px-6 py-2.5 text-sm font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-all shadow-md"
                   >
                     Download Result
@@ -176,6 +185,36 @@ export default function Home() {
           ))}
         </div>
       </section>
+      <LegalModal 
+        isOpen={appAlert.show && appAlert.type === 'potato'} 
+        onClose={() => {
+          setAppAlert({ show: false, type: null });
+          localStorage.removeItem('pf_alert');
+          localStorage.removeItem('pf_refresh_count'); 
+        }}
+        title="Whoa, slow down! 👀"
+      >
+        <p className="font-semibold text-slate-800 text-base">We're working on it!</p>
+        <p>Please wait as your image is being processed on our potato server (●'◡'●)</p>
+        <p>Since this is a free, open-source project, we are trying to save costs. Refreshing the page won't speed up the AI, but it might make our server cry.</p>
+      </LegalModal>
+
+      <LegalModal 
+        isOpen={appAlert.show && appAlert.type === 'dos'} 
+        onClose={() => {
+          setAppAlert({ show: false, type: null });
+          localStorage.removeItem('pf_alert');
+          localStorage.removeItem('pf_refresh_count'); 
+        }}
+        title="Processing Failed ❌"
+      >
+        <div className="space-y-1.5">
+          <p className="font-semibold text-rose-600 text-base mb-2">Image failed to process.</p>
+          <p>Since you kept refreshing and impatiently waiting, the image failed to be processed.</p>
+          <p>Please try again and be patient next time!</p>
+        </div>
+      </LegalModal>
+
     </div>
   );
 }

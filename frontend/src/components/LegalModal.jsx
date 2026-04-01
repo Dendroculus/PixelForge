@@ -43,7 +43,6 @@ export default function LegalModal({ isOpen, onClose, title, children }) {
         className={`absolute inset-0 transition-all duration-300 ease-in-out
           ${isAnimating ? 'bg-slate-900/40 backdrop-blur-sm opacity-100' : 'bg-slate-900/0 backdrop-blur-none opacity-0'}
         `}
-        onClick={onClose}
         aria-hidden="true"
       />
       

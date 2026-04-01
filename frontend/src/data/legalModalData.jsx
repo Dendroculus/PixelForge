@@ -28,5 +28,22 @@ export const legalModalData = {
         <p>Pixel Forge is an open-source demonstration project. The maintainers reserve the right to block access or shut down the hosted instance at any time.</p>
       </>
     )
+  },
+  security: {
+    title: "Security Measures",
+    content: (
+      <>
+        <p className="font-semibold text-slate-800 text-base">Keeping Your Data Safe</p>
+        <p>We take security seriously. Here are the measures we have in place to protect your data:</p>
+        <ul className="list-disc pl-5 space-y-2 mt-2">
+          <li><strong>Secure Uploads:</strong> All images are uploaded over HTTPS to ensure encryption in transit.</li>
+          <li><strong>Isolated Processing:</strong> Each image is processed in an isolated environment on Azure GPUs, preventing any cross-contamination of data.</li>
+          <li><strong>Automated Deletion:</strong> Both original and processed images are automatically deleted immediately after the upscaling process is complete and the result is delivered to you.</li>
+          <li><strong>Basic File Validation:</strong> We perform basic checks to ensure that uploaded files are valid images, helping to prevent malicious file uploads.</li>
+          <li><strong>Open Source Transparency:</strong> Our backend code is open source, allowing anyone to review our security practices and verify that we are handling data responsibly.</li>
+          <li><strong>Metadata Handling:</strong> We do not store or track any metadata associated with uploaded images, ensuring your privacy is maintained.</li>
+        </ul>
+      </>
+    )
   }
 };

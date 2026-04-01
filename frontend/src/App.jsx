@@ -73,7 +73,8 @@ export default function App() {
           <div className="flex items-center gap-6 group font-medium">
             <button onClick={() => openModal('privacy')} className="transition-colors focus:outline-none group-hover:text-slate-400 hover:!text-slate-900">Privacy</button>
             <button onClick={() => openModal('terms')} className="transition-colors focus:outline-none group-hover:text-slate-400 hover:!text-slate-900">Terms</button>
-            <a href="https://github.com/Dendroculus/image-upscaler-website" target="_blank" rel="noopener noreferrer" className="transition-colors focus:outline-none group-hover:text-slate-400 hover:!text-slate-900">Source Code</a>
+            <button onClick={() => openModal('security')} className="transition-colors focus:outline-none group-hover:text-slate-400 hover:!text-slate-900">Security</button>
+
           </div>
         </div>
       </footer>
