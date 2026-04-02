@@ -215,6 +215,33 @@ export default function Home() {
         </div>
       </LegalModal>
 
+      <LegalModal 
+        isOpen={appAlert.show && appAlert.type === 'reserved_warning'} 
+        onClose={() => setAppAlert({ show: false, type: null })}
+        title="Session Restored 🔄"
+      >
+        <div className="space-y-1.5">
+          <p className="font-semibold text-slate-800 text-base mb-2">We reserved your image!</p>
+          <p>Just letting you know that your upscaled image won't stay here forever.</p>
+          <p>Please remember to download it before it expires in {Math.floor(config.RESULT_EXPIRATION_TIME / 60000)} minutes!</p>
+        </div>
+      </LegalModal>
+
+      <LegalModal 
+        isOpen={appAlert.show && appAlert.type === 'expired'} 
+        onClose={() => {
+          setAppAlert({ show: false, type: null });
+          localStorage.removeItem('pf_alert');
+        }}
+        title="Session Expired ⏱️"
+      >
+        <div className="space-y-1.5">
+          <p className="font-semibold text-rose-600 text-base mb-2">Image deleted for privacy.</p>
+          <p>Your session timed out and your image was permanently deleted from your browser and our servers to protect your privacy.</p>
+          <p>Please upload your image again if you still need to upscale it!</p>
+        </div>
+      </LegalModal>
+
     </div>
   );
 }
