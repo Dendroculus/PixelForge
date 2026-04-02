@@ -52,7 +52,7 @@ class AIUpscaler:
 
     def _optimize_image_sync(self, raw_bytes: bytes, job_id: str) -> io.BytesIO:
         """
-        Validates and prepares the image for AI processing.
+        Validates and prepares the image for AI processing, preserving format and transparency.
         """
         with io.BytesIO(raw_bytes) as img_stream:
             with Image.open(img_stream) as img:
@@ -64,6 +64,8 @@ class AIUpscaler:
                 total_pixels = width * height
 
                 output_stream = io.BytesIO()
+                
+                save_format = img.format or "JPEG"
 
                 if total_pixels > OPTIMIZATION_TARGET_PIXELS:
                     logger.info(f"📐 Job #{job_id} - Optimizing to target resolution...")
@@ -72,15 +74,18 @@ class AIUpscaler:
                     new_height = int(height * ratio)
 
                     resized_img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
-                    if resized_img.mode in ("RGBA", "P"):
+                    
+                    if resized_img.mode in ("RGBA", "P") and save_format != "PNG":
                         resized_img = resized_img.convert("RGB")
 
-                    resized_img.save(output_stream, format="JPEG", quality=95)
+                    resized_img.save(output_stream, format=save_format, quality=95)
                 else:
                     logger.info(f"📐 Job #{job_id} - Standard resolution. Preparing stream.")
-                    if img.mode in ("RGBA", "P"):
+                    
+                    if img.mode in ("RGBA", "P") and save_format != "PNG":
                         img = img.convert("RGB")
-                    img.save(output_stream, format="JPEG", quality=95)
+                        
+                    img.save(output_stream, format=save_format, quality=95)
 
                 output_stream.seek(0)
                 return output_stream

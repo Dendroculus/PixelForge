@@ -99,7 +99,7 @@ def _validate_resolution(img: Image.Image) -> None:
             detail=f"Resolution exceeds {MAX_MEGAPIXELS} megapixels."
         )
 
-def _normalize_image(img: Image.Image, ext: str) -> Tuple[str, Image.Image]:
+def _normalize_image(img: Image.Image, ext: str) -> Tuple[Image.Image, str]:
     if img.mode in ("RGBA", "LA", "P") and ext in ("png", "webp"):
         clean_img = img.convert("RGBA")
     else:
