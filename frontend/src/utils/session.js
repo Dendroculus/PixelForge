@@ -1,4 +1,5 @@
 import { clearIDB } from './idb';
+import { STORAGE_KEYS } from '../config';
 
 export const clearAppSession = async (previewUrl = null) => {
   try {
@@ -7,12 +8,12 @@ export const clearAppSession = async (previewUrl = null) => {
     console.error("Error clearing IDB:", e);
   }
   
-  localStorage.removeItem('pf_job_id');
-  localStorage.removeItem('pf_progress');
-  localStorage.removeItem('pf_result_url');
-  localStorage.removeItem('pf_is_processing');
-  localStorage.removeItem('pf_refresh_count');
-  localStorage.removeItem('pf_result_timestamp'); 
+  localStorage.removeItem(STORAGE_KEYS.JOB_ID);
+  localStorage.removeItem(STORAGE_KEYS.PROGRESS);
+  localStorage.removeItem(STORAGE_KEYS.RESULT_URL);
+  localStorage.removeItem(STORAGE_KEYS.IS_PROCESSING);
+  localStorage.removeItem(STORAGE_KEYS.REFRESH_COUNT);
+  localStorage.removeItem(STORAGE_KEYS.RESULT_TIMESTAMP); 
   
   if (previewUrl) {
     URL.revokeObjectURL(previewUrl);
