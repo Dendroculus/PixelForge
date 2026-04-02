@@ -45,5 +45,21 @@ export const legalModalData = {
         </ul>
       </>
     )
+  },
+  limit_reached: {
+    title: "Daily Limit Reached 🛑",
+    content: (
+      <div className="space-y-4 text-slate-700">
+        <p className="text-lg font-medium text-slate-900">
+          Whoa there! You've used up your 3 free upscales for today.
+        </p>
+        <p>
+          Pixel Forge is powered by a "potato server" and expensive AI GPUs. To keep this tool free and open-source for everyone, we have to limit usage so the servers don't melt.
+        </p>
+        <p className="font-bold text-slate-900 mt-6">
+          See you tomorrow! Your limit resets 24 hours from your first upscale.
+        </p>
+      </div>
+    )
   }
 };

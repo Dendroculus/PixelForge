@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+DATABASE_URL = os.getenv("DATABASE_URL")
 ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development").lower()
 
 AZURE_CONNECTION_STRING: str | None = os.getenv("AZURE_CONNECTION_STRING")

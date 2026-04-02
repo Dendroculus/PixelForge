@@ -2,6 +2,7 @@ import os
 import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,6 +12,7 @@ from slowapi.errors import RateLimitExceeded
 from api.routes import router as api_router 
 from core.config import ALLOWED_ORIGINS
 from core.rate_limiter import limiter
+from core.database import init_db_pool, close_db_pool
 
 if "*" in ALLOWED_ORIGINS:
     raise ValueError("CRITICAL: Wildcard '*' is not permitted in ALLOWED_ORIGINS when credentials are allowed.")
@@ -32,11 +34,18 @@ logging.basicConfig(
     ]
 )
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await init_db_pool()
+    yield 
+    await close_db_pool()
+
 app = FastAPI(
     root_path="/api",
     title="AI Image Upscaler API",
     description="Production-ready FastAPI backend for Real-ESRGAN",
-    version="1.1.0"
+    version="1.1.0",
+    lifespan=lifespan
 )
 
 app.add_middleware(

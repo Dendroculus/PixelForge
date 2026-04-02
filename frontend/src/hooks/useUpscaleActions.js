@@ -1,11 +1,26 @@
 import { useCallback } from 'react';
 import { apiService } from '../services/apiService';
 import { clearAppSession } from '../utils/session';
-import PropTypes from 'prop-types';
 
 /**
  * Handles API communication, uploading images, and polling for results.
- * * @param {Object} context - The shared state setters and variables from the main pipeline.
+ * * @param {Object} context - The shared state setters and variables.
+ * @param {Function} context.setJobId - Sets the current active job ID.
+ * @param {Function} context.setProgress - Updates the simulated progress bar.
+ * @param {Function} context.setResultUrl - Sets the final upscaled image URL.
+ * @param {Function} context.setIsProcessing - Toggles the processing state.
+ * @param {Function} context.resetTurnstile - Resets the Cloudflare Turnstile widget.
+ * @param {string|null} context.previewUrl - The local object URL of the selected file.
+ * @param {Function} context.setSelectedFile - Sets the active File object.
+ * @param {Function} context.setPreviewUrl - Sets the active preview URL.
+ * @param {Function} context.setAppAlert - Triggers application-wide modals.
+ * @param {string|null} context.turnstileToken - The current Turnstile validation token.
+ * @param {Object} context.turnstileRef - Reference to the Turnstile component.
+ * @param {Function} context.setTurnstileToken - Updates the Turnstile token.
+ * @param {string} context.modelType - The selected AI model ('general' or 'anime').
+ * @param {File|null} context.selectedFile - The user's chosen file.
+ * @param {Function} context.recordUsage - Logs a successful upscale to local history.
+ * @param {Function} context.forceMaxLimit - Instantly maxes out usage if the backend blocks the request.
  * @returns {{ pollForResult: Function, handleUpscale: Function }}
  */
 export function useUpscaleActions({
@@ -22,7 +37,9 @@ export function useUpscaleActions({
   turnstileRef,
   setTurnstileToken,
   modelType,
-  selectedFile
+  selectedFile,
+  recordUsage,
+  forceMaxLimit,
 }) {
 
   const pollForResult = useCallback((id) => {
@@ -124,15 +141,31 @@ export function useUpscaleActions({
     
     try {
       const data = await apiService.uploadImage(fileToUse, modelType, currentToken);
+      
+      recordUsage();
+      
       localStorage.setItem('pf_job_id', data.job_id);
       pollForResult(data.job_id);
     } catch (error) {
-      alert(error.message); 
+      if (error.message === 'LIMIT_REACHED') {
+        forceMaxLimit();
+        localStorage.setItem('pf_alert', 'limit_reached');
+        setAppAlert({ show: true, type: 'limit_reached' });
+      } else {
+        alert(error.message); 
+      }
+      
       setIsProcessing(false);
       await clearAppSession(previewUrl);
       resetTurnstile();
     }
-  }, [selectedFile, turnstileToken, modelType, pollForResult, previewUrl, resetTurnstile, setIsProcessing, turnstileRef, setTurnstileToken]);
+  }, [selectedFile, turnstileToken, 
+      modelType, pollForResult, 
+      previewUrl, resetTurnstile, 
+      setIsProcessing, turnstileRef, 
+      setTurnstileToken, recordUsage, 
+      forceMaxLimit, setAppAlert
+    ]);
 
   return { pollForResult, handleUpscale };
 }
