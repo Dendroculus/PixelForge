@@ -1,4 +1,3 @@
-// pages/Home.jsx
 import { useState } from 'react';
 import UploadDropzone from '../components/UploadDropzone';
 import ResultViewer from '../components/ResultViewer';
@@ -29,7 +28,9 @@ export default function Home() {
     setTurnstileToken,
     turnstileToken,
     appAlert,      
-    setAppAlert
+    setAppAlert,
+    usesRemaining,
+    timeUntilReset
   } = useUpscalePipeline(setProgress);
 
   useSimulatedProgress(isProcessing, setProgress, turnstileToken);
@@ -46,9 +47,26 @@ export default function Home() {
 
         <div className="mt-12">
           {!selectedFile && !isProcessing && !jobId && (
-            <div className="bg-white/40 backdrop-blur-2xl p-2 rounded-2xl border border-white/50 shadow-xl shadow-slate-900/5">
-              <UploadDropzone onFileSelect={handleFileSelect} />
-            </div>
+            usesRemaining <= 0 ? (
+              <div className="bg-rose-50/90 backdrop-blur-2xl p-10 sm:p-14 rounded-3xl border border-rose-200 shadow-xl text-center flex flex-col items-center justify-center max-w-2xl mx-auto transition-all duration-500">
+                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-5 shadow-sm border border-rose-100 text-rose-500">
+                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <h3 className="text-2xl font-bold text-slate-800 mb-2">Daily Limit Reached</h3>
+                <p className="text-slate-600 font-medium mb-8 max-w-md">You've used all 3 free upscales today. This keeps our potato server alive for everyone!</p>
+                <div className="bg-white/80 px-8 py-4 rounded-2xl border border-rose-100 shadow-sm w-full max-w-sm">
+                  <span className="text-xs font-bold text-rose-400 uppercase tracking-widest">You can upscale again in</span>
+                  <div className="text-3xl font-black text-rose-600 font-mono tracking-tight mt-1">{timeUntilReset}</div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white/40 backdrop-blur-2xl p-2 rounded-2xl border border-white/50 shadow-xl shadow-slate-900/5">
+                <UploadDropzone onFileSelect={handleFileSelect} />
+                <div className="text-center mt-4 mb-2 text-sm font-medium text-slate-500">
+                  Free Uses Remaining: <span className="font-bold text-slate-700 bg-white/60 px-2 py-0.5 rounded-md border border-white/80 ml-1">{usesRemaining} / 3</span>
+                </div>
+              </div>
+            )
           )}
 
           {selectedFile && (
@@ -185,6 +203,23 @@ export default function Home() {
           ))}
         </div>
       </section>
+
+      {/* --- MODALS --- */}
+      <LegalModal 
+        isOpen={appAlert.show && appAlert.type === 'limit_reached'} 
+        onClose={() => {
+          setAppAlert({ show: false, type: null });
+          localStorage.removeItem('pf_alert');
+        }}
+        title="Daily Limit Reached 🛑"
+      >
+        <div className="space-y-3 text-left">
+          <p className="font-semibold text-slate-800 text-base">Whoa there! You've used up your 3 free upscales for today.</p>
+          <p>Pixel Forge is powered by a "potato server" and expensive AI GPUs. To keep this tool free and open-source for everyone, we have to limit usage so the servers don't melt.</p>
+          <p className="font-bold text-slate-900 pt-2">See you tomorrow! Your limit resets 24 hours from your first upscale.</p>
+        </div>
+      </LegalModal>
+
       <LegalModal 
         isOpen={appAlert.show && appAlert.type === 'potato'} 
         onClose={() => {
@@ -194,9 +229,11 @@ export default function Home() {
         }}
         title="Whoa, slow down! 👀"
       >
-        <p className="font-semibold text-slate-800 text-base">We're working on it!</p>
-        <p>Please wait as your image is being processed on our potato server (●'◡'●)</p>
-        <p>Since this is a free, open-source project, we are trying to save costs. Refreshing the page won't speed up the AI, but it might make our server cry.</p>
+        <div className="space-y-1.5 text-left">
+          <p className="font-semibold text-slate-800 text-base">We're working on it!</p>
+          <p>Please wait as your image is being processed on our potato server (●'◡'●)</p>
+          <p>Since this is a free, open-source project, we are trying to save costs. Refreshing the page won't speed up the AI, but it might make our server cry.</p>
+        </div>
       </LegalModal>
 
       <LegalModal 
@@ -208,7 +245,7 @@ export default function Home() {
         }}
         title="Processing Failed ❌"
       >
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 text-left">
           <p className="font-semibold text-rose-600 text-base mb-2">Image failed to process.</p>
           <p>Since you kept refreshing and impatiently waiting, the image failed to be processed.</p>
           <p>Please try again and be patient next time!</p>
@@ -220,7 +257,7 @@ export default function Home() {
         onClose={() => setAppAlert({ show: false, type: null })}
         title="Session Restored 🔄"
       >
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 text-left">
           <p className="font-semibold text-slate-800 text-base mb-2">We reserved your image!</p>
           <p>Just letting you know that your upscaled image won't stay here forever.</p>
           <p>Please remember to download it before it expires in {Math.floor(config.RESULT_EXPIRATION_TIME / 60000)} minutes!</p>
@@ -235,7 +272,7 @@ export default function Home() {
         }}
         title="Session Expired ⏱️"
       >
-        <div className="space-y-1.5">
+        <div className="space-y-1.5 text-left">
           <p className="font-semibold text-rose-600 text-base mb-2">Image deleted for privacy.</p>
           <p>Your session timed out and your image was permanently deleted from your browser and our servers to protect your privacy.</p>
           <p>Please upload your image again if you still need to upscale it!</p>
@@ -244,4 +281,4 @@ export default function Home() {
 
     </div>
   );
-}
+} 

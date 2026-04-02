@@ -3,11 +3,12 @@ import { saveFileToIDB } from '../utils/idb';
 import { clearAppSession } from '../utils/session';
 import { useUpscaleActions } from './useUpscaleActions';
 import { useSessionPersistence } from './useSessionPersistence';
+import { useUsageLimit } from './useUsageLimit';
 
 /**
- * The master orchestrator hook that combines state, API actions, and storage persistence.
+ * The master orchestrator hook that combines state, API actions, rate limits, and storage persistence.
  * * @param {Function} setProgress - UI progress bar state setter.
- * @returns {Object} Destructured UI state and action handlers.
+ * @returns {Object} Destructured UI state, system variables, and action handlers.
  */
 export function useUpscalePipeline(setProgress) {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -30,6 +31,8 @@ export function useUpscalePipeline(setProgress) {
     setTurnstileToken(null);
   }, []);
 
+  const { usesRemaining, timeUntilReset, recordUsage, forceMaxLimit } = useUsageLimit();
+
   const { pollForResult, handleUpscale } = useUpscaleActions({
     setJobId,
     setProgress,
@@ -44,7 +47,9 @@ export function useUpscalePipeline(setProgress) {
     turnstileRef,
     setTurnstileToken,
     modelType,
-    selectedFile
+    selectedFile,
+    recordUsage,
+    forceMaxLimit
   });
 
   useSessionPersistence({
@@ -102,6 +107,8 @@ export function useUpscalePipeline(setProgress) {
     handleCancel,
     handleUpscale,
     appAlert,
-    setAppAlert
+    setAppAlert,
+    usesRemaining,
+    timeUntilReset
   };
 }

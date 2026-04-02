@@ -2,7 +2,8 @@ import logging
 from fastapi import APIRouter, Form, UploadFile, File, Depends, BackgroundTasks, HTTPException, status, Request
 
 from core.security import process_and_sanitize_image
-from core.rate_limiter import limiter
+from core.rate_limiter import limiter, get_real_client_ip
+from core.usage_limiter import enforce_daily_limit
 from services.storage import StorageService
 from services.esrgan import ai_upscaler
 from api.dependencies import valid_model_type, verify_turnstile
@@ -39,8 +40,20 @@ async def upload_image(
     model_type: str = Depends(valid_model_type),
 ):
     
+    # 1. Verify Cloudflare Turnstile (Blocks bots)
     await verify_turnstile(cf_turnstile_response)
     
+    # 2. Check Daily Usage Limit
+    client_ip = get_real_client_ip(request)
+    is_allowed = await enforce_daily_limit(client_ip, limit_24h=3)
+    
+    if not is_allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS, 
+            detail="You have reached your daily limit of 3 free upscales. Come back tomorrow!"
+        )
+    
+    # 3. Process Image (Only if gatekeeper allows)
     try:
         job_id, safe_filename, image_stream = await process_and_sanitize_image(file)    
         await StorageService.save_upload(image_stream, safe_filename)
@@ -91,4 +104,4 @@ async def get_result(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
             detail="Error retrieving job status"
-        )
+        )   
