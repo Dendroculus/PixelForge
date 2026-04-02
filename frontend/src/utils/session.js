@@ -1,4 +1,3 @@
-// utils/session.js
 import { clearIDB } from './idb';
 
 export const clearAppSession = async (previewUrl = null) => {
@@ -13,6 +12,7 @@ export const clearAppSession = async (previewUrl = null) => {
   localStorage.removeItem('pf_result_url');
   localStorage.removeItem('pf_is_processing');
   localStorage.removeItem('pf_refresh_count');
+  localStorage.removeItem('pf_result_timestamp'); 
   
   if (previewUrl) {
     URL.revokeObjectURL(previewUrl);
