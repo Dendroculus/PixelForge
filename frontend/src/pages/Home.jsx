@@ -8,7 +8,7 @@ import LegalModal from '../components/LegalModal';
 import { useUpscalePipeline } from '../hooks/useUpscalePipeline';
 import { useSimulatedProgress } from '../hooks/useSimulatedProgress';
 import { clearAppSession } from '../utils/session';
-import { APP_CONFIG as config } from '../config';
+import { APP_CONFIG as config, STORAGE_KEYS } from '../config';
 
 export default function Home() {
   const [progress, setProgress] = useState(0);
@@ -209,7 +209,7 @@ export default function Home() {
         isOpen={appAlert.show && appAlert.type === 'limit_reached'} 
         onClose={() => {
           setAppAlert({ show: false, type: null });
-          localStorage.removeItem('pf_alert');
+          localStorage.removeItem(STORAGE_KEYS.ALERT);
         }}
         title="Daily Limit Reached 🛑"
       >
@@ -224,8 +224,8 @@ export default function Home() {
         isOpen={appAlert.show && appAlert.type === 'potato'} 
         onClose={() => {
           setAppAlert({ show: false, type: null });
-          localStorage.removeItem('pf_alert');
-          localStorage.removeItem('pf_refresh_count'); 
+          localStorage.removeItem(STORAGE_KEYS.ALERT);
+          localStorage.removeItem(STORAGE_KEYS.REFRESH_COUNT); 
         }}
         title="Whoa, slow down! 👀"
       >
@@ -240,8 +240,8 @@ export default function Home() {
         isOpen={appAlert.show && appAlert.type === 'dos'} 
         onClose={() => {
           setAppAlert({ show: false, type: null });
-          localStorage.removeItem('pf_alert');
-          localStorage.removeItem('pf_refresh_count'); 
+          localStorage.removeItem(STORAGE_KEYS.ALERT);
+          localStorage.removeItem(STORAGE_KEYS.REFRESH_COUNT); 
         }}
         title="Processing Failed ❌"
       >
@@ -268,7 +268,7 @@ export default function Home() {
         isOpen={appAlert.show && appAlert.type === 'expired'} 
         onClose={() => {
           setAppAlert({ show: false, type: null });
-          localStorage.removeItem('pf_alert');
+          localStorage.removeItem(STORAGE_KEYS.ALERT);
         }}
         title="Session Expired ⏱️"
       >

@@ -8,9 +8,21 @@ import logoSvg from './assets/PixelForge.svg';
 export const APP_CONFIG = {
   MAX_FILE_SIZE_MB: 10,
   ALLOWED_EXTENSIONS: ["jpg", "jpeg", "png", "webp"],
-  RESULT_EXPIRATION_TIME: 10 * 60 * 1000 // 10 minutes
+  RESULT_EXPIRATION_TIME: 10 * 60 * 1000, // 10 minutes
+  UPSCALE_LIMIT: 3,
+  DAY_MS: 24 * 60 * 60 * 1000 // 24 hours
 };
 
+export const STORAGE_KEYS = {
+  JOB_ID: 'pf_job_id',
+  PROGRESS: 'pf_progress',
+  RESULT_URL: 'pf_result_url',
+  IS_PROCESSING: 'pf_is_processing',
+  REFRESH_COUNT: 'pf_refresh_count',
+  RESULT_TIMESTAMP: 'pf_result_timestamp',
+  ALERT: 'pf_alert',
+  UPSCALE_HISTORY: 'pf_upscale_history'
+};
 
 export const IMAGES = {
   icon: logoIcon,
