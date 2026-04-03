@@ -31,7 +31,7 @@ function computeSnapshot() {
   const history = readValidHistory();
   const usesRemaining = Math.max(0, CONFIG.UPSCALE_LIMIT - history.length);
   const resetAt =
-    usesRemaining === 0 && history.length > 0 ? history[0] + CONFIG.  DAY_MS : null;
+    usesRemaining === 0 && history.length > 0 ? history[0] + CONFIG.DAY_MS : null;
 
   return { usesRemaining, resetAt };
 }

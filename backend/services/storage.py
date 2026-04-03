@@ -3,8 +3,8 @@ Storage Service Module
 
 This module handles all asynchronous storage operations interfacing with Azure Blob Storage.
 It provides methods for uploading user images to a private container, retrieving them 
-for AI processing, saving the finalized upscaled images to a public container, and 
-generating public URLs for the frontend.
+for AI processing, saving the finalized upscaled images to a public container, generating 
+public URLs for the frontend, and securely shredding files.
 """
 
 import io
@@ -41,13 +41,6 @@ class StorageService:
     async def _get_blob_client(cls, container_name: str, blob_name: str):
         """
         Securely provisions an async blob client and ensures connection cleanup.
-        
-        Args:
-            container_name: Name of the Azure Blob container
-            blob_name: Name of the blob (file) to access
-        
-        Yields:
-            An instance of BlobClient for the specified container and blob.
         """
         _ensure_azure_configured()
         async with BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING) as client:
@@ -143,6 +136,22 @@ class StorageService:
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail="Failed to generate secure access URL."
             )
+
+    @classmethod
+    async def delete_blob(cls, container_name: str, blob_name: str) -> bool:
+        """
+        Permanently deletes a blob from a specific container.
+        Used for immediate upload cleanup and delayed result cleanup.
+        """
+        secure_name = os.path.basename(blob_name)
+        try:
+            async with cls._get_blob_client(container_name, secure_name) as blob_client:
+                await blob_client.delete_blob()
+                logger.info(f"🗑️ Azure Cleanup: {container_name}/{secure_name} removed.")
+                return True
+        except Exception as e:
+            logger.warning(f"⚠️ Delete skipped for {container_name}/{secure_name}: {e}")
+            return False
 
     @classmethod
     async def mark_job_failed(cls, job_id: str) -> None:

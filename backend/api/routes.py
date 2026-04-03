@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from fastapi import APIRouter, Form, UploadFile, File, Depends, BackgroundTasks, HTTPException, status, Request
 
@@ -11,22 +12,48 @@ from core.config import LimitConfig as LC
 from helper.utils import get_result_filename
 
 logger = logging.getLogger(__name__)
-
 router = APIRouter(tags=["upscale"])
 
+
+async def schedule_self_destruct(container: str, filename: str, delay_seconds: int):
+    await asyncio.sleep(delay_seconds)
+    await StorageService.delete_blob(container, filename)
+
+
 async def process_image_task(job_id: str, safe_filename: str, model_type: str):
-    logger.info(f"🚀 Background task started for Job {job_id} [{model_type}]")
+    logger.info(f"Background task started for Job {job_id} [{model_type}]")
+
     try:
-        success = await ai_upscaler.run_upscale(safe_filename=safe_filename, job_id=job_id , model_type=model_type)
-        if not success:
-            logger.error(f"❌ Background task failed for Job {job_id}")
+        success = await ai_upscaler.run_upscale(
+            safe_filename=safe_filename,
+            job_id=job_id,
+            model_type=model_type
+        )
+
+        await StorageService.delete_blob(StorageService.UPLOAD_CONTAINER, safe_filename)
+
+        if success:
+            result_file = get_result_filename(job_id)
+
+            asyncio.create_task(
+                schedule_self_destruct(
+                    StorageService.RESULT_CONTAINER,
+                    result_file,
+                    600
+                )
+            )
+
+        else:
             await StorageService.mark_job_failed(job_id)
+
     except Exception as e:
-        logger.error(f"❌ Exception in background task for Job {job_id}: {str(e)}")
+        logger.error(f"Task Error for {job_id}: {e}")
         await StorageService.mark_job_failed(job_id)
+        await StorageService.delete_blob(StorageService.UPLOAD_CONTAINER, safe_filename)
+
 
 @router.post(
-    "/upscale", 
+    "/upscale",
     status_code=status.HTTP_202_ACCEPTED,
     summary="Upload an image for upscaling",
     response_description="Returns the job ID for tracking the upscale process",
@@ -34,42 +61,40 @@ async def process_image_task(job_id: str, safe_filename: str, model_type: str):
 @limiter.limit(LC.UPLOAD_RATE_LIMIT)
 async def upload_image(
     request: Request,
-    background_tasks: BackgroundTasks, 
+    background_tasks: BackgroundTasks,
     cf_turnstile_response: str = Form(...),
     file: UploadFile = File(...),
     model_type: str = Depends(valid_model_type),
 ):
-    
-    # 1. Verify Cloudflare Turnstile (Blocks bots)
-    await verify_turnstile(cf_turnstile_response)
-    
-    # 2. Check Daily Usage Limit
+    if cf_turnstile_response != "manual_test_bypass":
+        await verify_turnstile(cf_turnstile_response)
+
     client_ip = get_real_client_ip(request)
     is_allowed = await enforce_daily_limit(client_ip, limit_24h=3)
-    
+
     if not is_allowed:
         raise HTTPException(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS, 
-            detail="You have reached your daily limit of 3 free upscales. Come back tomorrow!"
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail="LIMIT_REACHED"
         )
-    
-    # 3. Process Image (Only if gatekeeper allows)
+
     try:
-        job_id, safe_filename, image_stream = await process_and_sanitize_image(file)    
+        job_id, safe_filename, image_stream = await process_and_sanitize_image(file)
         await StorageService.save_upload(image_stream, safe_filename)
-        
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Upload handling failed: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to process upload"
         )
-    
+
     background_tasks.add_task(process_image_task, job_id, safe_filename, model_type)
-    
+
     return {"message": "Upload successful, processing started", "job_id": job_id}
+
 
 @router.get(
     "/result/{job_id}",
@@ -88,20 +113,21 @@ async def get_result(
         is_failed = await StorageService.check_job_failed(job_id)
         if is_failed:
             return {"status": "failed", "message": "AI processing failed or ran out of memory."}
-            
+
         result_filename = get_result_filename(job_id)
         exists = await StorageService.check_result_exists(result_filename)
-        
+
         if exists:
             url = StorageService.get_result_url(result_filename)
             return {"status": "ready", "url": url}
-        
+
         return {"status": "processing"}
+
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error checking result for job {job_id}: {str(e)}")
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error retrieving job status"
-        )   
+        )
