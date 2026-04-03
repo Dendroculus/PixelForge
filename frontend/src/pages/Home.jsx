@@ -9,6 +9,7 @@ import { useUpscalePipeline } from '../hooks/useUpscalePipeline';
 import { useSimulatedProgress } from '../hooks/useSimulatedProgress';
 import { clearAppSession } from '../utils/session';
 import { APP_CONFIG as config, STORAGE_KEYS } from '../config';
+import CountdownTimer from '../components/CountdownTimer';
 
 export default function Home() {
   const [progress, setProgress] = useState(0);
@@ -30,7 +31,7 @@ export default function Home() {
     appAlert,      
     setAppAlert,
     usesRemaining,
-    timeUntilReset
+    resetTimestamp
   } = useUpscalePipeline(setProgress);
 
   useSimulatedProgress(isProcessing, setProgress, turnstileToken);
@@ -56,7 +57,9 @@ export default function Home() {
                 <p className="text-slate-600 font-medium mb-8 max-w-md">You've used all 3 free upscales today. This keeps our potato server alive for everyone!</p>
                 <div className="bg-white/80 px-8 py-4 rounded-2xl border border-rose-100 shadow-sm w-full max-w-sm">
                   <span className="text-xs font-bold text-rose-400 uppercase tracking-widest">You can upscale again in</span>
-                  <div className="text-3xl font-black text-rose-600 font-mono tracking-tight mt-1">{timeUntilReset}</div>
+                  <div className="text-3xl font-black text-rose-600 font-mono tracking-tight mt-1">
+                    <CountdownTimer targetTimestamp={resetTimestamp} />
+                  </div>
                 </div>
               </div>
             ) : (
@@ -260,7 +263,17 @@ export default function Home() {
         <div className="space-y-1.5 text-left">
           <p className="font-semibold text-slate-800 text-base mb-2">We reserved your image!</p>
           <p>Just letting you know that your upscaled image won't stay here forever.</p>
-          <p>Please remember to download it before it expires in {Math.floor(config.RESULT_EXPIRATION_TIME / 60000)} minutes!</p>
+          <p>
+            Please remember to download it before it expires in{' '}
+            <CountdownTimer 
+              targetTimestamp={Number(localStorage.getItem(STORAGE_KEYS.RESULT_TIMESTAMP)) + config.RESULT_EXPIRATION_TIME} 
+              isWarning={true}
+              onExpire={() => {
+                setAppAlert({ show: true, type: 'expired' });
+              }}
+            />
+            {' '}minutes!
+          </p>
         </div>
       </LegalModal>
 

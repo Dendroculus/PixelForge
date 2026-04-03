@@ -1,0 +1,55 @@
+import { useState, useEffect, useRef } from 'react';
+import PropTypes from 'prop-types';
+
+export default function CountdownTimer({ targetTimestamp, onExpire, isWarning = false }) {
+  const hasExpiredRef = useRef(false);
+
+  const [timeLeft, setTimeLeft] = useState(() => Math.max(0, targetTimestamp - Date.now()));
+
+  useEffect(() => {
+    hasExpiredRef.current = false;
+
+    const tick = () => {
+      const next = Math.max(0, targetTimestamp - Date.now());
+      setTimeLeft(next);
+
+      if (next <= 0 && !hasExpiredRef.current) {
+        hasExpiredRef.current = true;
+        onExpire?.();
+      }
+    };
+
+    const interval = setInterval(tick, 1000);
+    tick();
+
+    return () => clearInterval(interval);
+  }, [targetTimestamp, onExpire]);
+
+  if (timeLeft <= 0) {
+    return <span className="font-bold text-rose-500">Expired</span>;
+  }
+
+  const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+  const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+  const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+  if (hours > 0) {
+    return (
+      <span className="font-mono tracking-tight">
+        {hours}h {minutes}m {seconds.toString().padStart(2, '0')}s
+      </span>
+    );
+  }
+
+  return (
+    <span className={`font-mono font-bold ${isWarning ? 'text-rose-500' : 'text-blue-500'}`}>
+      {minutes}:{seconds.toString().padStart(2, '0')}
+    </span>
+  );
+}
+
+CountdownTimer.propTypes = {
+  targetTimestamp: PropTypes.number.isRequired,
+  onExpire: PropTypes.func,
+  isWarning: PropTypes.bool,
+};

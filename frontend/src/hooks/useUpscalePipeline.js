@@ -54,7 +54,7 @@ export function useUpscalePipeline(setProgress) {
     setTurnstileToken(null);
   }, []);
 
-  const { usesRemaining, timeUntilReset, recordUsage, forceMaxLimit } = useUsageLimit();
+  const { usesRemaining, resetTimestamp, recordUsage, forceMaxLimit } = useUsageLimit();
 
   const { pollForResult, handleUpscale } = useUpscaleActions({
     setJobId,
@@ -139,6 +139,6 @@ export function useUpscalePipeline(setProgress) {
     appAlert,
     setAppAlert,
     usesRemaining,
-    timeUntilReset
+    resetTimestamp
   };
 }

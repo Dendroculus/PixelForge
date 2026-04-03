@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { STORAGE_KEYS, APP_CONFIG as CONFIG } from '../config';
 
 const KEY = STORAGE_KEYS.UPSCALE_HISTORY;
@@ -25,31 +25,24 @@ function readValidHistory() {
 
 /**
  * Computes usage snapshot including remaining uses and reset timestamp.
- * @returns {{usesRemaining: number, resetAt: number|null}}
+ * @returns {{usesRemaining: number, resetTimestamp: number|null}}
  */
 function computeSnapshot() {
   const history = readValidHistory();
   const usesRemaining = Math.max(0, CONFIG.UPSCALE_LIMIT - history.length);
-  const resetAt =
+  // FIX: Renamed resetAt to resetTimestamp
+  const resetTimestamp =
     usesRemaining === 0 && history.length > 0 ? history[0] + CONFIG.DAY_MS : null;
 
-  return { usesRemaining, resetAt };
+  return { usesRemaining, resetTimestamp };
 }
 
-/**
- * React hook to manage usage limits with persistence and countdown timer.
- * @returns {{
- *  usesRemaining: number,
- *  timeUntilReset: string|null,
- *  recordUsage: () => void,
- *  forceMaxLimit: () => void
- * }}
- */
 export function useUsageLimit() {
   const initial = useMemo(() => computeSnapshot(), []);
   const [usesRemaining, setUsesRemaining] = useState(initial.usesRemaining);
-  const [resetAt, setResetAt] = useState(initial.resetAt);
-  const [timeUntilReset, setTimeUntilReset] = useState(null);
+  
+  // FIX: Renamed state to match what we are returning
+  const [resetTimestamp, setResetTimestamp] = useState(initial.resetTimestamp);
 
   /**
    * Refreshes usage state from localStorage.
@@ -57,35 +50,8 @@ export function useUsageLimit() {
   const refreshFromStorage = useCallback(() => {
     const snap = computeSnapshot();
     setUsesRemaining(snap.usesRemaining);
-    setResetAt(snap.resetAt);
+    setResetTimestamp(snap.resetTimestamp); // <-- Updated
   }, []);
-
-  useEffect(() => {
-    if (!resetAt) return;
-
-    const tick = () => {
-      const diff = resetAt - Date.now();
-
-      if (diff <= 0) {
-        refreshFromStorage();
-        setTimeUntilReset(null);
-        return;
-      }
-
-      const h = Math.floor(diff / (1000 * 60 * 60)).toString().padStart(2, '0');
-      const m = Math.floor((diff / (1000 * 60)) % 60).toString().padStart(2, '0');
-      const s = Math.floor((diff / 1000) % 60).toString().padStart(2, '0');
-      setTimeUntilReset(`${h}h ${m}m ${s}s`);
-    };
-
-    const start = setTimeout(() => { tick(); }, 0);
-    const interval = setInterval(() => { tick(); }, 1000);
-
-    return () => {
-      clearTimeout(start);
-      clearInterval(interval);
-    };
-  }, [resetAt, refreshFromStorage]);
 
   /**
    * Records a usage event and updates state.
@@ -106,5 +72,5 @@ export function useUsageLimit() {
     refreshFromStorage();
   }, [refreshFromStorage]);
 
-  return { usesRemaining, timeUntilReset, recordUsage, forceMaxLimit };
+  return { usesRemaining, resetTimestamp, recordUsage, forceMaxLimit };
 }
