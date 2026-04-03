@@ -3,26 +3,32 @@ from core.database import get_db_pool
 
 logger = logging.getLogger(__name__)
 
+
 async def enforce_daily_limit(ip_address: str, limit_24h: int = 3) -> bool:
-    """
-    Atomically checks and logs IP usage to prevent race conditions.
-    Returns True if allowed, False if the limit is reached.
-    """
+    """Atomically check and record usage; returns True if allowed."""
     pool = get_db_pool()
     if pool is None:
         logger.error("DB pool not initialized. Failing open.")
-        return True # Fail open so legit users aren't blocked by server errors
+        return True
 
-    sql = """
-    WITH inserted AS (
+    if limit_24h <= 0:
+        logger.warning("Invalid limit_24h=%s; blocking request.", limit_24h)
+        return False
+
+    lock_sql = "SELECT pg_advisory_xact_lock(hashtext($1));"
+
+    check_insert_sql = """
+    WITH usage AS (
+        SELECT COUNT(*)::int AS cnt
+        FROM upscale_logs
+        WHERE ip_address = $1
+          AND created_at > NOW() - INTERVAL '24 hours'
+    ),
+    inserted AS (
         INSERT INTO upscale_logs (ip_address)
         SELECT $1
-        WHERE (
-            SELECT COUNT(*)
-            FROM upscale_logs
-            WHERE ip_address = $1
-              AND created_at > NOW() - INTERVAL '24 hours'
-        ) < $2
+        FROM usage
+        WHERE usage.cnt < $2
         RETURNING 1
     )
     SELECT EXISTS(SELECT 1 FROM inserted);
@@ -30,12 +36,15 @@ async def enforce_daily_limit(ip_address: str, limit_24h: int = 3) -> bool:
 
     try:
         async with pool.acquire() as conn:
-            allowed = await conn.fetchval(sql, ip_address, limit_24h)
+            async with conn.transaction():
+                await conn.execute(lock_sql, ip_address)
+                allowed = await conn.fetchval(check_insert_sql, ip_address, limit_24h)
 
         if not allowed:
-            logger.warning(f"🛡️ Rate Limit Block: IP {ip_address} hit the 24h limit.")
+            logger.warning("Rate limit block: ip=%s limit=%s", ip_address, limit_24h)
+
         return bool(allowed)
 
-    except Exception as e:
-        logger.exception(f"Database error during rate-limit check: {e}")
+    except Exception:
+        logger.exception("Database error during rate-limit check for ip=%s", ip_address)
         return True

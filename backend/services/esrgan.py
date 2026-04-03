@@ -43,7 +43,7 @@ class AIUpscaler:
                 logger.info(f"☁️ Job #{job_id} - Uploading final result to Azure...")
                 await StorageService.save_result(result_bytes, result_filename)
 
-                logger.info(f"✅ Job #{job_id} Success! Cloud pipeline complete.")
+                logger.info(f"Job #{job_id} Success! Cloud pipeline complete.")
                 return True
 
         except Exception as e:
