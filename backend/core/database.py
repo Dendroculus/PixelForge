@@ -8,9 +8,12 @@ logger = logging.getLogger(__name__)
 _pool: asyncpg.pool.Pool | None = None
 
 
-
 async def init_db_pool() -> None:
-    """Initialize the asyncpg pool with retries and ensure usage schema exists."""
+    """
+    Initialize the asyncpg connection pool with retry logic and ensure required schema exists.
+
+    :raises Exception: If pool initialization fails after maximum retries
+    """
     global _pool
     if _pool is not None:
         logger.info("DB pool already initialized.")
@@ -76,7 +79,9 @@ async def init_db_pool() -> None:
 
 
 async def close_db_pool() -> None:
-    """Close and clear the asyncpg pool."""
+    """
+    Close the active asyncpg pool and reset state.
+    """
     global _pool
     if _pool is not None:
         await _pool.close()
@@ -85,12 +90,20 @@ async def close_db_pool() -> None:
 
 
 def get_db_pool() -> asyncpg.pool.Pool | None:
-    """Return the active asyncpg pool if initialized."""
+    """
+    Retrieve the current asyncpg connection pool.
+
+    :return: Active pool instance or None if not initialized
+    """
     return _pool
 
 
 async def run_database_cleanup() -> int:
-    """Delete expired usage buckets and return affected row count."""
+    """
+    Remove expired usage records based on retention policy.
+
+    :return: Number of rows deleted
+    """
     global _pool
     if _pool is None:
         logger.warning("DB pool not ready for cleanup.")

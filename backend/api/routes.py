@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from fastapi import APIRouter, Form, UploadFile, File, Depends, BackgroundTasks, HTTPException, status, Request
 
@@ -12,18 +11,10 @@ from core.config import LimitConfig as LC
 from helper.utils import get_result_filename
 
 logger = logging.getLogger(__name__)
-_active_tasks = set()
+
 router = APIRouter(tags=["upscale"])
 
-
-async def schedule_self_destruct(container: str, filename: str, delay_seconds: int) -> None:
-    """Delete a blob after a delay."""
-    await asyncio.sleep(delay_seconds)
-    await StorageService.delete_blob(container, filename)
-
-
 async def process_image_task(job_id: str, safe_filename: str, model_type: str) -> None:
-    """Run async upscale pipeline and manage temporary files."""
     logger.info("Background task started for job=%s model=%s", job_id, model_type)
 
     try:
@@ -33,27 +24,17 @@ async def process_image_task(job_id: str, safe_filename: str, model_type: str) -
             model_type=model_type,
         )
 
-        await StorageService.delete_blob(StorageService.UPLOAD_CONTAINER, safe_filename)
+        await StorageService.delete_azure_blob(StorageService.UPLOAD_CONTAINER, safe_filename)
 
         if success:
-            result_file = get_result_filename(job_id)
-
-            task = asyncio.create_task(
-                schedule_self_destruct(
-                    StorageService.RESULT_CONTAINER,
-                    result_file,
-                    600,
-                )
-            )
-            _active_tasks.add(task)
-            task.add_done_callback(_active_tasks.discard)
+            logger.info("Upscale successful for job=%s. Result saved to cloud.", job_id)
         else:
             await StorageService.mark_job_failed(job_id)
 
     except Exception as e:
         logger.error("Task error for job=%s: %s", job_id, e)
         await StorageService.mark_job_failed(job_id)
-        await StorageService.delete_blob(StorageService.UPLOAD_CONTAINER, safe_filename)
+        await StorageService.delete_azure_blob(StorageService.UPLOAD_CONTAINER, safe_filename)
 
 
 @router.post(
@@ -70,12 +51,11 @@ async def upload_image(
     file: UploadFile = File(...),
     model_type: str = Depends(valid_model_type),
 ):
-    """Accept an image upload, enforce limits, and queue processing."""
     if cf_turnstile_response != "manual_test_bypass":
         await verify_turnstile(cf_turnstile_response)
 
     client_ip = get_real_client_ip(request)
-    is_allowed = await enforce_daily_limit(client_ip, limit_24h=3)
+    is_allowed = await enforce_daily_limit(client_ip, limit_24h=LC.DAILY_USAGE_LIMIT)
 
     if not is_allowed:
         raise HTTPException(
@@ -111,7 +91,6 @@ async def get_result(
     request: Request,
     job_id: str,
 ):
-    """Return the current processing status for a job."""
     if not job_id or not job_id.isalnum():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid job ID")
 
@@ -144,6 +123,5 @@ async def get_result(
     status_code=status.HTTP_200_OK,
 )
 async def get_usage(request: Request):
-    """Return current rate-limit usage state for the requesting client IP."""
     client_ip = get_real_client_ip(request)
-    return await get_usage_status(client_ip, limit_24h=3)
+    return await get_usage_status(client_ip, limit_24h=LC.DAILY_USAGE_LIMIT)
