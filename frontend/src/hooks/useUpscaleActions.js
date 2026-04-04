@@ -1,29 +1,28 @@
-import { useCallback } from 'react';
+import { useCallback, useState, useEffect, useRef } from 'react';
 import { apiService } from '../services/apiService';
 import { clearAppSession } from '../utils/session';
 import { STORAGE_KEYS } from '../config';
 
 /**
- * React hook providing upscale-related actions including polling and upload handling.
- * @param {{
- *  setJobId: (id: string|null) => void,
- *  setProgress: (value: number) => void,
- *  setResultUrl: (url: string|null) => void,
- *  setIsProcessing: (state: boolean) => void,
- *  resetTurnstile: () => void,
- *  previewUrl: string|null,
- *  setSelectedFile: (file: File|null) => void,
- *  setPreviewUrl: (url: string|null) => void,
- *  setAppAlert: (alert: {show: boolean, type: string}) => void,
- *  turnstileToken: string|null,
- *  turnstileRef: { current: any },
- *  setTurnstileToken: (token: string|null) => void,
- *  modelType: string,
- *  selectedFile: File|null,
- *  recordUsage: () => void,
- *  forceMaxLimit: () => void
- * }} params
- * @returns {{ pollForResult: (id: string) => () => void, handleUpscale: (overrideFile?: Blob|null) => Promise<void> }}
+ * Hook to handle image upscale workflow including upload, polling, and Turnstile token handling.
+ * @param {Object} params
+ * @param {Function} params.setJobId
+ * @param {Function} params.setProgress
+ * @param {Function} params.setResultUrl
+ * @param {Function} params.setIsProcessing
+ * @param {Function} params.resetTurnstile
+ * @param {string|null} params.previewUrl
+ * @param {Function} params.setSelectedFile
+ * @param {Function} params.setPreviewUrl
+ * @param {Function} params.setAppAlert
+ * @param {string|null} params.turnstileToken
+ * @param {Object} params.turnstileRef
+ * @param {Function} params.setTurnstileToken
+ * @param {string} params.modelType
+ * @param {File|Blob|null} params.selectedFile
+ * @param {Function} params.recordUsage
+ * @param {Function} params.forceMaxLimit
+ * @returns {{ pollForResult: Function, handleUpscale: Function }}
  */
 export function useUpscaleActions({
   setJobId,
@@ -43,14 +42,24 @@ export function useUpscaleActions({
   recordUsage,
   forceMaxLimit,
 }) {
+  const [isWaitingForToken, setIsWaitingForToken] = useState(false);
+  const pendingFileRef = useRef(null);
+
+  useEffect(() => {
+    if (!selectedFile) {
+      setIsWaitingForToken(false);
+      pendingFileRef.current = null;
+    }
+  }, [selectedFile]);
 
   /**
-   * Polls backend for job result until success or failure threshold.
+   * Polls backend for job result until success or failure.
    * @param {string} id
-   * @returns {() => void} Cleanup function to cancel polling.
+   * @returns {Function} cleanup function
    */
   const pollForResult = useCallback((id) => {
     setJobId(id);
+
     let errorCount = 0;
     let timeoutId = null;
 
@@ -67,6 +76,7 @@ export function useUpscaleActions({
           const beginTime = Date.now().toString();
           localStorage.setItem(STORAGE_KEYS.RESULT_URL, result.data.url);
           localStorage.setItem(STORAGE_KEYS.RESULT_TIMESTAMP, beginTime);
+
           setProgress(100);
 
           setTimeout(() => {
@@ -74,6 +84,7 @@ export function useUpscaleActions({
             setIsProcessing(false);
             resetTurnstile();
           }, 400);
+
           return;
         }
 
@@ -128,8 +139,10 @@ export function useUpscaleActions({
   ]);
 
   /**
-   * Handles image upload and triggers processing workflow.
-   * @param {Blob|null} [overrideFile]
+   * Handles image upload and triggers polling.
+   * Waits for Turnstile token if not immediately available.
+   * @param {File|Blob|null} overrideFile
+   * @returns {Promise<void>}
    */
   const handleUpscale = useCallback(async (overrideFile = null) => {
     const fileToUse = overrideFile instanceof Blob ? overrideFile : selectedFile;
@@ -139,29 +152,20 @@ export function useUpscaleActions({
     localStorage.setItem(STORAGE_KEYS.IS_PROCESSING, 'true');
 
     let currentToken = turnstileToken;
+
     if (!currentToken && turnstileRef.current) {
       currentToken = turnstileRef.current.getResponse();
+      if (currentToken) setTurnstileToken(currentToken);
     }
 
     if (!currentToken) {
-      for (let i = 0; i < 50; i++) {
-        await new Promise(resolve => setTimeout(resolve, 200));
-        if (turnstileRef.current) {
-          currentToken = turnstileRef.current.getResponse();
-          if (currentToken) {
-            setTurnstileToken(currentToken);
-            break;
-          }
-        }
-      }
-    }
-
-    if (!currentToken) {
-      setIsProcessing(false);
-      localStorage.removeItem(STORAGE_KEYS.IS_PROCESSING);
-      resetTurnstile();
+      pendingFileRef.current = fileToUse;
+      setIsWaitingForToken(true);
       return;
     }
+
+    setIsWaitingForToken(false);
+    pendingFileRef.current = null;
 
     try {
       const data = await apiService.uploadImage(fileToUse, modelType, currentToken);
@@ -197,6 +201,12 @@ export function useUpscaleActions({
     forceMaxLimit,
     setAppAlert
   ]);
+
+  useEffect(() => {
+    if (isWaitingForToken && turnstileToken && pendingFileRef.current) {
+      handleUpscale(pendingFileRef.current);
+    }
+  }, [isWaitingForToken, turnstileToken, handleUpscale]);
 
   return { pollForResult, handleUpscale };
 }
