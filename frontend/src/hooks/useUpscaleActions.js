@@ -144,7 +144,7 @@ export function useUpscaleActions({
     }
 
     if (!currentToken) {
-      for (let i = 0; i < 20; i++) {
+      for (let i = 0; i < 50; i++) {
         await new Promise(resolve => setTimeout(resolve, 200));
         if (turnstileRef.current) {
           currentToken = turnstileRef.current.getResponse();

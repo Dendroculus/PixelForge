@@ -55,7 +55,7 @@ async def lifespan(app: FastAPI):
     try:
         await janitor_task
     except asyncio.CancelledError: 
-        raise RuntimeError("Database janitor task was cancelled during shutdown.")
+        pass # noqa
 
     await close_db_pool()
 
