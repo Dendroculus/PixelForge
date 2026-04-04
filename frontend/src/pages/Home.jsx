@@ -31,7 +31,8 @@ export default function Home() {
     appAlert,      
     setAppAlert,
     usesRemaining,
-    resetTimestamp
+    resetTimestamp,
+    isLoading
   } = useUpscalePipeline(setProgress);
 
   useSimulatedProgress(isProcessing, setProgress, turnstileToken);
@@ -48,7 +49,11 @@ export default function Home() {
 
         <div className="mt-12">
           {!selectedFile && !isProcessing && !jobId && (
-            usesRemaining <= 0 ? (
+            isLoading ? (
+              <div className="bg-white/40 backdrop-blur-2xl p-10 sm:p-14 rounded-3xl border border-white/50 shadow-xl flex items-center justify-center min-h-[300px] max-w-2xl mx-auto">
+                <div className="w-10 h-10 border-4 border-slate-300 border-t-slate-800 rounded-full animate-spin"></div>
+              </div>
+            ) : usesRemaining <= 0 ? (
               <div className="bg-rose-50/90 backdrop-blur-2xl p-10 sm:p-14 rounded-3xl border border-rose-200 shadow-xl text-center flex flex-col items-center justify-center max-w-2xl mx-auto transition-all duration-500">
                 <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mb-5 shadow-sm border border-rose-100 text-rose-500">
                   <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -207,7 +212,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* --- MODALS --- */}
       <LegalModal 
         isOpen={appAlert.show && appAlert.type === 'limit_reached'} 
         onClose={() => {
@@ -294,4 +298,4 @@ export default function Home() {
 
     </div>
   );
-} 
+}

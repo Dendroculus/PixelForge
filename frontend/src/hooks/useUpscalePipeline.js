@@ -6,30 +6,6 @@ import { useSessionPersistence } from './useSessionPersistence';
 import { useUsageLimit } from './useUsageLimit';
 import { STORAGE_KEYS } from '../config';
 
-/**
- * Main hook orchestrating the full upscale pipeline including state,
- * persistence, usage limits, and actions.
- * @param {(value: number) => void} setProgress
- * @returns {{
- *  selectedFile: File|null,
- *  previewUrl: string|null,
- *  isProcessing: boolean,
- *  resultUrl: string|null,
- *  jobId: string|null,
- *  modelType: string,
- *  setModelType: (type: string) => void,
- *  turnstileToken: string|null,
- *  setTurnstileToken: (token: string|null) => void,
- *  turnstileRef: { current: any },
- *  handleFileSelect: (file: File) => Promise<void>,
- *  handleCancel: () => Promise<void>,
- *  handleUpscale: (overrideFile?: Blob|null) => Promise<void>,
- *  appAlert: {show: boolean, type: string|null},
- *  setAppAlert: (alert: {show: boolean, type: string|null}) => void,
- *  usesRemaining: number,
- *  timeUntilReset: string|null
- * }}
- */
 export function useUpscalePipeline(setProgress) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -46,15 +22,12 @@ export function useUpscalePipeline(setProgress) {
 
   const turnstileRef = useRef(null);
 
-  /**
-   * Resets turnstile widget and token.
-   */
   const resetTurnstile = useCallback(() => {
     if (turnstileRef.current) turnstileRef.current.reset();
     setTurnstileToken(null);
   }, []);
 
-  const { usesRemaining, resetTimestamp, recordUsage, forceMaxLimit } = useUsageLimit();
+  const { usesRemaining, resetTimestamp, recordUsage, forceMaxLimit, isLoading } = useUsageLimit();
 
   const { pollForResult, handleUpscale } = useUpscaleActions({
     setJobId,
@@ -84,15 +57,11 @@ export function useUpscalePipeline(setProgress) {
     setAppAlert,
     appAlert,
     pollForResult,
-    handleUpscale,
+    handleUpscale: (...args) => handleUpscale(...args).catch((err) => console.error(`Upscale error : ${err}`)),
     resultUrl,
     previewUrl
   });
 
-  /**
-   * Handles file selection and initializes new session state.
-   * @param {File} file
-   */
   const handleFileSelect = async (file) => {
     localStorage.removeItem(STORAGE_KEYS.RESULT_URL);
     localStorage.removeItem(STORAGE_KEYS.JOB_ID);
@@ -108,9 +77,6 @@ export function useUpscalePipeline(setProgress) {
     setJobId(null);
   };
 
-  /**
-   * Cancels current process and clears session state.
-   */
   const handleCancel = async () => {
     await clearAppSession(previewUrl);
     setSelectedFile(null);
@@ -139,6 +105,7 @@ export function useUpscalePipeline(setProgress) {
     appAlert,
     setAppAlert,
     usesRemaining,
-    resetTimestamp
+    resetTimestamp,
+    isLoading
   };
 }
