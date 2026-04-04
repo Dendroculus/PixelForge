@@ -1,67 +1,55 @@
 import asyncio
 import logging
 import asyncpg
-from core.config import DATABASE_URL
+from core.config import DATABASE_URL, DatabaseConfig as DC
 
 logger = logging.getLogger(__name__)
 
 _pool: asyncpg.pool.Pool | None = None
 
-POOL_MIN_SIZE = 5
-POOL_MAX_SIZE = 30
-POOL_MAX_QUERIES = 50_000
-POOL_MAX_INACTIVE_CONN_LIFETIME = 300.0
-POOL_COMMAND_TIMEOUT = 10
-
-INIT_MAX_RETRIES = 8
-INIT_BASE_DELAY_SECONDS = 0.5
-
-RETENTION_HOURS = 24
-CLEANUP_BATCH_SIZE = 10_000
-CLEANUP_PAUSE_BETWEEN_BATCHES_SECONDS = 0.05
 
 
 async def init_db_pool() -> None:
-    """Initialize connection pool with retry and ensure schema exists."""
+    """Initialize the asyncpg pool with retries and ensure usage schema exists."""
     global _pool
     if _pool is not None:
         logger.info("DB pool already initialized.")
         return
 
-    for attempt in range(1, INIT_MAX_RETRIES + 1):
+    for attempt in range(1, DC.INIT_MAX_RETRIES + 1):
         try:
             _pool = await asyncpg.create_pool(
                 dsn=DATABASE_URL,
-                min_size=POOL_MIN_SIZE,
-                max_size=POOL_MAX_SIZE,
-                max_queries=POOL_MAX_QUERIES,
-                max_inactive_connection_lifetime=POOL_MAX_INACTIVE_CONN_LIFETIME,
-                command_timeout=POOL_COMMAND_TIMEOUT,
+                min_size=DC.POOL_MIN_SIZE,
+                max_size=DC.POOL_MAX_SIZE,
+                max_queries=DC.POOL_MAX_QUERIES,
+                max_inactive_connection_lifetime=DC.POOL_MAX_INACTIVE_CONN_LIFETIME,
+                command_timeout=DC.POOL_COMMAND_TIMEOUT,
             )
 
             async with _pool.acquire() as conn:
-                await conn.execute("""
-                    CREATE TABLE IF NOT EXISTS upscale_logs (
-                        id BIGSERIAL PRIMARY KEY,
+                await conn.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS ip_usage_hourly (
                         ip_address VARCHAR(255) NOT NULL,
-                        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+                        bucket_start TIMESTAMPTZ NOT NULL,
+                        usage_count INTEGER NOT NULL DEFAULT 0,
+                        PRIMARY KEY (ip_address, bucket_start)
                     );
-                """)
+                    """
+                )
 
-                await conn.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_ip_created
-                    ON upscale_logs(ip_address, created_at);
-                """)
-
-                await conn.execute("""
-                    CREATE INDEX IF NOT EXISTS idx_created_at
-                    ON upscale_logs(created_at);
-                """)
+                await conn.execute(
+                    """
+                    CREATE INDEX IF NOT EXISTS idx_ip_usage_hourly_bucket
+                    ON ip_usage_hourly (bucket_start);
+                    """
+                )
 
             logger.info(
                 "Database ready. pool[min=%s, max=%s]",
-                POOL_MIN_SIZE,
-                POOL_MAX_SIZE,
+                DC.POOL_MIN_SIZE,
+                DC.POOL_MAX_SIZE,
             )
             return
 
@@ -69,7 +57,7 @@ async def init_db_pool() -> None:
             logger.warning(
                 "DB init attempt %s/%s failed: %s",
                 attempt,
-                INIT_MAX_RETRIES,
+                DC.INIT_MAX_RETRIES,
                 e,
             )
 
@@ -80,15 +68,15 @@ async def init_db_pool() -> None:
                     pass
                 _pool = None
 
-            if attempt == INIT_MAX_RETRIES:
+            if attempt == DC.INIT_MAX_RETRIES:
                 logger.exception("Failed to initialize database.")
                 raise
 
-            backoff = INIT_BASE_DELAY_SECONDS * (2 ** (attempt - 1))
-            await asyncio.sleep(backoff)
+            await asyncio.sleep(DC.INIT_BASE_DELAY_SECONDS * (2 ** (attempt - 1)))
 
 
 async def close_db_pool() -> None:
+    """Close and clear the asyncpg pool."""
     global _pool
     if _pool is not None:
         await _pool.close()
@@ -97,49 +85,30 @@ async def close_db_pool() -> None:
 
 
 def get_db_pool() -> asyncpg.pool.Pool | None:
+    """Return the active asyncpg pool if initialized."""
     return _pool
 
 
 async def run_database_cleanup() -> int:
-    """Delete expired rows in batches to reduce load."""
+    """Delete expired usage buckets and return affected row count."""
     global _pool
     if _pool is None:
         logger.warning("DB pool not ready for cleanup.")
         return 0
 
-    total_deleted = 0
-
     sql = f"""
-    WITH to_delete AS (
-        SELECT id
-        FROM upscale_logs
-        WHERE created_at < NOW() - INTERVAL '{RETENTION_HOURS} hours'
-        ORDER BY id
-        LIMIT {CLEANUP_BATCH_SIZE}
-    )
-    DELETE FROM upscale_logs u
-    USING to_delete d
-    WHERE u.id = d.id;
+    DELETE FROM ip_usage_hourly
+    WHERE bucket_start < NOW() - INTERVAL '{DC.USAGE_RETENTION_HOURS} hours';
     """
 
     try:
         async with _pool.acquire() as conn:
-            while True:
-                result = await conn.execute(sql)
-                deleted = int(result.split()[-1])
-                total_deleted += deleted
+            result = await conn.execute(sql)
+            deleted = int(result.split()[-1])
 
-                if deleted == 0:
-                    break
-
-                await asyncio.sleep(CLEANUP_PAUSE_BETWEEN_BATCHES_SECONDS)
-
-        logger.info(
-            "Cleanup complete: %s rows removed.",
-            total_deleted,
-        )
-        return total_deleted
+        logger.info("Usage cleanup complete: %s rows removed.", deleted)
+        return deleted
 
     except Exception as e:
         logger.exception("Database cleanup failed: %s", e)
-        return total_deleted
+        return 0

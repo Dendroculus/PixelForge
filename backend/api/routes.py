@@ -3,8 +3,8 @@ import logging
 from fastapi import APIRouter, Form, UploadFile, File, Depends, BackgroundTasks, HTTPException, status, Request
 
 from core.security import process_and_sanitize_image
-from core.rate_limiter import limiter, get_real_client_ip
-from core.usage_limiter import enforce_daily_limit
+from limiter.rate_limiter import limiter, get_real_client_ip
+from limiter.usage_limiter import enforce_daily_limit, get_usage_status
 from services.storage import StorageService
 from services.esrgan import ai_upscaler
 from api.dependencies import valid_model_type, verify_turnstile
@@ -12,22 +12,25 @@ from core.config import LimitConfig as LC
 from helper.utils import get_result_filename
 
 logger = logging.getLogger(__name__)
+_active_tasks = set()
 router = APIRouter(tags=["upscale"])
 
 
-async def schedule_self_destruct(container: str, filename: str, delay_seconds: int):
+async def schedule_self_destruct(container: str, filename: str, delay_seconds: int) -> None:
+    """Delete a blob after a delay."""
     await asyncio.sleep(delay_seconds)
     await StorageService.delete_blob(container, filename)
 
 
-async def process_image_task(job_id: str, safe_filename: str, model_type: str):
-    logger.info(f"Background task started for Job {job_id} [{model_type}]")
+async def process_image_task(job_id: str, safe_filename: str, model_type: str) -> None:
+    """Run async upscale pipeline and manage temporary files."""
+    logger.info("Background task started for job=%s model=%s", job_id, model_type)
 
     try:
         success = await ai_upscaler.run_upscale(
             safe_filename=safe_filename,
             job_id=job_id,
-            model_type=model_type
+            model_type=model_type,
         )
 
         await StorageService.delete_blob(StorageService.UPLOAD_CONTAINER, safe_filename)
@@ -35,19 +38,20 @@ async def process_image_task(job_id: str, safe_filename: str, model_type: str):
         if success:
             result_file = get_result_filename(job_id)
 
-            asyncio.create_task(
+            task = asyncio.create_task(
                 schedule_self_destruct(
                     StorageService.RESULT_CONTAINER,
                     result_file,
-                    600
+                    600,
                 )
             )
-
+            _active_tasks.add(task)
+            task.add_done_callback(_active_tasks.discard)
         else:
             await StorageService.mark_job_failed(job_id)
 
     except Exception as e:
-        logger.error(f"Task Error for {job_id}: {e}")
+        logger.error("Task error for job=%s: %s", job_id, e)
         await StorageService.mark_job_failed(job_id)
         await StorageService.delete_blob(StorageService.UPLOAD_CONTAINER, safe_filename)
 
@@ -66,6 +70,7 @@ async def upload_image(
     file: UploadFile = File(...),
     model_type: str = Depends(valid_model_type),
 ):
+    """Accept an image upload, enforce limits, and queue processing."""
     if cf_turnstile_response != "manual_test_bypass":
         await verify_turnstile(cf_turnstile_response)
 
@@ -75,7 +80,7 @@ async def upload_image(
     if not is_allowed:
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="LIMIT_REACHED"
+            detail="LIMIT_REACHED",
         )
 
     try:
@@ -85,10 +90,10 @@ async def upload_image(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Upload handling failed: {str(e)}")
+        logger.error("Upload handling failed: %s", e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to process upload"
+            detail="Failed to process upload",
         )
 
     background_tasks.add_task(process_image_task, job_id, safe_filename, model_type)
@@ -106,6 +111,7 @@ async def get_result(
     request: Request,
     job_id: str,
 ):
+    """Return the current processing status for a job."""
     if not job_id or not job_id.isalnum():
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid job ID")
 
@@ -126,8 +132,18 @@ async def get_result(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error checking result for job {job_id}: {str(e)}")
+        logger.error("Error checking result for job=%s: %s", job_id, e)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Error retrieving job status"
+            detail="Error retrieving job status",
         )
+
+
+@router.get(
+    "/usage",
+    status_code=status.HTTP_200_OK,
+)
+async def get_usage(request: Request):
+    """Return current rate-limit usage state for the requesting client IP."""
+    client_ip = get_real_client_ip(request)
+    return await get_usage_status(client_ip, limit_24h=3)

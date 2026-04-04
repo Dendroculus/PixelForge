@@ -49,3 +49,16 @@ class LimitConfig:
     UPLOAD_RATE_LIMIT: str = "5/minute"
     POLL_RATE_LIMIT: str = "60/minute"
     SAS_EXPIRATION_MINUTES: int = 10
+
+
+class DatabaseConfig:
+    POOL_MIN_SIZE = 5
+    POOL_MAX_SIZE = 30
+    POOL_MAX_QUERIES = 50000
+    POOL_MAX_INACTIVE_CONN_LIFETIME = 300.0
+    POOL_COMMAND_TIMEOUT = 10
+
+    INIT_MAX_RETRIES = 8
+    INIT_BASE_DELAY_SECONDS = 0.5
+
+    USAGE_RETENTION_HOURS = 48

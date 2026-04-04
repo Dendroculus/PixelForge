@@ -12,7 +12,7 @@ from slowapi.errors import RateLimitExceeded
 
 from api.routes import router as api_router
 from core.config import ALLOWED_ORIGINS
-from core.rate_limiter import limiter
+from limiter.rate_limiter import limiter
 from core.database import init_db_pool, close_db_pool, run_database_cleanup
 
 
@@ -54,8 +54,8 @@ async def lifespan(app: FastAPI):
     janitor_task.cancel()
     try:
         await janitor_task
-    except asyncio.CancelledError:
-        pass
+    except asyncio.CancelledError: 
+        raise RuntimeError("Database janitor task was cancelled during shutdown.")
 
     await close_db_pool()
 

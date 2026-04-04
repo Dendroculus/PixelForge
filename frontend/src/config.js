@@ -10,7 +10,8 @@ export const APP_CONFIG = {
   ALLOWED_EXTENSIONS: ["jpg", "jpeg", "png", "webp"],
   RESULT_EXPIRATION_TIME: 10 * 60 * 1000, // 10 minutes
   UPSCALE_LIMIT: 3,
-  DAY_MS: 24 * 60 * 60 * 1000 // 24 hours
+  DAY_MS: 24 * 60 * 60 * 1000, // 24 hours
+  API_URL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
 };
 
 export const STORAGE_KEYS = {
