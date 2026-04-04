@@ -1,11 +1,12 @@
 import logging
+
 from core.database import get_db_pool
+from core.config import LimitConfig as LC
 
 logger = logging.getLogger(__name__)
 
 WINDOW_HOURS = 24
 WINDOW_MS = WINDOW_HOURS * 60 * 60 * 1000
-
 
 async def enforce_daily_limit(ip_address: str, limit_24h: int = 3) -> bool:
     """Atomically enforce a rolling 24-hour usage limit per IP."""
@@ -51,7 +52,7 @@ async def enforce_daily_limit(ip_address: str, limit_24h: int = 3) -> bool:
         return True
 
 
-async def get_usage_status(ip_address: str, limit_24h: int = 3) -> dict:
+async def get_usage_status(ip_address: str, limit_24h: int = LC.DAILY_USAGE_LIMIT) -> dict:
     """Return remaining uses and reset timestamp (epoch milliseconds)."""
     if limit_24h <= 0:
         return {"uses_remaining": 0, "reset_timestamp": None}
@@ -67,7 +68,7 @@ async def get_usage_status(ip_address: str, limit_24h: int = 3) -> dict:
             MIN(bucket_start) AS oldest_bucket
         FROM ip_usage_hourly
         WHERE ip_address = $1
-          AND bucket_start > NOW() - INTERVAL '24 hours'
+          AND bucket_start >= NOW() - INTERVAL '24 hours'
     )
     SELECT
         used,

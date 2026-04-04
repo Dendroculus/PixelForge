@@ -39,12 +39,18 @@ class StorageService:
     @classmethod
     @asynccontextmanager
     async def _get_blob_client(cls, container_name: str, blob_name: str):
-        """
-        Securely provisions an async blob client and ensures connection cleanup.
-        """
+        """Securely provisions an async blob client and ensures connection cleanup."""
         _ensure_azure_configured()
         async with BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING) as client:
             yield client.get_blob_client(container=container_name, blob=blob_name)
+
+    @classmethod
+    @asynccontextmanager
+    async def _get_container_client(cls, container_name: str):
+        """Securely provisions an async container client for batch operations."""
+        _ensure_azure_configured()
+        async with BlobServiceClient.from_connection_string(AZURE_CONNECTION_STRING) as client:
+            yield client.get_container_client(container_name)
 
     @classmethod
     async def save_upload(cls, image_stream: io.BytesIO, safe_filename: str) -> str:
@@ -138,20 +144,40 @@ class StorageService:
             )
 
     @classmethod
-    async def delete_blob(cls, container_name: str, blob_name: str) -> bool:
+    async def delete_azure_blob(cls, container_name: str, blob_name: str) -> bool:
         """
         Permanently deletes a blob from a specific container.
-        Used for immediate upload cleanup and delayed result cleanup.
+        Still strictly needed for instantly destroying RAW UPLOADS after AI processing.
         """
         secure_name = os.path.basename(blob_name)
         try:
             async with cls._get_blob_client(container_name, secure_name) as blob_client:
                 await blob_client.delete_blob()
-                logger.info(f"🗑️ Azure Cleanup: {container_name}/{secure_name} removed.")
+                logger.info(f"🗑️ Instant Cleanup: {container_name}/{secure_name} removed.")
                 return True
         except Exception as e:
             logger.warning(f"⚠️ Delete skipped for {container_name}/{secure_name}: {e}")
             return False
+
+    @classmethod
+    async def cleanup_expired_results(cls, expiration_minutes: int) -> int:
+        """
+        Cloud Janitor: Scans the result container and deletes blobs older than the expiration time.
+        """
+        deleted_count = 0
+        cutoff_time = datetime.now(timezone.utc) - timedelta(minutes=expiration_minutes)
+        
+        try:
+            async with cls._get_container_client(cls.RESULT_CONTAINER) as container:
+                async for blob in container.list_blobs():
+                    if blob.creation_time and blob.creation_time < cutoff_time:
+                        await container.delete_blob(blob.name)
+                        deleted_count += 1
+                        logger.info(f"🧹 Cloud Janitor: Deleted expired result -> {blob.name}")
+        except Exception as e:
+            logger.error(f"⚠️ Cloud Janitor failed to clean Azure: {e}")
+            
+        return deleted_count
 
     @classmethod
     async def mark_job_failed(cls, job_id: str) -> None:
