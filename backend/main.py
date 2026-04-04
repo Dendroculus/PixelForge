@@ -37,6 +37,7 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
+logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(logging.WARNING)
 
 async def database_janitor_loop():
     """
