@@ -211,22 +211,7 @@ export default function Home() {
           ))}
         </div>
       </section>
-
-      <LegalModal 
-        isOpen={appAlert.show && appAlert.type === 'limit_reached'} 
-        onClose={() => {
-          setAppAlert({ show: false, type: null });
-          localStorage.removeItem(STORAGE_KEYS.ALERT);
-        }}
-        title="Daily Limit Reached 🛑"
-      >
-        <div className="space-y-3 text-left">
-          <p className="font-semibold text-slate-800 text-base">Whoa there! You've used up your 3 free upscales for today.</p>
-          <p>Pixel Forge is powered by a "potato server" and expensive AI GPUs. To keep this tool free and open-source for everyone, we have to limit usage so the servers don't melt.</p>
-          <p className="font-bold text-slate-900 pt-2">See you tomorrow! Your limit resets 24 hours from your first upscale.</p>
-        </div>
-      </LegalModal>
-
+      
       <LegalModal 
         isOpen={appAlert.show && appAlert.type === 'potato'} 
         onClose={() => {
