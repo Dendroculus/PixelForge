@@ -2,9 +2,14 @@ import { useEffect, useRef } from 'react';
 import { loadFileFromIDB } from '../utils/idb';
 import { clearAppSession } from '../utils/session';
 import { APP_CONFIG as config, STORAGE_KEYS } from '../config';
+import { isExpired } from '../utils/time';
 
 /**
  * React hook to persist and restore app session state across reloads.
+ * Also enforces timeout for:
+ * - uploaded-but-not-upscaled image drafts
+ * - completed result availability
+ *
  * @param {{
  *  setSelectedFile: (file: File|null) => void,
  *  setPreviewUrl: (url: string|null) => void,
@@ -18,6 +23,7 @@ import { APP_CONFIG as config, STORAGE_KEYS } from '../config';
  *  resultUrl: string|null,
  *  previewUrl: string|null
  * }} params
+ * @returns {void}
  */
 export function useSessionPersistence({
   setSelectedFile,
@@ -30,7 +36,7 @@ export function useSessionPersistence({
   pollForResult,
   handleUpscale,
   resultUrl,
-  previewUrl
+  previewUrl,
 }) {
   const sessionRestored = useRef(false);
 
@@ -43,14 +49,26 @@ export function useSessionPersistence({
         const savedFile = await loadFileFromIDB();
         if (!savedFile) return;
 
+        const uploadTimestamp = localStorage.getItem(STORAGE_KEYS.UPLOAD_TIMESTAMP);
+        const savedResult = localStorage.getItem(STORAGE_KEYS.RESULT_URL);
+
+        if (!savedResult && isExpired(uploadTimestamp, config.UPLOAD_DRAFT_EXPIRATION_TIME)) {
+          await clearAppSession();
+          setSelectedFile(null);
+          setPreviewUrl(null);
+          setResultUrl(null);
+          setJobId(null);
+          setIsProcessing(false);
+          return;
+        }
+
         setSelectedFile(savedFile);
         setPreviewUrl(URL.createObjectURL(savedFile));
 
-        const savedResult = localStorage.getItem(STORAGE_KEYS.RESULT_URL);
         const savedTimestamp = localStorage.getItem(STORAGE_KEYS.RESULT_TIMESTAMP);
 
         if (savedResult) {
-          if (savedTimestamp && Date.now() - parseInt(savedTimestamp) > config.RESULT_EXPIRATION_TIME) {
+          if (isExpired(savedTimestamp, config.RESULT_EXPIRATION_TIME)) {
             await clearAppSession();
             setSelectedFile(null);
             setPreviewUrl(null);
@@ -58,17 +76,17 @@ export function useSessionPersistence({
             localStorage.setItem(STORAGE_KEYS.ALERT, 'expired');
             setAppAlert({ show: true, type: 'expired' });
             return;
-          } else {
-            setResultUrl(savedResult);
-            setIsProcessing(false);
-            localStorage.removeItem(STORAGE_KEYS.IS_PROCESSING);
-            localStorage.removeItem(STORAGE_KEYS.PROGRESS);
-
-            if (!appAlert.show) {
-              setAppAlert({ show: true, type: 'reserved_warning' });
-            }
-            return;
           }
+
+          setResultUrl(savedResult);
+          setIsProcessing(false);
+          localStorage.removeItem(STORAGE_KEYS.IS_PROCESSING);
+          localStorage.removeItem(STORAGE_KEYS.PROGRESS);
+
+          if (!appAlert.show) {
+            setAppAlert({ show: true, type: 'reserved_warning' });
+          }
+          return;
         }
 
         const savedJobId = localStorage.getItem(STORAGE_KEYS.JOB_ID);
@@ -87,7 +105,7 @@ export function useSessionPersistence({
           if (savedJobId) {
             setIsProcessing(true);
             pollForResult(savedJobId);
-          } else if (isProcessingStored) {
+          } else {
             setIsProcessing(true);
             handleUpscale(savedFile);
           }
@@ -110,9 +128,14 @@ export function useSessionPersistence({
     setIsProcessing,
     setPreviewUrl,
     setResultUrl,
-    setSelectedFile
+    setSelectedFile,
+    setJobId,
   ]);
 
+  /**
+   * Live result expiration watcher:
+   * Clears state while user remains on page once result TTL passes.
+   */
   useEffect(() => {
     let interval;
 
@@ -120,7 +143,7 @@ export function useSessionPersistence({
       interval = setInterval(async () => {
         const savedTimestamp = localStorage.getItem(STORAGE_KEYS.RESULT_TIMESTAMP);
 
-        if (savedTimestamp && Date.now() - parseInt(savedTimestamp) > config.RESULT_EXPIRATION_TIME) {
+        if (isExpired(savedTimestamp, config.RESULT_EXPIRATION_TIME)) {
           await clearAppSession(previewUrl);
           setSelectedFile(null);
           setPreviewUrl(null);
@@ -135,4 +158,44 @@ export function useSessionPersistence({
 
     return () => clearInterval(interval);
   }, [resultUrl, previewUrl, setAppAlert, setJobId, setPreviewUrl, setResultUrl, setSelectedFile]);
+
+  /**
+   * Live draft expiration watcher:
+   * If user uploaded a file but did not upscale, clear it automatically after TTL
+   * even without refresh.
+   */
+  useEffect(() => {
+    let interval;
+
+    const shouldWatchDraft =
+      Boolean(previewUrl) &&
+      !resultUrl &&
+      !localStorage.getItem(STORAGE_KEYS.JOB_ID) &&
+      localStorage.getItem(STORAGE_KEYS.IS_PROCESSING) !== 'true';
+
+    if (shouldWatchDraft) {
+      interval = setInterval(async () => {
+        const uploadTimestamp = localStorage.getItem(STORAGE_KEYS.UPLOAD_TIMESTAMP);
+
+        if (isExpired(uploadTimestamp, config.UPLOAD_DRAFT_EXPIRATION_TIME)) {
+          await clearAppSession(previewUrl);
+          setSelectedFile(null);
+          setPreviewUrl(null);
+          setResultUrl(null);
+          setJobId(null);
+          setIsProcessing(false);
+        }
+      }, 3000);
+    }
+
+    return () => clearInterval(interval);
+  }, [
+    previewUrl,
+    resultUrl,
+    setIsProcessing,
+    setJobId,
+    setPreviewUrl,
+    setResultUrl,
+    setSelectedFile,
+  ]);
 }
