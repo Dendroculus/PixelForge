@@ -4,25 +4,32 @@ import { clearAppSession } from '../utils/session';
 import { STORAGE_KEYS } from '../config';
 
 /**
- * Hook to handle image upscale workflow including upload, polling, and Turnstile token handling.
+ * Custom hook that manages the image upscale workflow:
+ * - Handles upload with Turnstile token coordination
+ * - Polls backend for results
+ * - Manages retry, timeout, and failure states
+ *
  * @param {Object} params
- * @param {Function} params.setJobId
- * @param {Function} params.setProgress
- * @param {Function} params.setResultUrl
- * @param {Function} params.setIsProcessing
- * @param {Function} params.resetTurnstile
- * @param {string|null} params.previewUrl
- * @param {Function} params.setSelectedFile
- * @param {Function} params.setPreviewUrl
- * @param {Function} params.setAppAlert
- * @param {string|null} params.turnstileToken
- * @param {Object} params.turnstileRef
- * @param {Function} params.setTurnstileToken
- * @param {string} params.modelType
- * @param {File|Blob|null} params.selectedFile
- * @param {Function} params.recordUsage
- * @param {Function} params.forceMaxLimit
- * @returns {{ pollForResult: Function, handleUpscale: Function }}
+ * @param {(id: string | null) => void} params.setJobId - Updates current job ID state
+ * @param {(progress: number) => void} params.setProgress - Updates progress percentage (0–100)
+ * @param {(url: string | null) => void} params.setResultUrl - Sets final processed image URL
+ * @param {(value: boolean) => void} params.setIsProcessing - Toggles processing/loading state
+ * @param {() => void} params.resetTurnstile - Resets Turnstile widget/token
+ * @param {string | null} params.previewUrl - Current preview image URL (used for cleanup)
+ * @param {(file: File | null) => void} params.setSelectedFile - Updates selected file state
+ * @param {(url: string | null) => void} params.setPreviewUrl - Updates preview URL state
+ * @param {(alert: { show: boolean, type: string }) => void} params.setAppAlert - Triggers UI alert state
+ * @param {string | null} params.turnstileToken - Current Turnstile verification token
+ * @param {React.RefObject} params.turnstileRef - Ref to Turnstile widget instance
+ * @param {(token: string) => void} params.setTurnstileToken - Stores Turnstile token
+ * @param {File | Blob | null} params.selectedFile - Currently selected file for upload
+ * @param {() => void} params.recordUsage - Tracks usage for rate limiting / analytics
+ * @param {() => void} params.forceMaxLimit - Forces UI state when usage limit is reached
+ *
+ * @returns {{
+ *   pollForResult: (id: string) => (() => void) | void,
+ *   handleUpscale: (overrideFile?: File | Blob | null) => Promise<void>
+ * }}
  */
 export function useUpscaleActions({
   setJobId,
@@ -37,7 +44,6 @@ export function useUpscaleActions({
   turnstileToken,
   turnstileRef,
   setTurnstileToken,
-  modelType,
   selectedFile,
   recordUsage,
   forceMaxLimit,
@@ -45,6 +51,9 @@ export function useUpscaleActions({
   const [isWaitingForToken, setIsWaitingForToken] = useState(false);
   const pendingFileRef = useRef(null);
 
+  /**
+   * Resets waiting state if selected file is cleared
+   */
   useEffect(() => {
     if (!selectedFile) {
       setIsWaitingForToken(false);
@@ -53,9 +62,11 @@ export function useUpscaleActions({
   }, [selectedFile]);
 
   /**
-   * Polls backend for job result until success or failure.
-   * @param {string} id
-   * @returns {Function} cleanup function
+   * Polls backend for processing result using job ID.
+   * Handles retries, rate limits, timeouts, and failure fallback.
+   *
+   * @param {string} id - Job ID returned from upload API
+   * @returns {() => void | undefined} Cleanup function to stop polling
    */
   const pollForResult = useCallback((id) => {
     setJobId(id);
@@ -67,24 +78,28 @@ export function useUpscaleActions({
     const maxAttempts = 120;
     const maxDurationMs = 10 * 60 * 1000;
 
+    /**
+     * Handles polling failure by resetting state and showing alert
+     */
     const handlePollingFailure = async () => {
       await clearAppSession(previewUrl);
-
       setSelectedFile(null);
       setPreviewUrl(null);
       setResultUrl(null);
       setJobId(null);
-
       setIsProcessing(false);
       resetTurnstile();
-
       localStorage.setItem(STORAGE_KEYS.ALERT, 'dos');
       setAppAlert({ show: true, type: 'dos' });
     };
 
+    /**
+     * Recursive polling function
+     */
     const poll = async () => {
       attemptCount++;
-      if (attemptCount > maxAttempts || (Date.now() - startedAt) > maxDurationMs) {
+
+      if (attemptCount > maxAttempts || Date.now() - startedAt > maxDurationMs) {
         await handlePollingFailure();
         return;
       }
@@ -149,13 +164,16 @@ export function useUpscaleActions({
     setIsProcessing,
     setSelectedFile,
     setPreviewUrl,
-    setAppAlert
+    setAppAlert,
   ]);
 
   /**
-   * Handles image upload and triggers polling.
-   * Waits for Turnstile token if not immediately available.
-   * @param {File|Blob|null} overrideFile
+   * Initiates upscale process:
+   * - Ensures Turnstile token is available
+   * - Uploads file to backend
+   * - Starts polling for result
+   *
+   * @param {File | Blob | null} [overrideFile=null] - Optional file override (used when retrying after token is obtained)
    * @returns {Promise<void>}
    */
   const handleUpscale = useCallback(async (overrideFile = null) => {
@@ -182,10 +200,8 @@ export function useUpscaleActions({
     pendingFileRef.current = null;
 
     try {
-      const data = await apiService.uploadImage(fileToUse, modelType, currentToken);
-
+      const data = await apiService.uploadImage(fileToUse, currentToken);
       recordUsage();
-
       localStorage.setItem(STORAGE_KEYS.JOB_ID, data.job_id);
       pollForResult(data.job_id);
     } catch (error) {
@@ -204,7 +220,6 @@ export function useUpscaleActions({
   }, [
     selectedFile,
     turnstileToken,
-    modelType,
     pollForResult,
     previewUrl,
     resetTurnstile,
@@ -213,9 +228,12 @@ export function useUpscaleActions({
     setTurnstileToken,
     recordUsage,
     forceMaxLimit,
-    setAppAlert
+    setAppAlert,
   ]);
 
+  /**
+   * Retries upload automatically once Turnstile token becomes available
+   */
   useEffect(() => {
     if (isWaitingForToken && turnstileToken && pendingFileRef.current) {
       handleUpscale(pendingFileRef.current);

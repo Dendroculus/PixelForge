@@ -1,13 +1,13 @@
 import logging
 import re
-from fastapi import APIRouter, Form, UploadFile, File, Depends, BackgroundTasks, HTTPException, status, Request
+from fastapi import APIRouter, Form, UploadFile, File, BackgroundTasks, HTTPException, status, Request
 
 from core.security import process_and_sanitize_image
 from limiter.rate_limiter import limiter, get_real_client_ip
 from limiter.usage_limiter import enforce_daily_limit, get_usage_status
 from services.storage import StorageService
 from services.esrgan import ai_upscaler
-from api.dependencies import valid_model_type, verify_turnstile
+from api.dependencies import verify_turnstile
 from core.config import LimitConfig as LC
 from helper.utils import get_result_filename
 import os
@@ -59,7 +59,6 @@ async def upload_image(
     background_tasks: BackgroundTasks,
     cf_turnstile_response: str = Form(...),
     file: UploadFile = File(...),
-    model_type: str = Depends(valid_model_type),
 ):
     if not (cf_turnstile_response == "manual_test_bypass" and _is_manual_bypass_allowed()):
         await verify_turnstile(cf_turnstile_response)
@@ -76,7 +75,6 @@ async def upload_image(
     try:
         job_id, safe_filename, image_stream = await process_and_sanitize_image(file)
         await StorageService.save_upload(image_stream, safe_filename)
-
     except HTTPException:
         raise
     except Exception as e:
@@ -86,6 +84,7 @@ async def upload_image(
             detail="Failed to process upload",
         )
 
+    model_type = "general"
     background_tasks.add_task(process_image_task, job_id, safe_filename, model_type)
 
     return {"message": "Upload successful, processing started", "job_id": job_id}
