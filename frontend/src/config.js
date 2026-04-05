@@ -11,7 +11,8 @@ export const APP_CONFIG = {
   RESULT_EXPIRATION_TIME: 10 * 60 * 1000, // 10 minutes
   UPSCALE_LIMIT: 3,
   DAY_MS: 24 * 60 * 60 * 1000, // 24 hours
-  API_URL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
+  API_URL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api',
+  UPLOAD_DRAFT_EXPIRATION_TIME: 10 * 60 * 1000 // 10 minutes
 };
 
 export const STORAGE_KEYS = {
@@ -22,7 +23,8 @@ export const STORAGE_KEYS = {
   REFRESH_COUNT: 'pf_refresh_count',
   RESULT_TIMESTAMP: 'pf_result_timestamp',
   ALERT: 'pf_alert',
-  UPSCALE_HISTORY: 'pf_upscale_history'
+  UPSCALE_HISTORY: 'pf_upscale_history',
+  UPLOAD_TIMESTAMP: 'pf_upload_timestamp'
 };
 
 export const IMAGES = {
