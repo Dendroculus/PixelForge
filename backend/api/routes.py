@@ -1,4 +1,5 @@
 import logging
+import re
 from fastapi import APIRouter, Form, UploadFile, File, Depends, BackgroundTasks, HTTPException, status, Request
 
 from core.security import process_and_sanitize_image
@@ -9,10 +10,19 @@ from services.esrgan import ai_upscaler
 from api.dependencies import valid_model_type, verify_turnstile
 from core.config import LimitConfig as LC
 from helper.utils import get_result_filename
+import os
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["upscale"])
+JOB_ID_RE = re.compile(r"^[a-f0-9]{32}$")
+
+
+def _is_manual_bypass_allowed() -> bool:
+    env = os.getenv("ENVIRONMENT", "").lower()
+    allow_bypass = os.getenv("ALLOW_TURNSTILE_TEST_BYPASS", "false").lower() in {"1", "true", "yes", "on"}
+    return env not in {"prod", "production"} and allow_bypass
+
 
 async def process_image_task(job_id: str, safe_filename: str, model_type: str) -> None:
     logger.info("Background task started for job=%s model=%s", job_id, model_type)
@@ -51,7 +61,7 @@ async def upload_image(
     file: UploadFile = File(...),
     model_type: str = Depends(valid_model_type),
 ):
-    if cf_turnstile_response != "manual_test_bypass":
+    if not (cf_turnstile_response == "manual_test_bypass" and _is_manual_bypass_allowed()):
         await verify_turnstile(cf_turnstile_response)
 
     client_ip = get_real_client_ip(request)
@@ -91,7 +101,7 @@ async def get_result(
     request: Request,
     job_id: str,
 ):
-    if not job_id or not job_id.isalnum():
+    if not job_id or not JOB_ID_RE.fullmatch(job_id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid job ID")
 
     try:

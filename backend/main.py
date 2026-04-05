@@ -20,6 +20,7 @@ from services.storage import StorageService
 if "*" in ALLOWED_ORIGINS:
     raise ValueError("Wildcard '*' is not allowed when credentials are enabled.")
 
+logger = logging.getLogger(__name__)
 
 LOG_DIR = Path(os.path.dirname(__file__)) / "logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -47,6 +48,7 @@ async def database_janitor_loop():
     loop_ratio = max(1, DC.DB_SWEEP_INTERVAL_SECONDS // DC.AZURE_SWEEP_INTERVAL_SECONDS)
 
     while True:
+        logger.info("💓 Janitor Heartbeat: Checking Azure for expired files...")
         await StorageService.cleanup_expired_results(
             expiration_minutes=LC.SAS_EXPIRATION_MINUTES
         )

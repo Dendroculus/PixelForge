@@ -8,12 +8,13 @@ logger = logging.getLogger(__name__)
 WINDOW_HOURS = 24
 WINDOW_MS = WINDOW_HOURS * 60 * 60 * 1000
 
+
 async def enforce_daily_limit(ip_address: str, limit_24h: int = 3) -> bool:
     """Atomically enforce a rolling 24-hour usage limit per IP."""
     pool = get_db_pool()
     if pool is None:
-        logger.error("DB pool not initialized. Failing open.")
-        return True
+        logger.error("DB pool not initialized. Denying request.")
+        return False
 
     if limit_24h <= 0:
         return False
@@ -49,7 +50,7 @@ async def enforce_daily_limit(ip_address: str, limit_24h: int = 3) -> bool:
 
     except Exception:
         logger.exception("Database error during rate-limit check for ip=%s", ip_address)
-        return True
+        return False
 
 
 async def get_usage_status(ip_address: str, limit_24h: int = LC.DAILY_USAGE_LIMIT) -> dict:

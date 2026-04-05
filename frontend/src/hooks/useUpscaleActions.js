@@ -62,8 +62,33 @@ export function useUpscaleActions({
 
     let errorCount = 0;
     let timeoutId = null;
+    let attemptCount = 0;
+    const startedAt = Date.now();
+    const maxAttempts = 120;
+    const maxDurationMs = 10 * 60 * 1000;
+
+    const handlePollingFailure = async () => {
+      await clearAppSession(previewUrl);
+
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setResultUrl(null);
+      setJobId(null);
+
+      setIsProcessing(false);
+      resetTurnstile();
+
+      localStorage.setItem(STORAGE_KEYS.ALERT, 'dos');
+      setAppAlert({ show: true, type: 'dos' });
+    };
 
     const poll = async () => {
+      attemptCount++;
+      if (attemptCount > maxAttempts || (Date.now() - startedAt) > maxDurationMs) {
+        await handlePollingFailure();
+        return;
+      }
+
       try {
         const result = await apiService.pollResult(id);
 
@@ -96,18 +121,7 @@ export function useUpscaleActions({
 
           errorCount++;
           if (errorCount > 5) {
-            await clearAppSession(previewUrl);
-
-            setSelectedFile(null);
-            setPreviewUrl(null);
-            setResultUrl(null);
-            setJobId(null);
-
-            setIsProcessing(false);
-            resetTurnstile();
-
-            localStorage.setItem(STORAGE_KEYS.ALERT, 'dos');
-            setAppAlert({ show: true, type: 'dos' });
+            await handlePollingFailure();
             return;
           }
         } else {
