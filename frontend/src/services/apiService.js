@@ -1,10 +1,14 @@
 const apiUrl = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://127.0.0.1:8000/api' : '');
 
+/**
+ * API service for upload and polling endpoints.
+ * The upscale request always uses the single supported model: "general".
+ */
 export const apiService = {
-  async uploadImage(file, modelType, turnstileToken) {
+  async uploadImage(file, turnstileToken) {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('model_type', modelType);
+    formData.append('model_type', 'general');
     formData.append('cf_turnstile_response', turnstileToken);
 
     const response = await fetch(`${apiUrl}/upscale`, {
@@ -38,22 +42,21 @@ export const apiService = {
 
       const data = await res.json();
 
-      if (data.status === "ready") {
+      if (data.status === 'ready') {
         return { success: true, data };
       }
 
-      if (data.status === "processing") {
+      if (data.status === 'processing') {
         return { success: false, error: false };
       }
 
-      if (data.status === "failed") {
+      if (data.status === 'failed') {
         return { success: false, error: true };
       }
 
       return { success: false, error: true };
-
     } catch (err) {
-      console.error("Polling failed:", err);
+      console.error('Polling failed:', err);
       return { success: false, error: true };
     }
   }

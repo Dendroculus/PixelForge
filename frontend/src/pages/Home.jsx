@@ -4,35 +4,39 @@ import ResultViewer from '../components/ResultViewer';
 import Header from '../components/Header';
 import ProgressBar from '../components/ProgressBar';
 import ActionControls from '../components/ActionControls';
-import LegalModal from '../components/LegalModal'; 
+import LegalModal from '../components/LegalModal';
 import { useUpscalePipeline } from '../hooks/useUpscalePipeline';
 import { useSimulatedProgress } from '../hooks/useSimulatedProgress';
 import { clearAppSession } from '../utils/session';
 import { APP_CONFIG as config, STORAGE_KEYS } from '../config';
 import CountdownTimer from '../components/CountdownTimer';
 
+/**
+ * Main home page for upload, processing, result preview, usage display,
+ * and app-level alert modals.
+ *
+ * @returns {JSX.Element}
+ */
 export default function Home() {
   const [progress, setProgress] = useState(0);
-  
+
   const {
     selectedFile,
     previewUrl,
     isProcessing,
     resultUrl,
     jobId,
-    modelType,
-    setModelType,
     handleFileSelect,
     handleCancel,
     handleUpscale,
-    turnstileRef,        
+    turnstileRef,
     setTurnstileToken,
     turnstileToken,
-    appAlert,      
+    appAlert,
     setAppAlert,
     usesRemaining,
     resetTimestamp,
-    isLoading
+    isLoading,
   } = useUpscalePipeline(setProgress);
 
   useSimulatedProgress(isProcessing, setProgress, turnstileToken);
@@ -44,7 +48,7 @@ export default function Home() {
           <span className="w-1.5 h-1.5 rounded-full bg-[#EEAECA] animate-pulse" />
           <span>Free & Open Source — No sign-up required</span>
         </div>
-        
+
         <Header />
 
         <div className="mt-12">
@@ -81,9 +85,9 @@ export default function Home() {
             <div className="bg-white/50 backdrop-blur-2xl p-6 rounded-2xl shadow-xl border border-white/60 space-y-6">
               {!resultUrl ? (
                 <div className="bg-white/50 rounded-xl p-2 border border-white/40 flex justify-center overflow-hidden">
-                  <img 
-                    src={previewUrl} 
-                    alt="Upload preview" 
+                  <img
+                    src={previewUrl}
+                    alt="Upload preview"
                     className={`max-h-[400px] w-auto object-contain rounded-lg transition-all duration-700 ${isProcessing ? 'scale-105 opacity-60 blur-sm' : 'opacity-100'}`}
                   />
                 </div>
@@ -92,7 +96,7 @@ export default function Home() {
                   <ResultViewer originalImage={previewUrl} upscaledImage={resultUrl} />
                 </div>
               )}
-              
+
               {isProcessing && <ProgressBar progress={progress} />}
 
               {!resultUrl && (
@@ -100,10 +104,9 @@ export default function Home() {
                   <p className="text-sm text-slate-700 font-medium truncate max-w-[250px]">
                     {selectedFile.name}
                   </p>
-                  
-                  <ActionControls 
-                    modelType={modelType}
-                    setModelType={setModelType}
+
+                  <ActionControls
+                    jobId={jobId}
                     isProcessing={isProcessing}
                     handleCancel={handleCancel}
                     handleUpscale={handleUpscale}
@@ -115,13 +118,13 @@ export default function Home() {
 
               {resultUrl && (
                 <div className="flex justify-between items-center pt-2">
-                  <button 
+                  <button
                     onClick={handleCancel}
                     className="px-5 py-2.5 text-sm font-medium text-slate-700 hover:text-slate-900 hover:bg-white/60 rounded-lg transition-colors"
                   >
                     Upload Another Image
                   </button>
-                  <a 
+                  <a
                     href={resultUrl}
                     download={`4K-${selectedFile.name}`}
                     onClick={() => {
@@ -151,7 +154,7 @@ export default function Home() {
       <section id="features" className="max-w-6xl mx-auto px-6 py-1">
         <h2 className="text-2xl font-bold text-center mb-2 text-slate-900">Why Pixel Forge?</h2>
         <p className="text-slate-700 text-center mb-12 max-w-xl mx-auto font-medium">Advanced AI upscaling optimized for photos and digital art.</p>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {[
             {
@@ -170,7 +173,7 @@ export default function Home() {
                 </svg>
               ),
               title: 'Secure & Private',
-              desc: 'Your images are processed and immediately deleted. No data is ever stored or shared.'
+              desc: 'Your images are processed securely and removed by automated retention cleanup. No data is sold or shared.'
             },
             {
               icon: (
@@ -178,10 +181,10 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                 </svg>
               ),
-              title: 'Two AI Models',
-              desc: 'Choose between General (photos) and Anime/Art models for optimal results on any image type.'
+              title: 'Optimized AI Model',
+              desc: 'A single tuned Real-ESRGAN pipeline delivers consistent quality without setup complexity.'
             }
-          ].map((feature) => ( 
+          ].map((feature) => (
             <div key={feature.title} className="group p-6 rounded-2xl bg-white/40 border border-white/50 hover:border-white hover:bg-white/60 transition-all shadow-sm">
               <div className="w-10 h-10 rounded-xl bg-white shadow-sm border border-white/60 flex items-center justify-center text-slate-800 mb-4 group-hover:scale-105 transition-transform">
                 {feature.icon}
@@ -196,13 +199,13 @@ export default function Home() {
       <section id="how-it-works" className="max-w-4xl mx-auto px-6 py-20">
         <h2 className="text-2xl font-bold text-center mb-2 text-slate-900">How It Works</h2>
         <p className="text-slate-700 text-center mb-12 font-medium">Three simple steps to enhance your images.</p>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
             { step: '01', title: 'Upload', desc: 'Drag & drop or click to upload any PNG, JPG, or WEBP image.' },
             { step: '02', title: 'Enhance', desc: 'Our Real-ESRGAN model upscales your image to 4x resolution with AI.' },
             { step: '03', title: 'Download', desc: 'Compare the before & after, then download your enhanced image instantly.' },
-          ].map((item) => ( 
+          ].map((item) => (
             <div key={item.step} className="text-center">
               <div className="text-5xl font-black text-white drop-shadow-md mb-3">{item.step}</div>
               <h3 className="text-lg font-bold text-slate-900 mb-2">{item.title}</h3>
@@ -211,13 +214,13 @@ export default function Home() {
           ))}
         </div>
       </section>
-      
-      <LegalModal 
-        isOpen={appAlert.show && appAlert.type === 'potato'} 
+
+      <LegalModal
+        isOpen={appAlert.show && appAlert.type === 'potato'}
         onClose={() => {
           setAppAlert({ show: false, type: null });
           localStorage.removeItem(STORAGE_KEYS.ALERT);
-          localStorage.removeItem(STORAGE_KEYS.REFRESH_COUNT); 
+          localStorage.removeItem(STORAGE_KEYS.REFRESH_COUNT);
         }}
         title="Whoa, slow down! 👀"
       >
@@ -228,12 +231,12 @@ export default function Home() {
         </div>
       </LegalModal>
 
-      <LegalModal 
-        isOpen={appAlert.show && appAlert.type === 'dos'} 
+      <LegalModal
+        isOpen={appAlert.show && appAlert.type === 'dos'}
         onClose={() => {
           setAppAlert({ show: false, type: null });
           localStorage.removeItem(STORAGE_KEYS.ALERT);
-          localStorage.removeItem(STORAGE_KEYS.REFRESH_COUNT); 
+          localStorage.removeItem(STORAGE_KEYS.REFRESH_COUNT);
         }}
         title="Processing Failed ❌"
       >
@@ -244,8 +247,8 @@ export default function Home() {
         </div>
       </LegalModal>
 
-      <LegalModal 
-        isOpen={appAlert.show && appAlert.type === 'reserved_warning'} 
+      <LegalModal
+        isOpen={appAlert.show && appAlert.type === 'reserved_warning'}
         onClose={() => setAppAlert({ show: false, type: null })}
         title="Session Restored 🔄"
       >
@@ -254,8 +257,8 @@ export default function Home() {
           <p>Just letting you know that your upscaled image won't stay here forever.</p>
           <p>
             Please remember to download it before it expires in{' '}
-            <CountdownTimer 
-              targetTimestamp={Number(localStorage.getItem(STORAGE_KEYS.RESULT_TIMESTAMP)) + config.RESULT_EXPIRATION_TIME} 
+            <CountdownTimer
+              targetTimestamp={Number(localStorage.getItem(STORAGE_KEYS.RESULT_TIMESTAMP)) + config.RESULT_EXPIRATION_TIME}
               isWarning={true}
               onExpire={() => {
                 setAppAlert({ show: true, type: 'expired' });
@@ -266,8 +269,8 @@ export default function Home() {
         </div>
       </LegalModal>
 
-      <LegalModal 
-        isOpen={appAlert.show && appAlert.type === 'expired'} 
+      <LegalModal
+        isOpen={appAlert.show && appAlert.type === 'expired'}
         onClose={() => {
           setAppAlert({ show: false, type: null });
           localStorage.removeItem(STORAGE_KEYS.ALERT);
@@ -280,7 +283,6 @@ export default function Home() {
           <p>Please upload your image again if you still need to upscale it!</p>
         </div>
       </LegalModal>
-
     </div>
   );
 }

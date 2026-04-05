@@ -12,7 +12,6 @@ export function useUpscalePipeline(setProgress) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [resultUrl, setResultUrl] = useState(null);
   const [jobId, setJobId] = useState(null);
-  const [modelType, setModelType] = useState('general');
   const [turnstileToken, setTurnstileToken] = useState(null);
 
   const [appAlert, setAppAlert] = useState(() => {
@@ -42,10 +41,9 @@ export function useUpscalePipeline(setProgress) {
     turnstileToken,
     turnstileRef,
     setTurnstileToken,
-    modelType,
     selectedFile,
     recordUsage,
-    forceMaxLimit
+    forceMaxLimit,
   });
 
   useSessionPersistence({
@@ -59,7 +57,7 @@ export function useUpscalePipeline(setProgress) {
     pollForResult,
     handleUpscale: (...args) => handleUpscale(...args).catch((err) => console.error(`Upscale error : ${err}`)),
     resultUrl,
-    previewUrl
+    previewUrl,
   });
 
   const handleFileSelect = async (file) => {
@@ -94,8 +92,6 @@ export function useUpscalePipeline(setProgress) {
     isProcessing,
     resultUrl,
     jobId,
-    modelType,
-    setModelType,
     turnstileToken,
     setTurnstileToken,
     turnstileRef,
@@ -106,6 +102,6 @@ export function useUpscalePipeline(setProgress) {
     setAppAlert,
     usesRemaining,
     resetTimestamp,
-    isLoading
+    isLoading,
   };
 }
