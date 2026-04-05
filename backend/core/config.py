@@ -48,12 +48,12 @@ class ContainerNames:
 class LimitConfig:
     UPLOAD_RATE_LIMIT: str = "5/minute"
     POLL_RATE_LIMIT: str = "60/minute"
-    SAS_EXPIRATION_MINUTES: int = 10
+    SAS_EXPIRATION_MINUTES: int = 11
     DAILY_USAGE_LIMIT: int = 3
 
 class DatabaseConfig:
-    POOL_MIN_SIZE = 5
-    POOL_MAX_SIZE = 30
+    POOL_MIN_SIZE = 1
+    POOL_MAX_SIZE = 10
     POOL_MAX_QUERIES = 50000
     POOL_MAX_INACTIVE_CONN_LIFETIME = 300.0
     POOL_COMMAND_TIMEOUT = 10
