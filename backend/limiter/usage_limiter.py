@@ -10,12 +10,39 @@ WINDOW_MS = WINDOW_HOURS * 60 * 60 * 1000
 
 
 async def enforce_daily_limit(ip_address: str, limit_24h: int = 3) -> bool:
-    """Atomically enforce a rolling 24-hour usage limit per IP."""
+    """Check rolling 24h limit without consuming usage. Fail closed on DB errors."""
     pool = get_db_pool()
 
     if pool is None:
-        logger.error("DB pool not initialized. Failing open for daily limit check.")
-        return True
+        logger.error("DB pool not initialized. Failing closed for daily limit check.")
+        return False
+
+    if limit_24h <= 0:
+        return False
+
+    sum_sql = """
+    SELECT COALESCE(SUM(usage_count), 0)::int AS used
+    FROM ip_usage_hourly
+    WHERE ip_address = $1
+      AND bucket_start > NOW() - INTERVAL '24 hours';
+    """
+
+    try:
+        async with pool.acquire() as conn:
+            used = await conn.fetchval(sum_sql, ip_address)
+        return used < limit_24h
+    except Exception:
+        logger.exception("Database error during rate-limit check for ip=%s. Failing closed.", ip_address)
+        return False
+
+
+async def consume_daily_usage(ip_address: str, limit_24h: int = 3) -> bool:
+    """Atomically consume one usage unit if below rolling 24h limit."""
+    pool = get_db_pool()
+
+    if pool is None:
+        logger.error("DB pool not initialized. Cannot consume usage.")
+        return False
 
     if limit_24h <= 0:
         return False
@@ -46,12 +73,11 @@ async def enforce_daily_limit(ip_address: str, limit_24h: int = 3) -> bool:
                     return False
 
                 await conn.execute(upsert_sql, ip_address)
-
         return True
 
     except Exception:
-        logger.exception("Database error during rate-limit check for ip=%s. Failing open.", ip_address)
-        return True
+        logger.exception("Database error during usage consume for ip=%s", ip_address)
+        return False
 
 
 async def get_usage_status(ip_address: str, limit_24h: int = LC.DAILY_USAGE_LIMIT) -> dict:
@@ -61,7 +87,7 @@ async def get_usage_status(ip_address: str, limit_24h: int = LC.DAILY_USAGE_LIMI
 
     pool = get_db_pool()
     if pool is None:
-        return {"uses_remaining": limit_24h, "reset_timestamp": None}
+        return {"uses_remaining": 0, "reset_timestamp": None}
 
     sql = """
     WITH windowed AS (
@@ -92,4 +118,4 @@ async def get_usage_status(ip_address: str, limit_24h: int = LC.DAILY_USAGE_LIMI
 
     except Exception:
         logger.exception("Failed to get usage status for ip=%s", ip_address)
-        return {"uses_remaining": limit_24h, "reset_timestamp": None}
+        return {"uses_remaining": 0, "reset_timestamp": None}

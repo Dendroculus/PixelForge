@@ -3,34 +3,17 @@ import { apiService } from '../services/apiService';
 import { clearAppSession } from '../utils/session';
 import { STORAGE_KEYS } from '../config';
 
-/**
- * Custom hook that manages the image upscale workflow:
- * - Handles upload with Turnstile token coordination
- * - Polls backend for results
- * - Manages retry, timeout, and failure states
- *
- * @param {Object} params
- * @param {(id: string | null) => void} params.setJobId - Updates current job ID state
- * @param {(progress: number) => void} params.setProgress - Updates progress percentage (0–100)
- * @param {(url: string | null) => void} params.setResultUrl - Sets final processed image URL
- * @param {(value: boolean) => void} params.setIsProcessing - Toggles processing/loading state
- * @param {() => void} params.resetTurnstile - Resets Turnstile widget/token
- * @param {string | null} params.previewUrl - Current preview image URL (used for cleanup)
- * @param {(file: File | null) => void} params.setSelectedFile - Updates selected file state
- * @param {(url: string | null) => void} params.setPreviewUrl - Updates preview URL state
- * @param {(alert: { show: boolean, type: string }) => void} params.setAppAlert - Triggers UI alert state
- * @param {string | null} params.turnstileToken - Current Turnstile verification token
- * @param {React.RefObject} params.turnstileRef - Ref to Turnstile widget instance
- * @param {(token: string) => void} params.setTurnstileToken - Stores Turnstile token
- * @param {File | Blob | null} params.selectedFile - Currently selected file for upload
- * @param {() => void} params.recordUsage - Tracks usage for rate limiting / analytics
- * @param {() => void} params.forceMaxLimit - Forces UI state when usage limit is reached
- *
- * @returns {{
- *   pollForResult: (id: string) => (() => void) | void,
- *   handleUpscale: (overrideFile?: File | Blob | null) => Promise<void>
- * }}
- */
+const JOB_STARTED_AT_KEY = 'JOB_STARTED_AT';
+
+function sanitizeScale(scale) {
+  const n = Number(scale);
+  if (!Number.isFinite(n)) return 2;
+  const i = Math.trunc(n);
+  if (i < 1) return 1;
+  if (i > 4) return 4;
+  return i;
+}
+
 export function useUpscaleActions({
   setJobId,
   setProgress,
@@ -45,140 +28,194 @@ export function useUpscaleActions({
   turnstileRef,
   setTurnstileToken,
   selectedFile,
-  recordUsage,
   forceMaxLimit,
 }) {
   const [isWaitingForToken, setIsWaitingForToken] = useState(false);
   const pendingFileRef = useRef(null);
+  const pendingScaleRef = useRef(2);
 
-  /**
-   * Resets waiting state if selected file is cleared
-   */
-  useEffect(() => {
-    if (!selectedFile) {
-      setIsWaitingForToken(false);
-      pendingFileRef.current = null;
+  const activePollTokenRef = useRef(0);
+  const activeTimeoutRef = useRef(null);
+
+  const clearPollTimeout = useCallback(() => {
+    if (activeTimeoutRef.current) {
+      clearTimeout(activeTimeoutRef.current);
+      activeTimeoutRef.current = null;
     }
-  }, [selectedFile]);
+  }, []);
 
-  /**
-   * Polls backend for processing result using job ID.
-   * Handles retries, rate limits, timeouts, and failure fallback.
-   *
-   * @param {string} id - Job ID returned from upload API
-   * @returns {() => void | undefined} Cleanup function to stop polling
-   */
+  const clearProcessingStorage = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEYS.JOB_ID);
+    localStorage.removeItem(STORAGE_KEYS.IS_PROCESSING);
+    localStorage.removeItem(STORAGE_KEYS.PROGRESS);
+    localStorage.removeItem(STORAGE_KEYS.RESULT_URL);
+    localStorage.removeItem(STORAGE_KEYS.RESULT_TIMESTAMP);
+    localStorage.removeItem(JOB_STARTED_AT_KEY);
+  }, []);
+
+  const resetPendingTokenWait = useCallback(() => {
+    pendingFileRef.current = null;
+    pendingScaleRef.current = 2;
+    setIsWaitingForToken(false);
+  }, []);
+
+  const handlePollingFailure = useCallback(async () => {
+    clearPollTimeout();
+    activePollTokenRef.current += 1;
+    clearProcessingStorage();
+    resetPendingTokenWait();
+
+    try {
+      await clearAppSession(previewUrl);
+    } catch (err) {
+      console.error('Session clear failed:', err);
+    }
+
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setResultUrl(null);
+    setJobId(null);
+    setIsProcessing(false);
+    resetTurnstile();
+
+    localStorage.setItem(STORAGE_KEYS.ALERT, 'dos');
+    setAppAlert({ show: true, type: 'dos' });
+  }, [
+    clearPollTimeout,
+    clearProcessingStorage,
+    previewUrl,
+    resetPendingTokenWait,
+    resetTurnstile,
+    setAppAlert,
+    setIsProcessing,
+    setJobId,
+    setPreviewUrl,
+    setResultUrl,
+    setSelectedFile,
+  ]);
+
   const pollForResult = useCallback((id) => {
+    if (!id) return undefined;
+
+    clearPollTimeout();
+    activePollTokenRef.current += 1;
+    const myPollToken = activePollTokenRef.current;
+
     setJobId(id);
 
-    let errorCount = 0;
-    let timeoutId = null;
+    let terminalErrorCount = 0;
+    let transientErrorCount = 0;
     let attemptCount = 0;
-    const startedAt = Date.now();
-    const maxAttempts = 120;
-    const maxDurationMs = 10 * 60 * 1000;
 
-    /**
-     * Handles polling failure by resetting state and showing alert
-     */
-    const handlePollingFailure = async () => {
-      await clearAppSession(previewUrl);
-      setSelectedFile(null);
-      setPreviewUrl(null);
-      setResultUrl(null);
-      setJobId(null);
-      setIsProcessing(false);
-      resetTurnstile();
-      localStorage.setItem(STORAGE_KEYS.ALERT, 'dos');
-      setAppAlert({ show: true, type: 'dos' });
+    const startedAt = Number(localStorage.getItem(JOB_STARTED_AT_KEY)) || Date.now();
+    if (!localStorage.getItem(JOB_STARTED_AT_KEY)) {
+      localStorage.setItem(JOB_STARTED_AT_KEY, String(startedAt));
+    }
+
+    const maxAttempts = 180;
+    const maxDurationMs = 10 * 60 * 1000;
+    const maxTransientErrors = 40;
+    const maxTerminalErrors = 3;
+
+    const scheduleNext = (fn, ms) => {
+      clearPollTimeout();
+      activeTimeoutRef.current = setTimeout(fn, ms);
     };
 
-    /**
-     * Recursive polling function
-     */
     const poll = async () => {
-      attemptCount++;
+      if (myPollToken !== activePollTokenRef.current) return;
 
-      if (attemptCount > maxAttempts || Date.now() - startedAt > maxDurationMs) {
+      attemptCount += 1;
+      const elapsed = Date.now() - startedAt;
+
+      if (attemptCount > maxAttempts || elapsed > maxDurationMs) {
         await handlePollingFailure();
         return;
       }
 
-      try {
-        const result = await apiService.pollResult(id);
+      const result = await apiService.pollResult(id);
 
-        if (result.success) {
-          localStorage.removeItem(STORAGE_KEYS.JOB_ID);
-          localStorage.removeItem(STORAGE_KEYS.PROGRESS);
-          localStorage.removeItem(STORAGE_KEYS.IS_PROCESSING);
-          localStorage.removeItem(STORAGE_KEYS.REFRESH_COUNT);
+      if (myPollToken !== activePollTokenRef.current) return;
 
-          const beginTime = Date.now().toString();
-          localStorage.setItem(STORAGE_KEYS.RESULT_URL, result.data.url);
-          localStorage.setItem(STORAGE_KEYS.RESULT_TIMESTAMP, beginTime);
+      if (result.success) {
+        console.log('READY branch hit', result.data.url);
+        clearPollTimeout();
 
-          setProgress(100);
+        localStorage.removeItem(STORAGE_KEYS.JOB_ID);
+        localStorage.removeItem(STORAGE_KEYS.PROGRESS);
+        localStorage.removeItem(STORAGE_KEYS.IS_PROCESSING);
+        localStorage.removeItem(STORAGE_KEYS.REFRESH_COUNT);
+        localStorage.removeItem(JOB_STARTED_AT_KEY);
 
-          setTimeout(() => {
-            setResultUrl(result.data.url);
-            setIsProcessing(false);
-            resetTurnstile();
-          }, 400);
+        const beginTime = Date.now().toString();
+        localStorage.setItem(STORAGE_KEYS.RESULT_URL, result.data.url);
+        localStorage.setItem(STORAGE_KEYS.RESULT_TIMESTAMP, beginTime);
 
+        setProgress(100);
+        setResultUrl(result.data.url);
+        setIsProcessing(false);
+        resetTurnstile();
+
+        return;
+      }
+
+      if (result.transient) {
+        transientErrorCount += 1;
+        if (transientErrorCount > maxTransientErrors || Date.now() - startedAt > maxDurationMs) {
+          await handlePollingFailure();
+          return;
+        }
+        scheduleNext(() => {
+          void poll();
+        }, result.rateLimited ? 5000 : 3500);
+        return;
+      }
+
+      if (result.error) {
+        terminalErrorCount += 1;
+
+        if (result.failed || terminalErrorCount >= maxTerminalErrors) {
+          await handlePollingFailure();
           return;
         }
 
-        if (result.error) {
-          if (result.status === 429) {
-            timeoutId = setTimeout(poll, 5000);
-            return;
-          }
-
-          errorCount++;
-          if (errorCount > 5) {
-            await handlePollingFailure();
-            return;
-          }
-        } else {
-          errorCount = 0;
-        }
-
-        timeoutId = setTimeout(poll, 3000);
-      } catch (err) {
-        console.error('Polling crash:', err);
-        timeoutId = setTimeout(poll, 3000);
+        scheduleNext(() => {
+          void poll();
+        }, 3000);
+        return;
       }
+
+      scheduleNext(() => {
+        void poll();
+      }, 3000);
     };
 
-    poll();
+    void poll();
 
     return () => {
-      if (timeoutId) clearTimeout(timeoutId);
+      if (myPollToken === activePollTokenRef.current) {
+        clearPollTimeout();
+        activePollTokenRef.current += 1;
+      }
     };
   }, [
-    setProgress,
+    clearPollTimeout,
+    handlePollingFailure,
     resetTurnstile,
-    previewUrl,
-    setJobId,
-    setResultUrl,
     setIsProcessing,
-    setSelectedFile,
-    setPreviewUrl,
-    setAppAlert,
+    setJobId,
+    setProgress,
+    setResultUrl,
   ]);
 
-  /**
-   * Initiates upscale process:
-   * - Ensures Turnstile token is available
-   * - Uploads file to backend
-   * - Starts polling for result
-   *
-   * @param {File | Blob | null} [overrideFile=null] - Optional file override (used when retrying after token is obtained)
-   * @returns {Promise<void>}
-   */
-  const handleUpscale = useCallback(async (overrideFile = null) => {
+  const handleUpscale = useCallback(async (scale = 2, overrideFile = null) => {
     const fileToUse = overrideFile instanceof Blob ? overrideFile : selectedFile;
-    if (!fileToUse) return;
+    if (!fileToUse) {
+      resetPendingTokenWait();
+      return;
+    }
+
+    const safeScale = sanitizeScale(scale);
 
     setIsProcessing(true);
     localStorage.setItem(STORAGE_KEYS.IS_PROCESSING, 'true');
@@ -186,59 +223,88 @@ export function useUpscaleActions({
     let currentToken = turnstileToken;
 
     if (!currentToken && turnstileRef.current) {
-      currentToken = turnstileRef.current.getResponse();
+      try {
+        currentToken = turnstileRef.current.getResponse();
+      } catch (err) {
+        console.error('Turnstile getResponse failed:', err);
+        currentToken = null;
+      }
       if (currentToken) setTurnstileToken(currentToken);
     }
 
     if (!currentToken) {
       pendingFileRef.current = fileToUse;
+      pendingScaleRef.current = safeScale;
       setIsWaitingForToken(true);
       return;
     }
 
-    setIsWaitingForToken(false);
-    pendingFileRef.current = null;
+    resetPendingTokenWait();
 
     try {
-      const data = await apiService.uploadImage(fileToUse, currentToken);
-      recordUsage();
+      const data = await apiService.uploadImage(fileToUse, currentToken, safeScale);
       localStorage.setItem(STORAGE_KEYS.JOB_ID, data.job_id);
+      localStorage.setItem(STORAGE_KEYS.IS_PROCESSING, 'true');
+
+      if (!localStorage.getItem(JOB_STARTED_AT_KEY)) {
+        localStorage.setItem(JOB_STARTED_AT_KEY, String(Date.now()));
+      }
+
       pollForResult(data.job_id);
     } catch (error) {
-      if (error.message === 'LIMIT_REACHED') {
+      const message = error?.message || 'Upload failed';
+
+      clearPollTimeout();
+      activePollTokenRef.current += 1;
+
+      if (message === 'LIMIT_REACHED') {
         forceMaxLimit();
         localStorage.setItem(STORAGE_KEYS.ALERT, 'limit_reached');
         setAppAlert({ show: true, type: 'limit_reached' });
       } else {
-        alert(error.message);
+        alert(message);
       }
 
       setIsProcessing(false);
-      await clearAppSession(previewUrl);
+      clearProcessingStorage();
+      resetPendingTokenWait();
+
+      try {
+        await clearAppSession(previewUrl);
+      } catch (err) {
+        console.error('Session clear after upload error failed:', err);
+      }
+
       resetTurnstile();
     }
   }, [
-    selectedFile,
-    turnstileToken,
+    clearPollTimeout,
+    clearProcessingStorage,
+    forceMaxLimit,
     pollForResult,
     previewUrl,
+    resetPendingTokenWait,
     resetTurnstile,
-    setIsProcessing,
-    turnstileRef,
-    setTurnstileToken,
-    recordUsage,
-    forceMaxLimit,
+    selectedFile,
     setAppAlert,
+    setIsProcessing,
+    setTurnstileToken,
+    turnstileRef,
+    turnstileToken,
   ]);
 
-  /**
-   * Retries upload automatically once Turnstile token becomes available
-   */
   useEffect(() => {
     if (isWaitingForToken && turnstileToken && pendingFileRef.current) {
-      handleUpscale(pendingFileRef.current);
+      void handleUpscale(pendingScaleRef.current, pendingFileRef.current);
     }
-  }, [isWaitingForToken, turnstileToken, handleUpscale]);
+  }, [handleUpscale, isWaitingForToken, turnstileToken]);
+
+  useEffect(() => {
+    return () => {
+      clearPollTimeout();
+      activePollTokenRef.current += 1;
+    };
+  }, [clearPollTimeout]);
 
   return { pollForResult, handleUpscale };
 }

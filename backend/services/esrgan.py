@@ -15,58 +15,107 @@ logger = logging.getLogger(__name__)
 
 class AIUpscaler:
     """
-    Purpose: Handles full AI image upscaling pipeline using Replicate
-    Why: Orchestrates download, optimization, AI processing, compression, and storage
+    Purpose: Handles full AI image upscaling pipeline
+    Why: Orchestrates optimization → AI processing → download → encoding → storage
     """
 
     def __init__(self, max_concurrent_jobs: int = 5):
+        """
+        Purpose: Initialize concurrency control and limits
+        Why: Prevents system overload with too many parallel AI jobs
+        """
         self._semaphore = asyncio.Semaphore(max_concurrent_jobs)
         self.MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_BYTES
 
-    async def run_upscale(self, safe_filename: str, job_id: str, model_type: str) -> bool:
+    @staticmethod
+    def _sanitize_scale(scale) -> int:
         """
-        Purpose: Executes full upscaling workflow for a single job
-        Input:
-            safe_filename (str): source file identifier
-            job_id (str): unique job identifier
-            model_type (str): selected AI model type
-        Output:
-            bool: success status
+        Purpose: Validate and normalize scale value
+        Why: Ensures scale stays within safe bounds (1–4)
         """
         try:
+            n = int(scale)
+        except (TypeError, ValueError):
+            return 2
+        if n < 1:
+            return 1
+        if n > 4:
+            return 4
+        return n
+
+    async def run_upscale(
+        self,
+        safe_filename: str,
+        job_id: str,
+        model_type: str,
+        scale: int = 2
+    ) -> tuple[bool, str | None, str | None]:
+        """
+        Purpose: Execute full upscale workflow
+        Flow:
+            1. Load image
+            2. Optimize input
+            3. Send to AI model
+            4. Download result
+            5. Encode output
+            6. Save result
+        Output:
+            (success, result_filename, error_message)
+        """
+        try:
+            safe_scale = self._sanitize_scale(scale)
+
             async with self._semaphore:
                 raw_bytes = await StorageService.get_upload_bytes(safe_filename)
 
                 if len(raw_bytes) > self.MAX_FILE_SIZE_BYTES:
-                    raise ValueError("Payload exceeds maximum allowed size.")
+                    return False, None, "Payload exceeds maximum allowed size."
 
-                optimized_stream = await asyncio.to_thread(self._optimize_image_sync, raw_bytes, job_id)
-                output_url = await self._process_with_ai(optimized_stream, job_id, model_type)
+                optimized_stream = await asyncio.to_thread(
+                    self._optimize_image_sync,
+                    raw_bytes,
+                    job_id
+                )
 
-                raw_result_bytes = await self._download_ai_result(output_url, job_id)
-                compressed_bytes = await asyncio.to_thread(self._compress_output_sync, raw_result_bytes)
+                output_url = await self._process_with_ai(
+                    optimized_stream,
+                    job_id,
+                    model_type
+                )
 
-                if len(compressed_bytes) > self.MAX_FILE_SIZE_BYTES:
-                    raise ValueError("Compressed output still exceeds maximum allowed size.")
+                raw_result_bytes = await self._download_ai_result(
+                    output_url,
+                    job_id
+                )
+
+                final_bytes, ext = await asyncio.to_thread(
+                    self._encode_output_sync,
+                    raw_result_bytes,
+                    safe_scale
+                )
+
+                if len(final_bytes) > self.MAX_FILE_SIZE_BYTES:
+                    return False, None, "Final output exceeds maximum allowed size."
 
                 result_filename = get_result_filename(job_id)
-                await StorageService.save_result(compressed_bytes, result_filename)
 
-                return True
+                if "." in result_filename:
+                    result_filename = result_filename.rsplit(".", 1)[0] + f".{ext}"
+                else:
+                    result_filename = f"{result_filename}.{ext}"
+
+                await StorageService.save_result(final_bytes, result_filename)
+
+                return True, result_filename, None
 
         except Exception as e:
-            logger.error(f"❌ AI Engine Error (Job #{job_id}): {e}")
-            return False
+            logger.error("AI Engine error (Job #%s): %s", job_id, e)
+            return False, None, "AI pipeline error."
 
     def _optimize_image_sync(self, raw_bytes: bytes, job_id: str) -> io.BytesIO:
         """
-        Purpose: Validates and prepares image for AI processing
-        Why: Ensures safe format, resolution limits, and compatibility
-        Input:
-            raw_bytes (bytes): original image data
-            job_id (str): job identifier for logging
-        Output:
-            io.BytesIO: optimized image stream
+        Purpose: Reduce image size and validate integrity
+        Why: Prevents excessive memory usage and improves AI processing efficiency
         """
         with io.BytesIO(raw_bytes) as img_stream:
             with Image.open(img_stream) as img:
@@ -84,64 +133,61 @@ class AIUpscaler:
                     ratio = (OPTIMIZATION_TARGET_PIXELS / total_pixels) ** 0.5
                     new_width = max(1, int(width * ratio))
                     new_height = max(1, int(height * ratio))
-
                     img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
                 if img.mode in ("RGBA", "P") and save_format != "PNG":
                     img = img.convert("RGB")
 
                 save_kwargs = {"format": save_format}
+
                 if save_format.upper() in ("JPEG", "JPG"):
-                    save_kwargs.update({"quality": 95, "optimize": True})
+                    save_kwargs.update({
+                        "quality": 95,
+                        "optimize": True
+                    })
 
                 img.save(output_stream, **save_kwargs)
                 output_stream.seek(0)
+
                 return output_stream
 
-    def _compress_output_sync(self, raw_bytes: bytes) -> bytes:
+    def _encode_output_sync(self, raw_bytes: bytes, scale: int = 2) -> tuple[bytes, str]:
         """
-        Purpose: Compresses AI output into storage-efficient JPEG
-        Why: Reduces file size and ensures compatibility
-        Input:
-            raw_bytes (bytes): raw AI output image
-        Output:
-            bytes: compressed image data
+        Purpose: Resize and encode final AI output
+        Why: Controls final resolution and ensures consistent format
         """
-        MAX_DIMENSION = 4096
+        safe_scale = self._sanitize_scale(scale)
+        max_dimension = 4096
 
-        with io.BytesIO(raw_bytes) as input_stream:
-            with Image.open(input_stream) as img:
+        with io.BytesIO(raw_bytes) as stream:
+            with Image.open(stream) as img:
                 img.load()
 
-                if max(img.size) > MAX_DIMENSION:
-                    img.thumbnail((MAX_DIMENSION, MAX_DIMENSION), Image.Resampling.LANCZOS)
+                if max(img.size) > max_dimension:
+                    img.thumbnail((max_dimension, max_dimension), Image.Resampling.LANCZOS)
 
-                if img.mode != "RGB":
-                    rgba = img.convert("RGBA")
-                    background = Image.new("RGB", rgba.size, (255, 255, 255))
-                    background.paste(rgba, mask=rgba.getchannel("A"))
-                    img = background
+                if safe_scale < 4:
+                    target_w = max(1, int(img.width * (safe_scale / 4.0)))
+                    target_h = max(1, int(img.height * (safe_scale / 4.0)))
+                    img = img.resize((target_w, target_h), Image.Resampling.LANCZOS)
 
-                output_stream = io.BytesIO()
-                img.save(
-                    output_stream,
-                    format="JPEG",
-                    quality=85,
-                    optimize=True,
-                    progressive=True,
-                )
-                return output_stream.getvalue()
+                if img.mode not in ("RGB", "RGBA"):
+                    img = img.convert("RGBA" if "A" in img.getbands() else "RGB")
 
-    async def _process_with_ai(self, image_stream: io.BytesIO, job_id: str, model_type: str) -> str:
+                out = io.BytesIO()
+                img.save(out, format="PNG", optimize=True, compress_level=6)
+
+                return out.getvalue(), "png"
+
+    async def _process_with_ai(
+        self,
+        image_stream: io.BytesIO,
+        job_id: str,
+        model_type: str
+    ) -> str:
         """
-        Purpose: Runs AI upscaling via Replicate API
-        Why: Applies selected model to enhance image quality
-        Input:
-            image_stream (BytesIO): prepared image
-            job_id (str): job identifier
-            model_type (str): selected model type
-        Output:
-            str: URL of processed image
+        Purpose: Send image to AI model (Replicate)
+        Why: Performs actual upscaling using selected model
         """
         try:
             model_str = ModelRegistry.get_replicate_id(model_type)
@@ -158,32 +204,35 @@ class AIUpscaler:
             finally:
                 image_stream.close()
 
-        output = await asyncio.wait_for(asyncio.to_thread(call_replicate), timeout=300)
+        output = await asyncio.wait_for(
+            asyncio.to_thread(call_replicate),
+            timeout=300
+        )
+
         return str(output[0]) if isinstance(output, list) else str(output)
 
     async def _download_ai_result(self, url: str, job_id: str) -> bytes:
         """
-        Purpose: Downloads AI-processed image from external source
-        Why: Retrieves result securely for further processing
-        Input:
-            url (str): result URL
-            job_id (str): job identifier
-        Output:
-            bytes: downloaded image data
+        Purpose: Download AI output securely
+        Why: Validates source and prevents unsafe external requests
         """
         parsed_url = urllib.parse.urlparse(url)
 
         if parsed_url.scheme != "https":
-            raise ValueError("Insecure protocol")
+            raise ValueError("Insecure protocol.")
 
-        if parsed_url.netloc not in ("replicate.delivery", "pbxt.replicate.delivery"):
-            raise ValueError("Untrusted domain")
+        if parsed_url.netloc not in (
+            "replicate.delivery",
+            "pbxt.replicate.delivery"
+        ):
+            raise ValueError("Untrusted output URL domain.")
 
         timeout = aiohttp.ClientTimeout(total=60)
+
         async with aiohttp.ClientSession(timeout=timeout) as session:
             async with session.get(url) as resp:
                 if resp.status != 200:
-                    raise ValueError(f"Download failed: {resp.status}")
+                    raise ValueError(f"Failed to download result: {resp.status}")
                 return await resp.read()
 
 

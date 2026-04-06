@@ -17,10 +17,10 @@ import CountdownTimer from '../../components/CountdownTimer';
  *
  * @returns {JSX.Element}
  */
-
 export default function UpscaleWorkspace() {
   const [isResultLoaded, setIsResultLoaded] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [scale, setScale] = useState(2); // default 2x
 
   const {
     selectedFile,
@@ -96,10 +96,11 @@ export default function UpscaleWorkspace() {
               ) : (
                 <div className="rounded-xl overflow-hidden border border-white/60 shadow-sm">
                   <ResultViewer 
-                  originalImage={previewUrl} 
-                  upscaledImage={resultUrl} 
-                  onImageLoad={() => setIsResultLoaded(true)} 
-                />
+                    key={resultUrl}
+                    originalImage={previewUrl} 
+                    upscaledImage={resultUrl} 
+                    onImageLoad={() => setIsResultLoaded(true)} 
+                  />
                 </div>
               )}
 
@@ -118,6 +119,8 @@ export default function UpscaleWorkspace() {
                     handleUpscale={handleUpscale}
                     turnstileRef={turnstileRef}
                     setTurnstileToken={setTurnstileToken}
+                    scale={scale}
+                    setScale={setScale}
                   />
                 </div>
               )}
@@ -130,25 +133,25 @@ export default function UpscaleWorkspace() {
                   >
                     Upload Another Image
                   </button>
-                 <a
-                  href={resultUrl}
-                  download={`4K-${selectedFile.name}`}
-                  onClick={(e) => {
-                    if (!isResultLoaded) {
-                      e.preventDefault();
-                      return;
-                    }
-                    clearAppSession(previewUrl);
-                    handleCancel();
-                  }}
-                  className={`px-6 py-2.5 text-sm font-bold text-white rounded-lg transition-all shadow-md ${
-                    !isResultLoaded 
-                      ? 'bg-slate-400 pointer-events-none cursor-not-allowed opacity-70' 
-                      : 'bg-slate-900 hover:bg-slate-800'
-                  }`}
-                >
-                  {isResultLoaded ? 'Download Result' : 'Loading Image...'}
-                </a>
+                  <a
+                    href={resultUrl}
+                    download={`${scale}x-${selectedFile.name}`}
+                    onClick={(e) => {
+                      if (!isResultLoaded) {
+                        e.preventDefault();
+                        return;
+                      }
+                      clearAppSession(previewUrl);
+                      handleCancel();
+                    }}
+                    className={`px-6 py-2.5 text-sm font-bold text-white rounded-lg transition-all shadow-md ${
+                      !isResultLoaded 
+                        ? 'bg-slate-400 pointer-events-none cursor-not-allowed opacity-70' 
+                        : 'bg-slate-900 hover:bg-slate-800'
+                    }`}
+                  >
+                    {isResultLoaded ? 'Download Result' : 'Loading Image...'}
+                  </a>
                 </div>
               )}
             </div>
@@ -217,7 +220,7 @@ export default function UpscaleWorkspace() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
             { step: '01', title: 'Upload', desc: 'Drag & drop or click to upload any PNG, JPG, or WEBP image.' },
-            { step: '02', title: 'Enhance', desc: 'Our Real-ESRGAN model upscales your image to 4x resolution with AI.' },
+            { step: '02', title: 'Enhance', desc: 'Our Real-ESRGAN model upscales your image with AI.' },
             { step: '03', title: 'Download', desc: 'Compare the before & after, then download your enhanced image instantly.' },
           ].map((item) => (
             <div key={item.step} className="text-center">

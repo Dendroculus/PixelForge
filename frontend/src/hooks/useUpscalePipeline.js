@@ -6,34 +6,6 @@ import { useSessionPersistence } from './useSessionPersistence';
 import { useUsageLimit } from './useUsageLimit';
 import { STORAGE_KEYS } from '../config';
 
-/**
- * Orchestrates the full client-side upscale pipeline state:
- * - selected file and preview
- * - processing state/result state
- * - turnstile token and reset behavior
- * - session persistence integration
- * - usage-limit integration
- *
- * @param {(value: number | ((prev: number) => number)) => void} setProgress - Setter for global progress percentage.
- * @returns {{
- *   selectedFile: File|null,
- *   previewUrl: string|null,
- *   isProcessing: boolean,
- *   resultUrl: string|null,
- *   jobId: string|null,
- *   turnstileToken: string|null,
- *   setTurnstileToken: (token: string|null) => void,
- *   turnstileRef: import('react').MutableRefObject<any>,
- *   handleFileSelect: (file: File) => Promise<void>,
- *   handleCancel: () => Promise<void>,
- *   handleUpscale: (...args: any[]) => Promise<void>
- *   appAlert: {show: boolean, type: string|null},
- *   setAppAlert: (value: {show: boolean, type: string|null}) => void,
- *   usesRemaining: number,
- *   resetTimestamp: number|null,
- *   isLoading: boolean
- * }}
- */
 export function useUpscalePipeline(setProgress) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -49,17 +21,12 @@ export function useUpscalePipeline(setProgress) {
 
   const turnstileRef = useRef(null);
 
-  /**
-   * Resets Cloudflare Turnstile widget and clears cached token.
-   *
-   * @returns {void}
-   */
   const resetTurnstile = useCallback(() => {
     if (turnstileRef.current) turnstileRef.current.reset();
     setTurnstileToken(null);
   }, []);
 
-  const { usesRemaining, resetTimestamp, recordUsage, forceMaxLimit, isLoading } = useUsageLimit();
+  const { usesRemaining, resetTimestamp, forceMaxLimit, isLoading } = useUsageLimit();
 
   const { pollForResult, handleUpscale } = useUpscaleActions({
     setJobId,
@@ -75,7 +42,6 @@ export function useUpscalePipeline(setProgress) {
     turnstileRef,
     setTurnstileToken,
     selectedFile,
-    recordUsage,
     forceMaxLimit,
   });
 
@@ -97,16 +63,6 @@ export function useUpscalePipeline(setProgress) {
     previewUrl,
   });
 
-  /**
-   * Handles file selection:
-   * - clears transient prior processing state
-   * - saves file to IndexedDB for reload persistence
-   * - stores upload timestamp for 10-minute "draft upload" expiration
-   * - prepares preview URL
-   *
-   * @param {File} file - The selected image file.
-   * @returns {Promise<void>}
-   */
   const handleFileSelect = async (file) => {
     localStorage.removeItem(STORAGE_KEYS.RESULT_URL);
     localStorage.removeItem(STORAGE_KEYS.JOB_ID);
@@ -116,7 +72,7 @@ export function useUpscalePipeline(setProgress) {
     localStorage.removeItem(STORAGE_KEYS.RESULT_TIMESTAMP);
 
     await saveFileToIDB(file);
-    localStorage.setItem(STORAGE_KEYS.UPLOAD_TIMESTAMP, Date.now().toString()); // NEW
+    localStorage.setItem(STORAGE_KEYS.UPLOAD_TIMESTAMP, Date.now().toString());
 
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
@@ -124,11 +80,6 @@ export function useUpscalePipeline(setProgress) {
     setJobId(null);
   };
 
-  /**
-   * Cancels current workflow and clears all persisted state.
-   *
-   * @returns {Promise<void>}
-   */
   const handleCancel = async () => {
     await clearAppSession(previewUrl);
     setSelectedFile(null);
@@ -158,4 +109,4 @@ export function useUpscalePipeline(setProgress) {
     resetTimestamp,
     isLoading,
   };
-}
+} 

@@ -6,7 +6,7 @@ function getStatusLabel(progress) {
   if (progress < 50) return "Analyzing pixel structures...";
   if (progress < 70) return "Running Real-ESRGAN model...";
   if (progress < 90) return "Reconstructing fine details...";
-  if (progress < 99) return "Polishing final 4K output...";
+  if (progress < 99) return "Polishing final upscaled output...";
   return "Finalizing download...";
 }
 export default function ProgressBar({ progress }) {
