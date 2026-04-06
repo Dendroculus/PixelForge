@@ -4,15 +4,41 @@ import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { NAV_LINKS } from '../../data/navConfig';
 
+/**
+ * Animated background using lightweight gradients.
+ * Falls back to static layout on mobile or reduced motion.
+ */
 const AmbientBackground = () => {
   const shouldReduceMotion = useReducedMotion();
-  const isMobile = typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches;
+  
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 768px)').matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const handleChange = (e) => setIsMobile(e.matches);
+    
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  const indigoGradient = 'radial-gradient(circle, rgba(129,140,248,0.25) 0%, rgba(129,140,248,0) 65%)';
+  const pinkGradient = 'radial-gradient(circle, rgba(238,174,202,0.25) 0%, rgba(238,174,202,0) 65%)';
 
   if (shouldReduceMotion || isMobile) {
     return (
       <div className="absolute inset-0 overflow-hidden -z-10 pointer-events-none">
-        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[460px] h-[460px] bg-indigo-400/20 rounded-full blur-[90px]" />
-        <div className="absolute bottom-10 left-1/2 -translate-x-1/2 w-[420px] h-[420px] bg-[#EEAECA]/20 rounded-full blur-[90px]" />
+        <div 
+          className="absolute top-10 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full" 
+          style={{ background: indigoGradient }}
+        />
+        <div 
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full" 
+          style={{ background: pinkGradient }}
+        />
       </div>
     );
   }
@@ -22,20 +48,22 @@ const AmbientBackground = () => {
       <motion.div
         animate={{ x: [0, 40, -40, 0], y: [0, -40, 40, 0], scale: [1, 1.06, 0.96, 1] }}
         transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
-        style={{ willChange: 'transform' }}
-        className="absolute top-0 left-1/4 w-[560px] h-[560px] bg-indigo-400/20 rounded-full blur-[110px]"
+        style={{ background: indigoGradient, willChange: 'transform' }}
+        className="absolute -top-20 left-1/4 w-[700px] h-[700px] rounded-full"
       />
       <motion.div
         animate={{ x: [0, -45, 45, 0], y: [0, 45, -45, 0], scale: [1, 0.96, 1.06, 1] }}
         transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
-        style={{ willChange: 'transform' }}
-        className="absolute bottom-0 right-1/4 w-[560px] h-[560px] bg-[#EEAECA]/20 rounded-full blur-[110px]"
+        style={{ background: pinkGradient, willChange: 'transform' }}
+        className="absolute -bottom-20 right-1/4 w-[700px] h-[700px] rounded-full"
       />
     </div>
   );
 };
 
-/** Rotating hero word with no clipping/layout shift. */
+/**
+ * Rotating animated text used in the hero title.
+ */
 const RotatingText = React.memo(() => {
   const words = useMemo(() => ['create.', 'enhance.', 'transform.', 'optimize.'], []);
   const [index, setIndex] = useState(0);
@@ -66,14 +94,18 @@ const RotatingText = React.memo(() => {
   );
 });
 
+/**
+ * Interactive card with tilt effect (disabled on mobile/reduced motion).
+ */
 const TiltCard = ({ children, to, itemVariants }) => {
   const ref = useRef(null);
   const rectRef = useRef(null);
   const shouldReduceMotion = useReducedMotion();
 
-  const isTouchDevice =
-    typeof window !== 'undefined' &&
-    (window.matchMedia('(pointer: coarse)').matches || window.matchMedia('(max-width: 768px)').matches);
+  const [isTouchDevice] = useState(() => {
+      if (typeof window === 'undefined') return false;
+      return window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 768;
+    });
 
   const disableTilt = shouldReduceMotion || isTouchDevice;
 
@@ -121,7 +153,7 @@ const TiltCard = ({ children, to, itemVariants }) => {
     >
       <Link
         to={to}
-        className="group block relative p-5 sm:p-6 bg-white/50 backdrop-blur-xl border border-white/60 rounded-3xl transition-all duration-300 hover:bg-white/80 hover:border-white shadow-sm hover:shadow-xl hover:shadow-indigo-500/5"
+        className="group block relative p-5 sm:p-6 bg-white/80 md:bg-white/50 backdrop-blur-md md:backdrop-blur-xl border border-white/60 rounded-3xl transition-all duration-300 hover:bg-white/90 md:hover:bg-white/80 hover:border-white shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 transform-gpu"
         style={{ transform: disableTilt ? 'none' : 'translateZ(16px)' }}
       >
         {children}
@@ -130,6 +162,9 @@ const TiltCard = ({ children, to, itemVariants }) => {
   );
 };
 
+/**
+ * Icon component for each card.
+ */
 const CardIcon = ({ d, isAi }) => {
   const bgClass = isAi
     ? 'bg-gradient-to-br from-indigo-500 to-purple-500 shadow-md shadow-indigo-500/20'
@@ -147,6 +182,9 @@ const CardIcon = ({ d, isAi }) => {
   );
 };
 
+/**
+ * Main homepage hub showing categorized tools.
+ */
 export default function HomeHub() {
   const categoryKeys = useMemo(() => Object.keys(NAV_LINKS), []);
   const [activeTab, setActiveTab] = useState(categoryKeys[0]);
@@ -194,7 +232,8 @@ export default function HomeHub() {
         </div>
 
         <div className="flex justify-center mb-8 sm:mb-10 relative z-10">
-        <div className="flex items-center p-1.5 bg-white/70 md:bg-white/40 md:backdrop-blur-xl border border-white/60 rounded-full shadow-sm overflow-x-auto max-w-full hide-scrollbar [scrollbar-width:none] [-ms-overflow-style:none]">            {categoryKeys.map((key) => {
+          <div className="flex items-center p-1.5 bg-white/70 md:bg-white/40 md:backdrop-blur-xl border border-white/60 rounded-full shadow-sm overflow-x-auto max-w-full hide-scrollbar [scrollbar-width:none] [-ms-overflow-style:none]">
+            {categoryKeys.map((key) => {
               const isActive = activeTab === key;
               return (
                 <button
@@ -254,10 +293,9 @@ export default function HomeHub() {
                           </div>
                         )}
                       </div>
-
-                      <p className="text-sm text-slate-500 font-medium leading-relaxed max-w-md hidden sm:block">
-                        {item.desc}
-                      </p>
+                    <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed max-w-md mt-0.5 sm:mt-0">
+                      {item.desc}
+                    </p>
                     </div>
                   </div>
 
