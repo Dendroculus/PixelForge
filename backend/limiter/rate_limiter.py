@@ -50,32 +50,44 @@ def _load_cloudflare_subnets():
     return parsed
 
 
+def _env_truthy(name: str, default: str = "false") -> bool:
+    return os.getenv(name, default).strip().lower() in {"1", "true", "yes", "on"}
+
+
 CLOUDFLARE_SUBNETS = _load_cloudflare_subnets()
+TRUST_PROXY_HEADERS = _env_truthy("TRUST_PROXY_HEADERS", "true")
+REQUIRE_CLOUDFLARE_PROXY = _env_truthy("REQUIRE_CLOUDFLARE_PROXY", "true")
 
 
 def get_real_client_ip(request: Request) -> str:
     """
-    Resolves the client IP address securely, protecting against header spoofing.
+    Resolves client IP safely.
+    - Trust CF-Connecting-IP only when immediate peer is Cloudflare.
+    - If Cloudflare proxy is required but missing, fail to a stable fallback key.
     """
     client_host = request.client.host if request.client else "127.0.0.1"
 
     try:
         client_ip_obj = ipaddress.ip_address(client_host)
-        is_cloudflare = any(client_ip_obj in subnet for subnet in CLOUDFLARE_SUBNETS)
     except ValueError:
-        is_cloudflare = False
+        return "127.0.0.1"
 
-    if is_cloudflare:
+    is_cloudflare = any(client_ip_obj in subnet for subnet in CLOUDFLARE_SUBNETS)
+
+    if REQUIRE_CLOUDFLARE_PROXY and not is_cloudflare:
+        return "proxy-missing"
+
+    if TRUST_PROXY_HEADERS and is_cloudflare:
         cf_ip = request.headers.get("CF-Connecting-IP")
         if cf_ip:
             candidate = cf_ip.strip()
             try:
-                ipaddress.ip_address(candidate)
-                return candidate
+                parsed_candidate = ipaddress.ip_address(candidate)
+                return str(parsed_candidate)
             except ValueError:
                 pass
 
-    return client_host
+    return str(client_ip_obj)
 
 
 limiter = Limiter(key_func=get_real_client_ip)

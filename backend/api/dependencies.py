@@ -9,6 +9,13 @@ async def verify_turnstile(cf_turnstile_response: str = Form(...)) -> str:
     """
     Verifies Cloudflare Turnstile token and blocks invalid or failed checks.
     """
+    if not CLOUDFLARE_TURNSTILE_SECRET_KEY:
+        logger.error("Turnstile secret key is not configured.")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Bot protection is not configured."
+        )
+
     if not cf_turnstile_response:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -20,8 +27,6 @@ async def verify_turnstile(cf_turnstile_response: str = Form(...)) -> str:
         "secret": CLOUDFLARE_TURNSTILE_SECRET_KEY,
         "response": cf_turnstile_response
     }
-    
-    logger.warning("Turnstile token length: %s", len(cf_turnstile_response or ""))
 
     try:
         timeout = aiohttp.ClientTimeout(total=5.0)

@@ -26,7 +26,7 @@ import { STORAGE_KEYS } from '../config';
  *   turnstileRef: import('react').MutableRefObject<any>,
  *   handleFileSelect: (file: File) => Promise<void>,
  *   handleCancel: () => Promise<void>,
- *   handleUpscale: (overrideFile?: File|Blob|null) => Promise<void>,
+ *   handleUpscale: (...args: any[]) => Promise<void>
  *   appAlert: {show: boolean, type: string|null},
  *   setAppAlert: (value: {show: boolean, type: string|null}) => void,
  *   usesRemaining: number,
@@ -88,7 +88,11 @@ export function useUpscalePipeline(setProgress) {
     setAppAlert,
     appAlert,
     pollForResult,
-    handleUpscale: (...args) => handleUpscale(...args).catch((err) => console.error(`Upscale error : ${err}`)),
+    handleUpscale: (...args) => {
+      void handleUpscale(...args).catch((err) => {
+        console.error(`Upscale error : ${err}`);
+      });
+    },
     resultUrl,
     previewUrl,
   });

@@ -48,15 +48,19 @@ async def database_janitor_loop():
     loop_ratio = max(1, DC.DB_SWEEP_INTERVAL_SECONDS // DC.AZURE_SWEEP_INTERVAL_SECONDS)
 
     while True:
-        logger.info("💓 Janitor Heartbeat: Checking Azure for expired files...")
-        await StorageService.cleanup_expired_results(
-            expiration_minutes=LC.SAS_EXPIRATION_MINUTES
-        )
+        try:
+            logger.info("💓 Janitor Heartbeat: Checking Azure for expired files...")
+            await StorageService.cleanup_expired_results(
+                expiration_minutes=LC.SAS_EXPIRATION_MINUTES
+            )
 
-        if db_cleanup_counter % loop_ratio == 0:
-            await run_database_cleanup()
+            if db_cleanup_counter % loop_ratio == 0:
+                await run_database_cleanup()
 
-        db_cleanup_counter += 1
+            db_cleanup_counter += 1
+        except Exception as e:
+            logger.exception("Janitor loop iteration failed: %s", e)
+
         await asyncio.sleep(DC.AZURE_SWEEP_INTERVAL_SECONDS)
 
 @asynccontextmanager
