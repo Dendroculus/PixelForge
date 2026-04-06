@@ -44,6 +44,8 @@ ALLOWED_MIME_TYPES: FrozenSet[str] = frozenset([
     for ext in FORMAT_MAP.values()
 ])
 
+DEFAULT_SCALE = 4
+
 class ContainerNames:
     UPLOAD_CONTAINER: str = "uploads"
     RESULT_CONTAINER: str = "results"

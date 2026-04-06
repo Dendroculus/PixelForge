@@ -39,6 +39,8 @@ export default function UpscaleWorkspace() {
     usesRemaining,
     resetTimestamp,
     isLoading,
+    scale,
+    setScale,
   } = useUpscalePipeline(setProgress);
 
   useSimulatedProgress(isProcessing, setProgress, turnstileToken);
@@ -118,6 +120,8 @@ export default function UpscaleWorkspace() {
                     handleUpscale={handleUpscale}
                     turnstileRef={turnstileRef}
                     setTurnstileToken={setTurnstileToken}
+                    scale={scale}
+                    setScale={setScale}
                   />
                 </div>
               )}
@@ -256,8 +260,8 @@ export default function UpscaleWorkspace() {
       >
         <div className="space-y-1.5 text-left">
           <p className="font-semibold text-rose-600 text-base mb-2">Image failed to process.</p>
-          <p>Since you kept refreshing and impatiently waiting, the image failed to be processed.</p>
-          <p>Please try again and be patient next time!</p>
+          <p>Sorry our servers are currently busy and cannot process your request at the moment.</p>
+          <p>Please try again, we're really trying our best! 🥲</p>
         </div>
       </LegalModal>
 

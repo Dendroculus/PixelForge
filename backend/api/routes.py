@@ -24,26 +24,40 @@ _pending_jobs_lock = asyncio.Lock()
 
 
 def _is_manual_bypass_allowed() -> bool:
+    """
+    Allows bypassing Turnstile verification in local/dev environments
+    when explicitly enabled via environment variables.
+    """
     env = os.getenv("ENVIRONMENT", "").lower()
     allow_bypass = os.getenv("ALLOW_TURNSTILE_TEST_BYPASS", "false").lower() in {"1", "true", "yes", "on"}
     return env in {"local", "dev", "development"} and allow_bypass
 
 
-async def process_image_task(job_id: str, safe_filename: str, model_type: str) -> None:
+async def process_image_task(job_id: str, safe_filename: str, model_type: str, scale: int) -> None:
+    """
+    Background task that performs image upscaling and handles storage cleanup.
+
+    Steps:
+    - Run AI upscaling
+    - Delete uploaded original file
+    - Mark job as failed if processing fails
+    - Decrement pending job counter
+    """
     global _pending_jobs
-    logger.info("Background task started for job=%s model=%s", job_id, model_type)
+    logger.info("Background task started for job=%s model=%s scale=%s", job_id, model_type, scale)
 
     try:
         success = await ai_upscaler.run_upscale(
             safe_filename=safe_filename,
             job_id=job_id,
             model_type=model_type,
+            scale=scale
         )
 
         await StorageService.delete_azure_blob(StorageService.UPLOAD_CONTAINER, safe_filename)
 
         if success:
-            logger.info("Upscale successful for job=%s. Result saved to cloud.", job_id)
+            logger.info("Upscale successful for job=%s", job_id)
         else:
             await StorageService.mark_job_failed(job_id)
 
@@ -59,16 +73,30 @@ async def process_image_task(job_id: str, safe_filename: str, model_type: str) -
 @router.post(
     "/upscale",
     status_code=status.HTTP_202_ACCEPTED,
-    summary="Upload an image for upscaling",
-    response_description="Returns the job ID for tracking the upscale process",
+    summary="Upload image for upscaling",
 )
 @limiter.limit(LC.UPLOAD_RATE_LIMIT)
 async def upload_image(
     request: Request,
     background_tasks: BackgroundTasks,
     cf_turnstile_response: str = Form(...),
+    scale: int = Form(2),
     file: UploadFile = File(...),
 ):
+    """
+    Upload endpoint for image upscaling.
+
+    Flow:
+    - Verify Turnstile (or allow dev bypass)
+    - Enforce per-IP daily usage limit
+    - Apply backpressure via pending job limit
+    - Sanitize and store uploaded image
+    - Queue background processing task
+
+    Returns:
+    - job_id for polling result
+    """
+
     if not (cf_turnstile_response == "manual_test_bypass" and _is_manual_bypass_allowed()):
         await verify_turnstile(cf_turnstile_response)
 
@@ -81,7 +109,6 @@ async def upload_image(
             detail="LIMIT_REACHED",
         )
 
-    # Backpressure to prevent unbounded expensive queue growth.
     global _pending_jobs
     async with _pending_jobs_lock:
         if _pending_jobs >= MAX_PENDING_JOBS:
@@ -108,21 +135,28 @@ async def upload_image(
         )
 
     model_type = "general"
-    background_tasks.add_task(process_image_task, job_id, safe_filename, model_type)
+    background_tasks.add_task(process_image_task, job_id, safe_filename, model_type, scale)
 
     return {"message": "Upload successful, processing started", "job_id": job_id}
 
 
 @router.get(
     "/result/{job_id}",
-    summary="Check upscaling result",
-    response_description="Returns the status of the job and the URL if ready",
+    summary="Get upscale result",
 )
 @limiter.limit(LC.POLL_RATE_LIMIT)
 async def get_result(
     request: Request,
     job_id: str,
 ):
+    """
+    Polling endpoint for job result.
+
+    Returns:
+    - status: "processing" | "ready" | "failed"
+    - url: result image URL (if ready)
+    """
+
     if not job_id or not JOB_ID_RE.fullmatch(job_id):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid job ID")
 
@@ -156,5 +190,8 @@ async def get_result(
 )
 @limiter.limit(LC.POLL_RATE_LIMIT)
 async def get_usage(request: Request):
+    """
+    Returns current usage statistics for the client IP.
+    """
     client_ip = get_real_client_ip(request)
     return await get_usage_status(client_ip, limit_24h=LC.DAILY_USAGE_LIMIT)

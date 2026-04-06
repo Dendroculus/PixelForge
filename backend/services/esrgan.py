@@ -23,13 +23,14 @@ class AIUpscaler:
         self._semaphore = asyncio.Semaphore(max_concurrent_jobs)
         self.MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_BYTES
 
-    async def run_upscale(self, safe_filename: str, job_id: str, model_type: str) -> bool:
+    async def run_upscale(self, safe_filename: str, job_id: str, model_type: str, scale: int = 4) -> bool:
         """
         Purpose: Executes full upscaling workflow for a single job
         Input:
             safe_filename (str): source file identifier
             job_id (str): unique job identifier
             model_type (str): selected AI model type
+            scale (int): upscaling multiplier (e.g. 1, 2, 3, 4)
         Output:
             bool: success status
         """
@@ -41,7 +42,7 @@ class AIUpscaler:
                     raise ValueError("Payload exceeds maximum allowed size.")
 
                 optimized_stream = await asyncio.to_thread(self._optimize_image_sync, raw_bytes, job_id)
-                output_url = await self._process_with_ai(optimized_stream, job_id, model_type)
+                output_url = await self._process_with_ai(optimized_stream, job_id, model_type, scale)
 
                 raw_result_bytes = await self._download_ai_result(output_url, job_id)
                 compressed_bytes = await asyncio.to_thread(self._compress_output_sync, raw_result_bytes)
@@ -59,15 +60,6 @@ class AIUpscaler:
             return False
 
     def _optimize_image_sync(self, raw_bytes: bytes, job_id: str) -> io.BytesIO:
-        """
-        Purpose: Validates and prepares image for AI processing
-        Why: Ensures safe format, resolution limits, and compatibility
-        Input:
-            raw_bytes (bytes): original image data
-            job_id (str): job identifier for logging
-        Output:
-            io.BytesIO: optimized image stream
-        """
         with io.BytesIO(raw_bytes) as img_stream:
             with Image.open(img_stream) as img:
                 img.verify()
@@ -99,14 +91,6 @@ class AIUpscaler:
                 return output_stream
 
     def _compress_output_sync(self, raw_bytes: bytes) -> bytes:
-        """
-        Purpose: Compresses AI output into storage-efficient JPEG
-        Why: Reduces file size and ensures compatibility
-        Input:
-            raw_bytes (bytes): raw AI output image
-        Output:
-            bytes: compressed image data
-        """
         MAX_DIMENSION = 4096
 
         with io.BytesIO(raw_bytes) as input_stream:
@@ -132,23 +116,13 @@ class AIUpscaler:
                 )
                 return output_stream.getvalue()
 
-    async def _process_with_ai(self, image_stream: io.BytesIO, job_id: str, model_type: str) -> str:
-        """
-        Purpose: Runs AI upscaling via Replicate API
-        Why: Applies selected model to enhance image quality
-        Input:
-            image_stream (BytesIO): prepared image
-            job_id (str): job identifier
-            model_type (str): selected model type
-        Output:
-            str: URL of processed image
-        """
+    async def _process_with_ai(self, image_stream: io.BytesIO, job_id: str, model_type: str, scale: int) -> str:
         try:
             model_str = ModelRegistry.get_replicate_id(model_type)
-            params = ModelRegistry.get_params(model_type)
+            params = ModelRegistry.get_params(model_type, scale=scale)
         except ValueError:
             model_str = ModelRegistry.get_replicate_id("general")
-            params = ModelRegistry.get_params("general")
+            params = ModelRegistry.get_params("general", scale=4)
 
         params["image"] = image_stream
 
@@ -162,15 +136,6 @@ class AIUpscaler:
         return str(output[0]) if isinstance(output, list) else str(output)
 
     async def _download_ai_result(self, url: str, job_id: str) -> bytes:
-        """
-        Purpose: Downloads AI-processed image from external source
-        Why: Retrieves result securely for further processing
-        Input:
-            url (str): result URL
-            job_id (str): job identifier
-        Output:
-            bytes: downloaded image data
-        """
         parsed_url = urllib.parse.urlparse(url)
 
         if parsed_url.scheme != "https":

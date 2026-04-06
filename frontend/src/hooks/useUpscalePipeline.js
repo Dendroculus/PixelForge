@@ -41,6 +41,7 @@ export function useUpscalePipeline(setProgress) {
   const [resultUrl, setResultUrl] = useState(null);
   const [jobId, setJobId] = useState(null);
   const [turnstileToken, setTurnstileToken] = useState(null);
+  const [scale, setScale] = useState(2);
 
   const [appAlert, setAppAlert] = useState(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.ALERT);
@@ -77,6 +78,7 @@ export function useUpscalePipeline(setProgress) {
     selectedFile,
     recordUsage,
     forceMaxLimit,
+    scale,
   });
 
   useSessionPersistence({
@@ -157,5 +159,7 @@ export function useUpscalePipeline(setProgress) {
     usesRemaining,
     resetTimestamp,
     isLoading,
+    scale,
+    setScale,
   };
 }

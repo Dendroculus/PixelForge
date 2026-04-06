@@ -1,25 +1,20 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
-export default function ResultViewer({ originalImage, upscaledImage, onImageLoad }) {
+function ResultViewerContent({ originalImage, upscaledImage, onImageLoad }) {
   const [sliderPosition, setSliderPosition] = useState(50);
   const [isLoaded, setIsLoaded] = useState(false);
   const [loadingText, setLoadingText] = useState('Downloading Results...');
 
   useEffect(() => {
-    let timeout;
-    if (!isLoaded) {
-      timeout = setTimeout(() => {
-        setLoadingText('High-resolution file detected. Almost there...');
-      }, 3000);
-    }
+    if (isLoaded) return undefined;
+
+    const timeout = setTimeout(() => {
+      setLoadingText('High-resolution file detected. Almost there...');
+    }, 3000);
+
     return () => clearTimeout(timeout);
   }, [isLoaded]);
-
-  useEffect(() => {
-    setIsLoaded(false);
-    setLoadingText('Downloading Results...');
-  }, [upscaledImage]);
 
   const handleUpscaledLoad = () => {
     setIsLoaded(true);
@@ -63,7 +58,17 @@ export default function ResultViewer({ originalImage, upscaledImage, onImageLoad
           style={{ left: `${sliderPosition}%` }}
         >
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-7 h-7 bg-white rounded-full shadow-sm flex items-center justify-center border border-slate-200">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="text-slate-400"
+            >
               <path d="M9 18l-6-6 6-6" />
               <path d="M15 6l6 6-6 6" />
             </svg>
@@ -87,6 +92,27 @@ export default function ResultViewer({ originalImage, upscaledImage, onImageLoad
         </div>
       </div>
     </div>
+  );
+}
+
+ResultViewerContent.propTypes = {
+  originalImage: PropTypes.string.isRequired,
+  upscaledImage: PropTypes.string.isRequired,
+  onImageLoad: PropTypes.func,
+};
+
+ResultViewerContent.defaultProps = {
+  onImageLoad: undefined,
+};
+
+export default function ResultViewer({ originalImage, upscaledImage, onImageLoad }) {
+  return (
+    <ResultViewerContent
+      key={upscaledImage}
+      originalImage={originalImage}
+      upscaledImage={upscaledImage}
+      onImageLoad={onImageLoad}
+    />
   );
 }
 

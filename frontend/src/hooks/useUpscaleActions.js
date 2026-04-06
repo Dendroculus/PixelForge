@@ -25,6 +25,7 @@ import { STORAGE_KEYS } from '../config';
  * @param {File | Blob | null} params.selectedFile - Currently selected file for upload
  * @param {() => void} params.recordUsage - Tracks usage for rate limiting / analytics
  * @param {() => void} params.forceMaxLimit - Forces UI state when usage limit is reached
+ * @param {number} params.scale - Current upscale scale factor (e.g., 2 for 2x)
  *
  * @returns {{
  *   pollForResult: (id: string) => (() => void) | void,
@@ -47,6 +48,7 @@ export function useUpscaleActions({
   selectedFile,
   recordUsage,
   forceMaxLimit,
+  scale,
 }) {
   const [isWaitingForToken, setIsWaitingForToken] = useState(false);
   const pendingFileRef = useRef(null);
@@ -200,7 +202,7 @@ export function useUpscaleActions({
     pendingFileRef.current = null;
 
     try {
-      const data = await apiService.uploadImage(fileToUse, currentToken);
+      const data = await apiService.uploadImage(fileToUse, currentToken, scale);
       recordUsage();
       localStorage.setItem(STORAGE_KEYS.JOB_ID, data.job_id);
       pollForResult(data.job_id);
@@ -229,6 +231,7 @@ export function useUpscaleActions({
     recordUsage,
     forceMaxLimit,
     setAppAlert,
+    scale,
   ]);
 
   /**

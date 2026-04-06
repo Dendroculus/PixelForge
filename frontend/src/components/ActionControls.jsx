@@ -8,6 +8,8 @@ export default function ActionControls({
   handleUpscale,
   turnstileRef,
   setTurnstileToken,
+  scale,      
+  setScale,   
 }) {
   const isSubmitDisabled = isProcessing || !!jobId;
 
@@ -25,6 +27,23 @@ export default function ActionControls({
           onSuccess={(token) => setTurnstileToken(token)}
           onError={() => console.error('Turnstile failed to initialize or verify.')}
         />
+      </div>
+
+      <div className="flex items-center bg-white rounded-lg p-1 shadow-sm border border-slate-200">
+        {[1, 2, 3, 4].map((mult) => (
+          <button
+            key={mult}
+            onClick={() => setScale(mult)}
+            disabled={isSubmitDisabled}
+            className={`px-3 py-1.5 text-sm font-bold rounded-md transition-colors ${
+              scale === mult
+                ? 'bg-slate-900 text-white'
+                : 'text-slate-600 hover:bg-slate-100'
+            } disabled:opacity-50`}
+          >
+            {mult}x
+          </button>
+        ))}
       </div>
 
       <button
@@ -53,4 +72,6 @@ ActionControls.propTypes = {
   handleUpscale: PropTypes.func.isRequired,
   turnstileRef: PropTypes.object.isRequired,
   setTurnstileToken: PropTypes.func.isRequired,
+  scale: PropTypes.number.isRequired,  
+  setScale: PropTypes.func.isRequired, 
 };
