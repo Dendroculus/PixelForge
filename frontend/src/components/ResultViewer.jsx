@@ -1,26 +1,35 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
-export default function ResultViewer({ originalImage, upscaledImage }) {
+export default function ResultViewer({ originalImage, upscaledImage, onImageLoad }) {
   const [sliderPosition, setSliderPosition] = useState(50);
-  const [isLoaded, setIsLoaded] = useState(false); 
-  const [loadingText, setLoadingText] = useState("Downloading Results...");
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [loadingText, setLoadingText] = useState('Downloading Results...');
 
   useEffect(() => {
     let timeout;
     if (!isLoaded) {
       timeout = setTimeout(() => {
-        setLoadingText("High-resolution file detected. Almost there...");
-      }, 3000); 
+        setLoadingText('High-resolution file detected. Almost there...');
+      }, 3000);
     }
-    
     return () => clearTimeout(timeout);
   }, [isLoaded]);
 
+  useEffect(() => {
+    setIsLoaded(false);
+    setLoadingText('Downloading Results...');
+  }, [upscaledImage]);
+
+  const handleUpscaledLoad = () => {
+    setIsLoaded(true);
+    if (typeof onImageLoad === 'function') {
+      onImageLoad();
+    }
+  };
+
   return (
     <div className="relative w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-50 aspect-video flex items-center justify-center">
-      
-      {/* Loading Screen */}
       {!isLoaded && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm z-50 px-4 text-center">
           <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin mb-4"></div>
@@ -30,20 +39,18 @@ export default function ResultViewer({ originalImage, upscaledImage }) {
         </div>
       )}
 
-      {/* Wrapper to fade in the images smoothly once loaded */}
-      <div 
+      <div
         className="absolute inset-0 w-full h-full transition-opacity duration-700"
         style={{ opacity: isLoaded ? 1 : 0 }}
       >
-        {/* Upscaled Image (Background / Right Side) */}
         <img
           src={upscaledImage}
           alt="Upscaled result"
           className="absolute top-0 left-0 w-full h-full object-contain"
-          onLoad={() => setIsLoaded(true)}
+          onLoad={handleUpscaledLoad}
+          onError={() => setIsLoaded(false)}
         />
 
-        {/* Original Image (Foreground / Left Side, Clipped by the slider) */}
         <img
           src={originalImage}
           alt="Original input"
@@ -51,7 +58,6 @@ export default function ResultViewer({ originalImage, upscaledImage }) {
           style={{ clipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)` }}
         />
 
-        {/* Visual Slider Line & Handle */}
         <div
           className="absolute top-0 bottom-0 w-px bg-slate-300 pointer-events-none"
           style={{ left: `${sliderPosition}%` }}
@@ -64,17 +70,15 @@ export default function ResultViewer({ originalImage, upscaledImage }) {
           </div>
         </div>
 
-        {/* Invisible Range Input */}
         <input
           type="range"
           min="0"
           max="100"
           value={sliderPosition}
-          onChange={(e) => setSliderPosition(e.target.value)}
+          onChange={(e) => setSliderPosition(Number(e.target.value))}
           className="absolute top-0 left-0 w-full h-full opacity-0 cursor-ew-resize m-0 z-10"
         />
 
-        {/* Badges */}
         <div className="absolute top-3 left-3 bg-white/90 text-slate-600 text-[10px] font-medium px-2 py-0.5 rounded border border-slate-200 pointer-events-none z-0 uppercase tracking-wide shadow-sm">
           Original
         </div>
@@ -88,5 +92,10 @@ export default function ResultViewer({ originalImage, upscaledImage }) {
 
 ResultViewer.propTypes = {
   originalImage: PropTypes.string.isRequired,
-  upscaledImage: PropTypes.string.isRequired
+  upscaledImage: PropTypes.string.isRequired,
+  onImageLoad: PropTypes.func,
+};
+
+ResultViewer.defaultProps = {
+  onImageLoad: undefined,
 };
