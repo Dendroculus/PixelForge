@@ -1,23 +1,23 @@
 import { useState } from 'react';
-import UploadDropzone from '../components/UploadDropzone';
-import ResultViewer from '../components/ResultViewer';
-import Header from '../components/Header';
-import ProgressBar from '../components/ProgressBar';
-import ActionControls from '../components/ActionControls';
-import LegalModal from '../components/LegalModal';
-import { useUpscalePipeline } from '../hooks/useUpscalePipeline';
-import { useSimulatedProgress } from '../hooks/useSimulatedProgress';
-import { clearAppSession } from '../utils/session';
-import { APP_CONFIG as config, STORAGE_KEYS } from '../config';
-import CountdownTimer from '../components/CountdownTimer';
+import UploadDropzone from '../../components/UploadDropzone';
+import ResultViewer from '../../components/ResultViewer';
+import Header from '../../components/Header';
+import ProgressBar from '../../components/ProgressBar';
+import ActionControls from '../../components/ActionControls';
+import LegalModal from '../../components/LegalModal';
+import { useUpscalePipeline } from '../../hooks/useUpscalePipeline';
+import { useSimulatedProgress } from '../../hooks/useSimulatedProgress';
+import { clearAppSession } from '../../utils/session';
+import { APP_CONFIG as config, STORAGE_KEYS } from '../../config';
+import CountdownTimer from '../../components/CountdownTimer';
 
 /**
- * Main home page for upload, processing, result preview, usage display,
+ * Main upscale workspace for upload, processing, result preview, usage display,
  * and app-level alert modals.
  *
  * @returns {JSX.Element}
  */
-export default function Home() {
+export default function UpscaleWorkspace() {
   const [progress, setProgress] = useState(0);
 
   const {
