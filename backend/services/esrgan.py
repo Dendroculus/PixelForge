@@ -6,7 +6,7 @@ import replicate
 import urllib.parse
 from PIL import Image
 from services.storage import StorageService
-from core.config import MAX_FILE_SIZE_BYTES, OPTIMIZATION_TARGET_PIXELS
+from core.config import DEFAULT_SCALE, MAX_FILE_SIZE_BYTES, OPTIMIZATION_TARGET_PIXELS
 from core.model_registry import ModelRegistry
 from helper.utils import get_result_filename
 
@@ -100,20 +100,10 @@ class AIUpscaler:
                 if max(img.size) > MAX_DIMENSION:
                     img.thumbnail((MAX_DIMENSION, MAX_DIMENSION), Image.Resampling.LANCZOS)
 
-                if img.mode != "RGB":
-                    rgba = img.convert("RGBA")
-                    background = Image.new("RGB", rgba.size, (255, 255, 255))
-                    background.paste(rgba, mask=rgba.getchannel("A"))
-                    img = background
-
                 output_stream = io.BytesIO()
-                img.save(
-                    output_stream,
-                    format="JPEG",
-                    quality=85,
-                    optimize=True,
-                    progressive=True,
-                )
+                
+                img.save(output_stream, format="PNG", optimize=False)
+                
                 return output_stream.getvalue()
 
     async def _process_with_ai(self, image_stream: io.BytesIO, job_id: str, model_type: str, scale: int) -> str:
@@ -122,7 +112,7 @@ class AIUpscaler:
             params = ModelRegistry.get_params(model_type, scale=scale)
         except ValueError:
             model_str = ModelRegistry.get_replicate_id("general")
-            params = ModelRegistry.get_params("general", scale=4)
+            params = ModelRegistry.get_params("general", scale=DEFAULT_SCALE)
 
         params["image"] = image_stream
 
