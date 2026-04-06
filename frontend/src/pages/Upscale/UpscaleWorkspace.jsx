@@ -17,7 +17,9 @@ import CountdownTimer from '../../components/CountdownTimer';
  *
  * @returns {JSX.Element}
  */
+
 export default function UpscaleWorkspace() {
+  const [isResultLoaded, setIsResultLoaded] = useState(false);
   const [progress, setProgress] = useState(0);
 
   const {
@@ -93,7 +95,11 @@ export default function UpscaleWorkspace() {
                 </div>
               ) : (
                 <div className="rounded-xl overflow-hidden border border-white/60 shadow-sm">
-                  <ResultViewer originalImage={previewUrl} upscaledImage={resultUrl} />
+                  <ResultViewer 
+                  originalImage={previewUrl} 
+                  upscaledImage={resultUrl} 
+                  onImageLoad={() => setIsResultLoaded(true)} 
+                />
                 </div>
               )}
 
@@ -124,17 +130,25 @@ export default function UpscaleWorkspace() {
                   >
                     Upload Another Image
                   </button>
-                  <a
-                    href={resultUrl}
-                    download={`4K-${selectedFile.name}`}
-                    onClick={() => {
-                      clearAppSession(previewUrl);
-                      handleCancel();
-                    }}
-                    className="px-6 py-2.5 text-sm font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-all shadow-md"
-                  >
-                    Download Result
-                  </a>
+                 <a
+                  href={resultUrl}
+                  download={`4K-${selectedFile.name}`}
+                  onClick={(e) => {
+                    if (!isResultLoaded) {
+                      e.preventDefault();
+                      return;
+                    }
+                    clearAppSession(previewUrl);
+                    handleCancel();
+                  }}
+                  className={`px-6 py-2.5 text-sm font-bold text-white rounded-lg transition-all shadow-md ${
+                    !isResultLoaded 
+                      ? 'bg-slate-400 pointer-events-none cursor-not-allowed opacity-70' 
+                      : 'bg-slate-900 hover:bg-slate-800'
+                  }`}
+                >
+                  {isResultLoaded ? 'Download Result' : 'Loading Image...'}
+                </a>
                 </div>
               )}
             </div>

@@ -9,10 +9,10 @@ const routes = [
     path: '/upscale',
     component: React.lazy(() => import('./pages/Upscale/UpscaleWorkspace')), 
   },
-//   {
-//     path: '*', 
-//     component: React.lazy(() => import('./pages/NotFound/NotFound')), 
-//   }
+  {
+    path: '*', 
+    component: React.lazy(() => import('./pages/Special/ComingSoon')), 
+  }
 ];
 
 export default routes;

@@ -194,8 +194,7 @@ export default function HomeHub() {
         </div>
 
         <div className="flex justify-center mb-8 sm:mb-10 relative z-10">
-          <div className="flex items-center p-1.5 bg-white/40 backdrop-blur-xl border border-white/60 rounded-full shadow-sm overflow-x-auto max-w-full hide-scrollbar">
-            {categoryKeys.map((key) => {
+        <div className="flex items-center p-1.5 bg-white/70 md:bg-white/40 md:backdrop-blur-xl border border-white/60 rounded-full shadow-sm overflow-x-auto max-w-full hide-scrollbar [scrollbar-width:none] [-ms-overflow-style:none]">            {categoryKeys.map((key) => {
               const isActive = activeTab === key;
               return (
                 <button
