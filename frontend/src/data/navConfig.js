@@ -26,7 +26,7 @@ export const NAV_LINKS = {
     items: [
       { id: 'compress', to: "/compress", label: "Compress Image", isAi: false, icon: "M19 14l-7 7m0 0l-7-7m7 7V3", desc: "Reduce file sizes while maintaining quality." },
       { id: 'convert', to: "/coming-soon", label: "Convert Format", isAi: false, icon: "M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4", desc: "Easily switch between PNG, JPG, and WEBP." },
-      { id: 'metadata', to: "/coming-soon", label: "Remove Metadata", isAi: false, icon: "M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16", desc: "Strip EXIF data to protect your privacy." },
+      { id: 'metadata', to: "/metadata", label: "Remove Metadata", isAi: false, icon: "M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16", desc: "Strip EXIF data to protect your privacy." },
     ]
   },
   tools: {

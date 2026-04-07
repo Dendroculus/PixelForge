@@ -24,7 +24,6 @@ export default function App() {
     <BrowserRouter>
       <div className="min-h-screen bg-gradient-to-br from-[#EEAECA] to-[#94BBE9] text-slate-800 flex flex-col overflow-hidden selection:bg-white/40">
         <Navbar />
-
         <main className="flex-1 min-h-0 relative w-full flex flex-col">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-white/40 blur-[150px] rounded-full pointer-events-none -z-10" />
           <div className="absolute top-[400px] right-0 w-[400px] h-[400px] bg-white/30 blur-[120px] rounded-full pointer-events-none -z-10" />

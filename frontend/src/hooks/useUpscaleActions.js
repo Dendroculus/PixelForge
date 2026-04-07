@@ -192,7 +192,7 @@ export function useUpscaleActions({
         localStorage.setItem(STORAGE_KEYS.ALERT, 'limit_reached');
         setAppAlert({ show: true, type: 'limit_reached' });
       } else {
-        alert(error.message);
+        setAppAlert({ show: true, type: 'dos' });
       }
 
       setIsProcessing(false);
