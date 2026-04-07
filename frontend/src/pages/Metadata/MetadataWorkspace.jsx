@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import exifr from 'exifr';
 import UploadDropzone from '../../components/UploadDropzone';
-import Header from '../../components/Header';
 
 export default function MetadataWorkspace() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -85,7 +84,6 @@ export default function MetadataWorkspace() {
   return (
     <div className="w-full">
       <section className="max-w-6xl mx-auto px-6 pt-24 pb-16 text-center relative z-10">
-        <Header />
 
         <div className="mt-12">
           {!selectedFile ? (

@@ -1,12 +1,8 @@
 import { Link } from 'react-router-dom';
-import Header from '../../components/Header'; 
 
 export default function NotFound() {
   return (
-    <div className="w-full min-h-screen flex flex-col relative z-10">
-      <div className="pt-6 px-6 max-w-6xl mx-auto w-full">
-        <Header />
-      </div>
+    <div className="w-full flex flex-col relative z-10">
 
       <div className="flex-grow flex items-center justify-center p-6">
         <div className="bg-white/40 backdrop-blur-2xl p-10 md:p-16 rounded-[2rem] border border-white/50 shadow-2xl shadow-slate-900/10 text-center max-w-lg w-full transform transition-all border-radius-2xl">

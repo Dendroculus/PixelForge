@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import UploadDropzone from '../../components/UploadDropzone';
 import ResultViewer from '../../components/ResultViewer';
-import Header from '../../components/Header';
 import ProgressBar from '../../components/ProgressBar';
 import ActionControls from '../../components/ActionControls';
 import LegalModal from '../../components/LegalModal';
@@ -53,7 +52,6 @@ export default function UpscaleWorkspace() {
           <span>Free & Open Source — No sign-up required</span>
         </div>
 
-        <Header />
 
         <div className="mt-12">
           {!selectedFile && !isProcessing && !jobId && (
