@@ -46,13 +46,7 @@ export default function UpscaleWorkspace() {
 
   return (
     <div className="w-full">
-      <section className="max-w-4xl mx-auto px-6 pt-24 pb-16 text-center relative z-10">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/50 border border-white/60 text-slate-700 text-xs font-semibold mb-6 shadow-sm">
-          <span className="w-1.5 h-1.5 rounded-full bg-[#EEAECA] animate-pulse" />
-          <span>Free & Open Source — No sign-up required</span>
-        </div>
-
-
+      <section className="max-w-4xl mx-auto px-6 pt-4 pb-16 text-center relative z-10">
         <div className="mt-12">
           {!selectedFile && !isProcessing && !jobId && (
             isLoading ? (

@@ -83,9 +83,9 @@ export default function MetadataWorkspace() {
 
   return (
     <div className="w-full">
-      <section className="max-w-6xl mx-auto px-6 pt-24 pb-16 text-center relative z-10">
+      <section className="max-w-6xl mx-auto px-6 pt-4 pb-16 text-center relative z-10">
 
-        <div className="mt-12">
+        <div>
           {!selectedFile ? (
             // STATE 1: Upload Dropzone
             <div className="bg-white/40 backdrop-blur-2xl p-2 rounded-2xl border border-white/50 shadow-xl shadow-slate-900/5 max-w-2xl mx-auto">
@@ -138,7 +138,6 @@ export default function MetadataWorkspace() {
                 </h4>
                   <div className="space-y-2">
                     {Object.entries(metadata)
-                      // Replaced the unused '_' with 'key'
                       .filter(([val]) => typeof val === 'string' || typeof val === 'number')
                       .map(([key, val]) => (
                       <div key={key} className="flex justify-between items-center text-sm border-b border-slate-200/60 pb-1 last:border-0">

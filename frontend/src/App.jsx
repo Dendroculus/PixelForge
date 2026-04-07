@@ -10,7 +10,8 @@ import { legalModalData } from './data/legalModalData';
 
 /**
  * Conditionally renders the global header based on the current route.
- * Prevents the header from rendering on the primary Home Hub landing page.
+ * Prevents the header from rendering on the primary Home Hub landing page,
+ * and dynamically injects subtitles based on the active path.
  */
 function GlobalHeader() {
   const location = useLocation();
@@ -19,25 +20,32 @@ function GlobalHeader() {
     return null;
   }
 
+  const headerConfig = {
+    '/upscale': {
+      words: ["upscale.", "enhance.", "enlarge."],
+      subtitle: "High-performance AI tools for your images. No accounts, no waiting, and no complexity. Just upload and go."
+    },
+    '/metadata': {
+      words: ["clean.", "sanitize.", "strip."],
+      subtitle: "Instantly strip hidden EXIF data and camera settings from your photos for absolute privacy."
+    }
+  };
+
+  const currentConfig = headerConfig[location.pathname] || {};
+
   return (
-    <div className="pt-8 px-6 max-w-6xl mx-auto w-full relative z-50">
-      <Header />
+    <div className="pt-4 px-6 max-w-6xl mx-auto w-full relative z-50">
+      <Header {...currentConfig} />
     </div>
   );
 }
 
-/**
- * Fallback loader for lazy-loaded route components.
- */
 const PageLoader = () => (
   <div className="flex-1 flex items-center justify-center min-h-[300px] w-full z-10">
     <div className="w-10 h-10 border-4 border-slate-300 border-t-slate-800 rounded-full animate-spin" />
   </div>
 );
 
-/**
- * Main application entry point orchestrating layout, routing, and global modals.
- */
 export default function App() {
   const [modalState, setModalState] = useState({ isOpen: false, type: 'privacy' });
 
@@ -69,7 +77,9 @@ export default function App() {
           </Suspense>
         </main>
 
-        <Footer openModal={openModal} />
+        <div className="mt-auto w-full relative z-50">
+          <Footer openModal={openModal} />
+        </div>
 
         <LegalModal isOpen={modalState.isOpen} onClose={closeModal} title={activeModalData.title}>
           {activeModalData.content}
