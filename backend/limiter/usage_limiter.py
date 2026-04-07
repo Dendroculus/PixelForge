@@ -1,5 +1,4 @@
 import logging
-
 from core.database import get_db_pool
 from core.config import LimitConfig as LC
 
@@ -9,8 +8,11 @@ WINDOW_HOURS = 24
 WINDOW_MS = WINDOW_HOURS * 60 * 60 * 1000
 
 
-async def enforce_daily_limit(ip_address: str, limit_24h: int = 3) -> bool:
-    """Atomically enforce a rolling 24-hour usage limit per IP."""
+async def check_daily_limit(ip_address: str, limit_24h: int = 3) -> bool:
+    """
+    Checks if the user has uses remaining WITHOUT deducting.
+    Returns True if they are allowed to proceed.
+    """
     pool = get_db_pool()
 
     if pool is None:
@@ -20,14 +22,30 @@ async def enforce_daily_limit(ip_address: str, limit_24h: int = 3) -> bool:
     if limit_24h <= 0:
         return False
 
-    lock_sql = "SELECT pg_advisory_xact_lock(hashtext($1));"
-
     sum_sql = """
     SELECT COALESCE(SUM(usage_count), 0)::int AS used
     FROM ip_usage_hourly
     WHERE ip_address = $1
       AND bucket_start > NOW() - INTERVAL '24 hours';
     """
+
+    try:
+        async with pool.acquire() as conn:
+            used = await conn.fetchval(sum_sql, ip_address)
+            return used < limit_24h
+    except Exception:
+        logger.exception("Database error during rate-limit check for ip=%s. Failing open.", ip_address)
+        return True
+
+
+async def increment_daily_limit(ip_address: str) -> None:
+    """
+    Deducts 1 usage credit by inserting/updating the current hour's bucket.
+    Called strictly AFTER a successful AI process.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        return
 
     upsert_sql = """
     INSERT INTO ip_usage_hourly (ip_address, bucket_start, usage_count)
@@ -38,20 +56,9 @@ async def enforce_daily_limit(ip_address: str, limit_24h: int = 3) -> bool:
 
     try:
         async with pool.acquire() as conn:
-            async with conn.transaction():
-                await conn.execute(lock_sql, ip_address)
-                used = await conn.fetchval(sum_sql, ip_address)
-
-                if used >= limit_24h:
-                    return False
-
-                await conn.execute(upsert_sql, ip_address)
-
-        return True
-
+            await conn.execute(upsert_sql, ip_address)
     except Exception:
-        logger.exception("Database error during rate-limit check for ip=%s. Failing open.", ip_address)
-        return True
+        logger.exception("Database error during usage increment for ip=%s", ip_address)
 
 
 async def get_usage_status(ip_address: str, limit_24h: int = LC.DAILY_USAGE_LIMIT) -> dict:
