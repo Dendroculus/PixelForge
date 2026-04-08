@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { IMAGES as img } from '../config';
-import { NAV_LINKS } from '../data/navConfig';
+import { NavLinks } from '../data/navConfig';
 
 /**
  * Standardized SVG Icon wrapper.
@@ -84,7 +84,7 @@ export default function Navbar() {
         </Link>
 
         <div className="hidden lg:flex items-center gap-6">
-          {Object.values(NAV_LINKS).map((category) => (
+          {Object.values(NavLinks).map((category) => (
             <NavDropdown key={category.title} title={category.title}>
               {category.items.map((item) => (
                 <DropdownItem 
@@ -126,7 +126,7 @@ export default function Navbar() {
       {isMobileMenuOpen && (
         <div className="lg:hidden border-t border-white/40 bg-white/80 backdrop-blur-3xl px-6 py-6 space-y-6 shadow-2xl max-h-[80vh] overflow-y-auto">
           <div className="flex flex-col gap-1 text-sm font-medium text-slate-700">
-            {Object.values(NAV_LINKS).map((category) => (
+            {Object.values(NavLinks).map((category) => (
               <div key={category.title}>
                 <div className={`text-xs font-bold text-slate-400 uppercase tracking-widest mb-1 ml-2 ${category.title !== 'Enhance' ? 'mt-4' : ''}`}>
                   {category.title}

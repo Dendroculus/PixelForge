@@ -41,6 +41,16 @@ const PageLoader = () => (
   </div>
 );
 
+const WorkspaceLoader = () => (
+  <div className="w-full flex-1">
+    <section className="flex-1 w-full max-w-6xl mx-auto px-4 pt-6 pb-16">
+      <div className="w-full min-h-96 rounded-3xl border border-white/70 bg-white/50 backdrop-blur-xl shadow-xl shadow-indigo-500/5 flex items-center justify-center">
+        <div className="w-10 h-10 border-4 border-slate-300 border-t-slate-800 rounded-full animate-spin" />
+      </div>
+    </section>
+  </div>
+);
+
 export default function App() {
   const [modalState, setModalState] = useState({ isOpen: false, type: 'privacy' });
 
@@ -61,13 +71,33 @@ export default function App() {
           <GlobalHeader />
 
           <Suspense fallback={<PageLoader />}>
-            <Routes>
-              {routes.map((r) => {
-                const Component = r.component;
-                return <Route key={r.path} path={r.path} element={<Component />} />;
-              })}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+          <Routes>
+            {routes.map((r) => {
+              const Component = r.component;
+              const FallbackLoader = r.path === '/upscale' ? WorkspaceLoader : PageLoader;
+              
+              return (
+                <Route 
+                  key={r.path} 
+                  path={r.path} 
+                  element={
+                    <Suspense fallback={<FallbackLoader />}>
+                      <Component />
+                    </Suspense>
+                  } 
+                />
+              );
+            })}
+            
+            <Route 
+              path="*" 
+              element={
+                <Suspense fallback={<PageLoader />}>
+                  <NotFound />
+                </Suspense>
+              } 
+            />
+          </Routes>
           </Suspense>
         </main>
 
