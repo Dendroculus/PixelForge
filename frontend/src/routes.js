@@ -46,6 +46,10 @@ const routes = [
     component: React.lazy(() => import('./pages/Metadata/MetadataWorkspace')),
   },
   {
+    path: '/color-palette',
+    component: React.lazy(() => import('./pages/Utilities/ColorPalette')),
+  },
+  {
     path: '/coming-soon', 
     component: React.lazy(() => import('./pages/Special/ComingSoon')), 
   },

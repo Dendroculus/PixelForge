@@ -41,7 +41,6 @@ export default function MetadataWorkspace() {
       img.src = fileUrl;
     });
   };
-
   const handleFileSelect = async (file) => {
     setIsProcessing(true);
     setSelectedFile(file);
@@ -131,7 +130,7 @@ export default function MetadataWorkspace() {
                   <img src={previewUrl} alt="Original" className="h-full w-auto object-contain rounded-lg" />
                 </div>
 
-                <div className="flex-grow bg-white/60 rounded-xl border border-white/80 p-4 overflow-y-auto max-h-[300px] custom-scrollbar shadow-inner">
+                <div className="grow bg-white/60 rounded-xl border border-white/80 p-4 overflow-y-auto max-h-75 custom-scrollbar shadow-inner">
                   <h4 className="text-xs font-extrabold text-slate-900 bg-slate-100 uppercase tracking-widest text-center mb-4 py-2 px-4 rounded-lg border-b border-slate-200/60">
                   Extracted EXIF Data
                 </h4>
@@ -161,7 +160,7 @@ export default function MetadataWorkspace() {
                   <img src={strippedUrl} alt="Stripped" className="h-full w-auto object-contain rounded-lg" />
                 </div>
 
-                <div className="flex-grow flex flex-col justify-center items-center text-center px-4 space-y-4">
+                <div className="grow flex flex-col justify-center items-center text-center px-4 space-y-4">
                   <div className="w-16 h-16 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mb-2 shadow-sm border border-emerald-200">
                     <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                   </div>
@@ -179,7 +178,7 @@ export default function MetadataWorkspace() {
                   <a
                     href={strippedUrl}
                     download={`Cleaned-${selectedFile.name}`}
-                    className="flex-[2] flex justify-center items-center py-3 text-sm font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition-all shadow-md"
+                    className="flex-2 flex justify-center items-center py-3 text-sm font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition-all shadow-md"
                   >
                     Download Clean Image
                   </a>

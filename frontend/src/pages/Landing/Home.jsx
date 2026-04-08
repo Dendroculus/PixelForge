@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion, useMotionValue, useSpring, useTransform } from 'framer-motion';
-import { NAV_LINKS } from '../../data/navConfig';
+import { NavLinks } from '../../data/navConfig';
 
 /**
  * Animated background using lightweight gradients.
@@ -185,9 +185,9 @@ const CardIcon = ({ d, isAi }) => {
  * Main homepage hub showing categorized tools.
  */
 export default function HomeHub() {
-  const categoryKeys = useMemo(() => Object.keys(NAV_LINKS), []);
+  const categoryKeys = useMemo(() => Object.keys(NavLinks), []);
   const [activeTab, setActiveTab] = useState(categoryKeys[0]);
-  const currentCategory = NAV_LINKS[activeTab];
+  const currentCategory = NavLinks[activeTab];
   const shouldReduceMotion = useReducedMotion();
 
   const containerVariants = {
@@ -249,7 +249,7 @@ export default function HomeHub() {
                       transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
                     />
                   )}
-                  <span className="relative z-10">{NAV_LINKS[key].title}</span>
+                  <span className="relative z-10">{NavLinks[key].title}</span>
                 </button>
               );
             })}
