@@ -7,6 +7,7 @@ import logoSvg from './assets/PixelForge.svg';
 
 export const APP_CONFIG = {
   MAX_FILE_SIZE_MB: 10,
+  COMPRESS_MAX_SIZE_MB: 15,
   ALLOWED_EXTENSIONS: ["jpg", "jpeg", "png", "webp"],
   RESULT_EXPIRATION_TIME: 10 * 60 * 1000, // 10 minutes
   UPSCALE_LIMIT: 3,

@@ -91,13 +91,13 @@ export default function UploadDropzone({ onFileSelect }) {
         <div>
           {error ? (
             <>
-              <p className="font-bold text-base sm:text-lg text-rose-600 max-w-[400px] mx-auto leading-snug px-4">{error}</p>
+              <p className="font-bold text-base sm:text-lg text-rose-600 max-w-100 mx-auto leading-snug px-4">{error}</p>
               <p className="text-sm mt-2 text-rose-500 font-medium">Strictly {AllowedFormatsText} only!</p>
             </>
           ) : (
             <>
               <p className="font-bold text-lg text-slate-800">Click to upload or drag & drop</p>
-              <p className="text-sm mt-1.5 text-slate-600 font-medium">Supports {AllowedFormatsText} • Max {config.MAX_FILE_SIZE_MB}MB</p>
+              <p className="text-sm mt-1.5 text-slate-600 font-medium">Max {config.MAX_FILE_SIZE_MB}MB</p>
             </>
           )}
         </div>
