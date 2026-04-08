@@ -34,6 +34,10 @@ const routes = [
   //   component: React.lazy(() => import('./pages/Watermark/WatermarkWorkspace')),
   // },
   {
+    path: '/compress-image',
+    component: React.lazy(() =>  import('./pages/Compressor/CompressImage')),
+  },
+  {
     path: '/convert-format',
     component: React.lazy(() => import('./pages/Formatting/ConvertFormat')),
   },

@@ -24,7 +24,7 @@ function ResultViewerContent({ originalImage, upscaledImage, onImageLoad }) {
   };
 
   return (
-    <div className="relative w-full overflow-hidden rounded-lg border border-slate-200 bg-slate-50 aspect-video flex items-center justify-center">
+    <div className="relative w-full h-full overflow-hidden rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center">
       {!isLoaded && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm z-50 px-4 text-center">
           <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin mb-4"></div>
@@ -41,7 +41,7 @@ function ResultViewerContent({ originalImage, upscaledImage, onImageLoad }) {
         <img
           src={upscaledImage}
           alt="Upscaled result"
-          className="absolute top-0 left-0 w-full h-full object-contain"
+          className="absolute top-0 left-0 w-full h-full object-cover"
           onLoad={handleUpscaledLoad}
           onError={() => setIsLoaded(false)}
         />
@@ -49,7 +49,7 @@ function ResultViewerContent({ originalImage, upscaledImage, onImageLoad }) {
         <img
           src={originalImage}
           alt="Original input"
-          className="absolute top-0 left-0 w-full h-full object-contain"
+          className="absolute top-0 left-0 w-full h-full object-cover"
           style={{ clipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)` }}
         />
 

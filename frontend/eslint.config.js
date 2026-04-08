@@ -22,8 +22,12 @@ export default defineConfig([
         sourceType: 'module',
       },
     },
-    rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
-    },
+  rules: {
+    'no-unused-vars': ['warn', { 
+      'varsIgnorePattern': '^(motion|AnimatePresence|_)',
+      'argsIgnorePattern': '^_'
+    }],
+    'react/jsx-uses-vars': 'error', 
+  },
   },
 ])
