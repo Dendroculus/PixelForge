@@ -12,6 +12,7 @@ export default function UploadCard({
   heightClass = 'h-36',
   validate = true,
   clearErrorAfterMs = 5000,
+  maxSizeMB,
 }) {
   const [localError, setLocalError] = useState('');
   const timeoutRef = useRef(null);
@@ -56,7 +57,7 @@ export default function UploadCard({
         return;
       }
 
-      const result = await validateImageUpload(file);
+      const result = await validateImageUpload(file, maxSizeMB);
 
       if (!result.isValid) {
         const msg = result.error || 'Invalid file.';
@@ -76,7 +77,8 @@ export default function UploadCard({
 
       onChange?.(syntheticEvent);
     },
-    [validate, onChange, onValidationError, inputRef, clearLocalError, setErrorWithTimer]
+    // Added maxSizeMB here:
+    [validate, onChange, onValidationError, inputRef, clearLocalError, setErrorWithTimer, maxSizeMB]
   );
 
   const cardStateClass = localError

@@ -8,35 +8,32 @@ const ERROR_MESSAGES = {
   VIDEO: "Why do you even try to upload a video to an image upscaler web? 🤔",
   TIMEOUT: "The file took too long to process. Is it corrupted? ⏳",
   DEFAULT: "Uh oh! This file is not supported.",
-  TOO_LARGE: `File size exceeds the ${config.MAX_FILE_SIZE_MB}MB limit.`
 };
-
-const MaxFileSizeBytes = config.MAX_FILE_SIZE_MB * 1024 * 1024;
 
 const allowedMimeTypes = new Set(
   config.ALLOWED_EXTENSIONS.map(ext => `image/${ext === 'jpg' ? 'jpeg' : ext}`)
 );
 
 /**
- * Validates a file's MIME type, size limits, and performs a pre-flight 
- * image rendering check to prevent extension spoofing.
- * 
  * @param {File} file - The file object from the dropzone/input.
- * @returns {Promise<{isValid: boolean, error?: string, file?: File}>}
+ * @param {number} [customMaxSizeMB] - Optional override for max file size.
  */
-export const validateImageUpload = (file) => {
+export const validateImageUpload = (file, customMaxSizeMB = null) => {
   return new Promise((resolve) => {
     if (!file) {
       return resolve({ isValid: false, error: ERROR_MESSAGES.DEFAULT });
     }
 
-    if (file.size > MaxFileSizeBytes) {
-      return resolve({ isValid: false, error: ERROR_MESSAGES.TOO_LARGE });
+    // Use custom size if provided, otherwise fallback to the default config
+    const limitMB = customMaxSizeMB || config.MAX_FILE_SIZE_MB;
+    const maxFileSizeBytes = limitMB * 1024 * 1024;
+
+    if (file.size > maxFileSizeBytes) {
+      return resolve({ isValid: false, error: `File size exceeds the ${limitMB}MB limit.` });
     }
 
     const fileType = file.type || "";
     
-    // Check specific file families
     if (fileType === 'image/svg+xml') {
       return resolve({ isValid: false, error: ERROR_MESSAGES.SVG });
     }

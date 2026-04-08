@@ -140,6 +140,7 @@ export default function CompressImage() {
                 inputRef={fileInputRef}
                 onChange={onFileChange}
                 helperText={`Any format up to ${APP_CONFIG.COMPRESS_MAX_SIZE_MB}MB`}
+                maxSizeMB={APP_CONFIG.COMPRESS_MAX_SIZE_MB}
               />
               <AnimatePresence>
                 {file && (
@@ -206,14 +207,14 @@ export default function CompressImage() {
           </h3>
         }
         rightBody={
-          <div className="flex h-full w-full flex-col">
-            <div className="min-h-0 flex-1 rounded-xl border border-white/50 bg-white/20 p-2">
+          <div className="absolute inset-2 flex flex-col">
+            <div className="relative flex-1 min-h-0 w-full rounded-xl border border-white/50 bg-white/20 overflow-hidden">
               {resultUrl ? (
-                <motion.img initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} src={resultUrl} alt="Compressed output preview" className="h-full w-full object-contain" />
+                <motion.img initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} src={resultUrl} alt="Compressed output preview" className="absolute inset-0 w-full h-full object-contain p-2" />
               ) : previewUrl ? (
-                <motion.img initial={{ opacity: 0 }} animate={{ opacity: 1 }} src={previewUrl} alt="Original preview" className="h-full w-full object-contain opacity-70" />
+                <motion.img initial={{ opacity: 0 }} animate={{ opacity: 1 }} src={previewUrl} alt="Original preview" className="absolute inset-0 w-full h-full object-contain p-2 opacity-70" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center">
+                <div className="absolute inset-0 flex items-center justify-center">
                   <EmptyWorkspaceState />
                 </div>
               )}
@@ -221,7 +222,7 @@ export default function CompressImage() {
 
             <AnimatePresence>
               {resultUrl && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-3 flex flex-col gap-3">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-3 flex shrink-0 flex-col gap-3">
                   <div className="flex items-center justify-between rounded-xl border border-white/60 bg-white/40 px-4 py-3 text-sm">
                     <span className="font-semibold text-slate-600 line-through decoration-rose-400">{bytesToMB(file.size)} MB</span>
                     <svg className="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">

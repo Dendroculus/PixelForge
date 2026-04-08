@@ -244,20 +244,22 @@ export default function ConvertFormat() {
           </h3>
         }
         rightBody={
-          <div className="flex h-full w-full flex-col">
-            <div className="min-h-0 flex-1 rounded-xl border border-white/50 bg-white/20 p-2">
+          <div className="absolute inset-2 flex flex-col">
+            <div className="relative flex-1 min-h-0 w-full rounded-xl border border-white/50 bg-white/20 overflow-hidden">
               {resultUrl ? (
-                <motion.img initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} src={resultUrl} alt="Converted output preview" className="h-full w-full object-contain" />
+                <motion.img initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} src={resultUrl} alt="Converted output preview" className="absolute inset-0 w-full h-full object-contain p-2" />
               ) : previewUrl ? (
-                <motion.img initial={{ opacity: 0 }} animate={{ opacity: 1 }} src={previewUrl} alt="Original preview" className="h-full w-full object-contain opacity-70" />
+                <motion.img initial={{ opacity: 0 }} animate={{ opacity: 1 }} src={previewUrl} alt="Original preview" className="absolute inset-0 w-full h-full object-contain p-2 opacity-70" />
               ) : (
-                <div className="flex h-full w-full items-center justify-center"><EmptyWorkspaceState /></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <EmptyWorkspaceState />
+                </div>
               )}
             </div>
 
             <AnimatePresence>
               {resultUrl && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-3">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-3 shrink-0">
                   <a href={resultUrl} download={downloadName} className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 px-5 py-3.5 text-sm font-bold text-white transition-all hover:bg-emerald-400 hover:shadow-lg hover:shadow-emerald-500/20">
                     Download {targetFormat.toUpperCase()}
                   </a>

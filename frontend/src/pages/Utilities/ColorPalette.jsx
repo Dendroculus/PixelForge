@@ -227,17 +227,17 @@ export default function ColorPalette() {
         }
         rightHeader={<h3 className="flex items-center justify-between text-sm font-bold text-slate-800">Preview Workspace</h3>}
         rightBody={
-          previewUrl ? (
-            <div className="h-full w-full p-2">
+          <div className="absolute inset-2 flex items-center justify-center">
+            {previewUrl ? (
               <img
                 src={previewUrl}
                 alt="Original"
-                className={`h-full w-full object-contain ${isProcessing ? 'scale-105 opacity-60 blur-md grayscale transition-all duration-700' : 'transition-all duration-700 opacity-100'}`}
+                className={`max-h-full max-w-full object-contain ${isProcessing ? 'scale-105 opacity-60 blur-md grayscale transition-all duration-700' : 'transition-all duration-700 opacity-100'}`}
               />
-            </div>
-          ) : (
-            <EmptyWorkspaceState />
-          )
+            ) : (
+              <EmptyWorkspaceState />
+            )}
+          </div>
         }
       />
     </section>
