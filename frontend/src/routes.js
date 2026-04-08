@@ -33,10 +33,10 @@ const routes = [
   //   path: '/watermark',
   //   component: React.lazy(() => import('./pages/Watermark/WatermarkWorkspace')),
   // },
-  // {
-  //   path: '/convert-format',
-  //   component: React.lazy(() => import('./pages/Watermark/WatermarkWorkspace')),
-  // },
+  {
+    path: '/convert-format',
+    component: React.lazy(() => import('./pages/Formatting/ConvertFormat')),
+  },
   {
     path: '/metadata',
     component: React.lazy(() => import('./pages/Metadata/MetadataWorkspace')),

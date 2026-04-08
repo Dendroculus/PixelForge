@@ -9,7 +9,6 @@ export default function MetadataWorkspace() {
   const [strippedUrl, setStrippedUrl] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Cleans up object URLs to prevent memory leaks
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);

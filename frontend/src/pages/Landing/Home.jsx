@@ -32,11 +32,11 @@ const AmbientBackground = () => {
     return (
       <div className="absolute inset-0 overflow-hidden -z-10 pointer-events-none">
         <div 
-          className="absolute top-10 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full" 
+          className="absolute top-10 left-1/2 -translate-x-1/2 w-150 h-150 rounded-full" 
           style={{ background: indigoGradient }}
         />
         <div 
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full" 
+          className="absolute bottom-10 left-1/2 -translate-x-1/2 w-150 h-150 rounded-full" 
           style={{ background: pinkGradient }}
         />
       </div>
@@ -49,13 +49,13 @@ const AmbientBackground = () => {
         animate={{ x: [0, 40, -40, 0], y: [0, -40, 40, 0], scale: [1, 1.06, 0.96, 1] }}
         transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
         style={{ background: indigoGradient, willChange: 'transform' }}
-        className="absolute -top-20 left-1/4 w-[700px] h-[700px] rounded-full"
+        className="absolute -top-20 left-1/4 w-175 h-175 rounded-full"
       />
       <motion.div
         animate={{ x: [0, -45, 45, 0], y: [0, 45, -45, 0], scale: [1, 0.96, 1.06, 1] }}
         transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
         style={{ background: pinkGradient, willChange: 'transform' }}
-        className="absolute -bottom-20 right-1/4 w-[700px] h-[700px] rounded-full"
+        className="absolute -bottom-20 right-1/4 w-175 h-175 rounded-full"
       />
     </div>
   );
@@ -85,7 +85,7 @@ const RotatingText = React.memo(() => {
           animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
           exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
           transition={{ duration: 0.22, ease: 'easeOut' }}
-          className="block whitespace-nowrap text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500 pb-[0.08em]"
+          className="block whitespace-nowrap text-transparent bg-clip-text bg-linear-to-r from-indigo-500 to-purple-500 pb-[0.08em]"
         >
           {words[index]}
         </motion.span>
@@ -173,7 +173,7 @@ const CardIcon = ({ d, isAi }) => {
 
   return (
     <div
-      className={`w-14 h-14 min-w-[56px] rounded-2xl flex items-center justify-center ${bgClass} ${colorClass} group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300`}
+      className={`w-14 h-14 min-w-14 rounded-2xl flex items-center justify-center ${bgClass} ${colorClass} group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300`}
     >
       <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={d} />
@@ -214,7 +214,7 @@ export default function HomeHub() {
     <div className="min-h-screen flex flex-col w-full relative overflow-hidden selection:bg-indigo-100 selection:text-indigo-900">
       <AmbientBackground />
 
-      <main className="flex-grow max-w-4xl mx-auto w-full px-4 sm:px-6 pt-14 sm:pt-16 pb-20 sm:pb-24">
+      <main className="grow max-w-4xl mx-auto w-full px-4 sm:px-6 pt-14 sm:pt-16 pb-20 sm:pb-24">
         <div className="text-center mb-10 sm:mb-12 relative z-10">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/50 backdrop-blur-md border border-white/60 text-slate-700 text-xs font-bold mb-6 shadow-sm">
             <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
@@ -284,7 +284,7 @@ export default function HomeHub() {
                               <motion.div
                                 animate={{ x: ['-120%', '220%'] }}
                                 transition={{ duration: 2.2, repeat: Infinity, ease: 'linear', repeatDelay: 1.2 }}
-                                className="absolute inset-0 z-10 bg-gradient-to-r from-transparent via-white/60 to-transparent skew-x-12"
+                                className="absolute inset-0 z-10 bg-linaer-to-r from-transparent via-white/60 to-transparent skew-x-12"
                               />
                             )}
                             <span className="relative block text-[9px] bg-indigo-100 text-indigo-700 px-2 py-0.5 font-black tracking-wider uppercase">

@@ -8,8 +8,8 @@ export default function ComingSoon() {
   return (
     <div className="flex-1 min-h-0 relative w-full overflow-hidden px-6 pt-14 pb-10">
       <div className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[520px] h-[520px] bg-indigo-300/25 rounded-full blur-[110px]" />
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[420px] h-[420px] bg-fuchsia-300/20 rounded-full blur-[100px]" />
+        <div className="absolute top-10 left-1/2 -translate-x-1/2 w-130 h-130 bg-indigo-300/25 rounded-full blur-[110px]" />
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-105 h-105 bg-fuchsia-300/20 rounded-full blur-[100px]" />
       </div>
 
       <motion.section
@@ -39,16 +39,9 @@ export default function ComingSoon() {
             to="/"
             className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 transition-colors shadow-sm"
           >
-            Return Home
+            Back to Home
           </Link>
 
-          <button
-            type="button"
-            onClick={() => window.history.back()}
-            className="inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 transition-colors"
-          >
-            Go Back
-          </button>
         </div>
       </motion.section>
     </div>

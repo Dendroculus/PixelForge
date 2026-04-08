@@ -50,7 +50,7 @@ export default function UpscaleWorkspace() {
         <div className="mt-12">
           {!selectedFile && !isProcessing && !jobId && (
             isLoading ? (
-              <div className="bg-white/40 backdrop-blur-2xl p-10 sm:p-14 rounded-3xl border border-white/50 shadow-xl flex items-center justify-center min-h-[300px] max-w-2xl mx-auto">
+              <div className="bg-white/40 backdrop-blur-2xl p-10 sm:p-14 rounded-3xl border border-white/50 shadow-xl flex items-center justify-center min-h-75 max-w-2xl mx-auto">
                 <div className="w-10 h-10 border-4 border-slate-300 border-t-slate-800 rounded-full animate-spin"></div>
               </div>
             ) : usesRemaining <= 0 ? (
@@ -84,7 +84,7 @@ export default function UpscaleWorkspace() {
                   <img
                     src={previewUrl}
                     alt="Upload preview"
-                    className={`max-h-[400px] w-auto object-contain rounded-lg transition-all duration-700 ${isProcessing ? 'scale-105 opacity-60 blur-sm' : 'opacity-100'}`}
+                    className={`max-h-100 w-auto object-contain rounded-lg transition-all duration-700 ${isProcessing ? 'scale-105 opacity-60 blur-sm' : 'opacity-100'}`}
                   />
                 </div>
               ) : (
@@ -101,7 +101,7 @@ export default function UpscaleWorkspace() {
 
               {!resultUrl && (
                 <div className="flex flex-col sm:flex-row justify-between items-center gap-4 pt-2">
-                  <p className="text-sm text-slate-700 font-medium truncate max-w-[250px]">
+                  <p className="text-sm text-slate-700 font-medium truncate max-w-62.5">
                     {selectedFile.name}
                   </p>
 

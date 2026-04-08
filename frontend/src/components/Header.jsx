@@ -55,7 +55,7 @@ export default function Header({
       <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tighter text-center leading-[1.1] mb-4">
         {titlePrefix} <br />
         <span 
-          className={`inline-block pb-2 text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-fuchsia-500 transition-all duration-300 ease-in-out ${
+          className={`inline-block pb-2 text-transparent bg-clip-text bg-linear-to-r from-indigo-500 via-purple-500 to-fuchsia-500 transition-all duration-300 ease-in-out ${
             isFading ? 'opacity-0 translate-y-4 blur-sm' : 'opacity-100 translate-y-0 blur-0'
           }`}
         >

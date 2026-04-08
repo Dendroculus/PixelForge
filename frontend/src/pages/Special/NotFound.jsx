@@ -4,8 +4,8 @@ export default function NotFound() {
   return (
     <div className="w-full flex flex-col relative z-10">
 
-      <div className="flex-grow flex items-center justify-center p-6">
-        <div className="bg-white/40 backdrop-blur-2xl p-10 md:p-16 rounded-[2rem] border border-white/50 shadow-2xl shadow-slate-900/10 text-center max-w-lg w-full transform transition-all border-radius-2xl">
+      <div className="grow flex items-center justify-center p-6">
+        <div className="bg-white/40 backdrop-blur-2xl p-10 md:p-16 rounded-4xl border border-white/50 shadow-2xl shadow-slate-900/10 text-center max-w-lg w-full transform transition-all border-radius-2xl">
           
           <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 mt-6 mb-3">
             Lost in the pixels! 👾

@@ -13,9 +13,9 @@ export default function Footer({ openModal }) {
         <p>© 2026 Pixel Forge. Powered by Real-ESRGAN.</p>
         
         <div className="flex items-center gap-6 group font-medium">
-          <button onClick={() => openModal('privacy')} className="transition-colors focus:outline-none group-hover:text-slate-400 hover:!text-slate-900">Privacy</button>
-          <button onClick={() => openModal('terms')} className="transition-colors focus:outline-none group-hover:text-slate-400 hover:!text-slate-900">Terms</button>
-          <button onClick={() => openModal('security')} className="transition-colors focus:outline-none group-hover:text-slate-400 hover:!text-slate-900">Security</button>
+          <button onClick={() => openModal('privacy')} className="transition-colors focus:outline-none group-hover:text-slate-400 hover:text-slate-900!">Privacy</button>
+          <button onClick={() => openModal('terms')} className="transition-colors focus:outline-none group-hover:text-slate-400 hover:text-slate-900!">Terms</button>
+          <button onClick={() => openModal('security')} className="transition-colors focus:outline-none group-hover:text-slate-400 hover:text-slate-900!">Security</button>
         </div>
       </div>
     </footer>

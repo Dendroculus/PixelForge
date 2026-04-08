@@ -54,13 +54,13 @@ const DropdownItem = ({ to, icon, children, isAi }) => {
       className={`group/item px-3 py-2.5 text-sm text-slate-600 rounded-xl transition-all flex items-center justify-between border border-transparent ${baseHoverClass}`}
     >
       <div className="flex items-center gap-3">
-        <div className={`text-slate-400 transition-colors flex-shrink-0 ${iconHoverClass}`}>
+        <div className={`text-slate-400 transition-colors shrink-0 ${iconHoverClass}`}>
           {icon}
         </div>
         <span className={`font-medium transition-colors ${textHoverClass}`}>{children}</span>
       </div>
       {isAi && (
-        <span className="text-[9px] bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-1.5 py-0.5 rounded-md font-bold shadow-sm tracking-wider uppercase">
+        <span className="text-[9px] bg-linear-to-r from-indigo-500 to-purple-500 text-white px-1.5 py-0.5 rounded-md font-bold shadow-sm tracking-wider uppercase">
           AI
         </span>
       )}
@@ -80,7 +80,7 @@ export default function Navbar() {
         
         <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <img src={img.icon} alt="Pixel Forge Logo" className="h-8 sm:h-10 md:h-8 w-auto object-contain block" />
-          <img src={img.textBlack} alt="Pixel Forge Text" className="h-6 sm:h-7 md:h-4 w-auto object-contain block translate-y-[2px]" />
+          <img src={img.textBlack} alt="Pixel Forge Text" className="h-6 sm:h-7 md:h-4 w-auto object-contain block translate-y-0.5" />
         </Link>
 
         <div className="hidden lg:flex items-center gap-6">
@@ -142,7 +142,7 @@ export default function Navbar() {
                     >
                       {item.label}
                       {item.isAi && (
-                        <span className="text-[10px] bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-1.5 py-0.5 rounded font-bold">
+                        <span className="text-[10px] bg-linear-to-r from-indigo-500 to-purple-500 text-white px-1.5 py-0.5 rounded font-bold">
                           AI
                         </span>
                       )}

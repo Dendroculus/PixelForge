@@ -57,7 +57,7 @@ export default function ActionControls({
       <button
         onClick={handleUpscale}
         disabled={isSubmitDisabled}
-        className="flex items-center justify-center min-w-[155px] px-6 py-2.5 text-sm font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-colors shadow-md disabled:opacity-70 disabled:cursor-not-allowed transition-all"
+        className="flex items-center justify-center min-w-38.75 px-6 py-2.5 text-sm font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 shadow-md disabled:opacity-70 disabled:cursor-not-allowed transition-all"
       >
         {renderButtonContent()}
       </button>
