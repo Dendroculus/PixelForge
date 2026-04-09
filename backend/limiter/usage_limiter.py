@@ -7,14 +7,13 @@ logger = logging.getLogger(__name__)
 WINDOW_HOURS = 24
 WINDOW_MS = WINDOW_HOURS * 60 * 60 * 1000
 
+def _get_feature_key(ip_address: str, feature: str) -> str:
+    """Namespaces the IP to track separate limits without changing DB schema."""
+    return f"{ip_address}:{feature}"
 
-async def check_daily_limit(ip_address: str, limit_24h: int = 3) -> bool:
-    """
-    Checks if the user has uses remaining WITHOUT deducting.
-    Returns True if they are allowed to proceed.
-    """
+async def check_daily_limit(ip_address: str, limit_24h: int = 3, feature: str = "upscale") -> bool:
+    """Checks if the user has uses remaining WITHOUT deducting."""
     pool = get_db_pool()
-
     if pool is None:
         logger.error("DB pool not initialized. Failing open for daily limit check.")
         return True
@@ -22,6 +21,8 @@ async def check_daily_limit(ip_address: str, limit_24h: int = 3) -> bool:
     if limit_24h <= 0:
         return False
 
+    feature_ip = _get_feature_key(ip_address, feature)
+    
     sum_sql = """
     SELECT COALESCE(SUM(usage_count), 0)::int AS used
     FROM ip_usage_hourly
@@ -31,21 +32,20 @@ async def check_daily_limit(ip_address: str, limit_24h: int = 3) -> bool:
 
     try:
         async with pool.acquire() as conn:
-            used = await conn.fetchval(sum_sql, ip_address)
+            used = await conn.fetchval(sum_sql, feature_ip)
             return used < limit_24h
     except Exception:
-        logger.exception("Database error during rate-limit check for ip=%s. Failing open.", ip_address)
+        logger.exception("Database error during rate-limit check for ip=%s. Failing open.", feature_ip)
         return True
 
 
-async def increment_daily_limit(ip_address: str) -> None:
-    """
-    Deducts 1 usage credit by inserting/updating the current hour's bucket.
-    Called strictly AFTER a successful AI process.
-    """
+async def increment_daily_limit(ip_address: str, feature: str = "upscale") -> None:
+    """Deducts 1 usage credit by inserting/updating the current hour's bucket."""
     pool = get_db_pool()
     if pool is None:
         return
+
+    feature_ip = _get_feature_key(ip_address, feature)
 
     upsert_sql = """
     INSERT INTO ip_usage_hourly (ip_address, bucket_start, usage_count)
@@ -56,12 +56,12 @@ async def increment_daily_limit(ip_address: str) -> None:
 
     try:
         async with pool.acquire() as conn:
-            await conn.execute(upsert_sql, ip_address)
+            await conn.execute(upsert_sql, feature_ip)
     except Exception:
-        logger.exception("Database error during usage increment for ip=%s", ip_address)
+        logger.exception("Database error during usage increment for ip=%s", feature_ip)
 
 
-async def get_usage_status(ip_address: str, limit_24h: int = LC.DAILY_USAGE_LIMIT) -> dict:
+async def get_usage_status(ip_address: str, limit_24h: int = LC.DAILY_USAGE_LIMIT, feature: str = "upscale") -> dict:
     """Return remaining uses and reset timestamp (epoch milliseconds)."""
     if limit_24h <= 0:
         return {"uses_remaining": 0, "reset_timestamp": None}
@@ -69,6 +69,8 @@ async def get_usage_status(ip_address: str, limit_24h: int = LC.DAILY_USAGE_LIMI
     pool = get_db_pool()
     if pool is None:
         return {"uses_remaining": limit_24h, "reset_timestamp": None}
+
+    feature_ip = _get_feature_key(ip_address, feature)
 
     sql = """
     WITH windowed AS (
@@ -87,7 +89,7 @@ async def get_usage_status(ip_address: str, limit_24h: int = LC.DAILY_USAGE_LIMI
 
     try:
         async with pool.acquire() as conn:
-            rec = await conn.fetchrow(sql, ip_address)
+            rec = await conn.fetchrow(sql, feature_ip)
 
         used = rec["used"] if rec and rec["used"] is not None else 0
         oldest_ms = rec["oldest_bucket_ms"] if rec else None
@@ -98,5 +100,5 @@ async def get_usage_status(ip_address: str, limit_24h: int = LC.DAILY_USAGE_LIMI
         return {"uses_remaining": uses_remaining, "reset_timestamp": reset_timestamp}
 
     except Exception:
-        logger.exception("Failed to get usage status for ip=%s", ip_address)
+        logger.exception("Failed to get usage status for ip=%s", feature_ip)
         return {"uses_remaining": limit_24h, "reset_timestamp": None}
