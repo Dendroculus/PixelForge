@@ -7,7 +7,7 @@ export const NavLinks = {
     title: "AI Enhance",
     items: [
       { id: 'upscale', to: "/upscale", label: "Upscale Image", isAi: true, icon: "M13 10V3L4 14h7v7l9-11h-7z", desc: "Increase resolution by 4x without losing quality." },
-      { id: 'remove-bg', to: "/coming-soon", label: "Remove Background", isAi: true, icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10", desc: "Extract subjects instantly with high precision." },
+      { id: 'remove-bg', to: "/remove-bg", label: "Remove Background", isAi: true, icon: "M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10", desc: "Extract subjects instantly with high precision." },
       { id: 'denoise', to: "/coming-soon", label: "Denoise Image", isAi: true, icon: "M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4", desc: "Remove grain and artifacting from low-light photos." },
     ]
   },

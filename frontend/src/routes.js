@@ -9,10 +9,10 @@ const routes = [
     path: '/upscale',
     component: React.lazy(() => import('./pages/Upscale/UpscaleWorkspace')), 
   },
-  // {
-  //   path: '/remove-bg',
-  //   component: React.lazy(() => import('./pages/RemoveBG/RemoveBGWorkspace')),
-  // },
+  {
+    path: '/remove-bg',
+    component: React.lazy(() => import('./pages/RemoveBG/RemoveBackground')),
+  },
   // {
   //   path: '/denoise',
   //   component: React.lazy(() => import('./pages/Denoise/DenoiseWorkspace')),
