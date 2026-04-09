@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Turnstile } from '@marsidev/react-turnstile';
 import WorkspaceLayout from '../../components/Layout/WorkspaceLayout';
 import UploadDropzone from '../../components/Upload/UploadDropzone';
-import ResultViewer from '../../components/Upscale/UpscaleResultViewer';
+import ResultViewer from '../../components/Workspace/ResultViewer';
 import ProgressBar from '../../components/Common/ProgressBar';
 import WorkspaceModals from '../../components/Workspace/WorkspaceModals';
 import WorkspaceLimitCard from '../../components/Workspace/WorkspaceLimitCard';

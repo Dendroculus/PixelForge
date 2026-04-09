@@ -7,7 +7,7 @@ const routes = [
   },
   {
     path: '/upscale',
-    component: React.lazy(() => import('./pages/Upscale/UpscaleWorkspace')), 
+    component: React.lazy(() => import('./pages/Upscale/UpscaleImage')), 
   },
   {
     path: '/remove-bg',

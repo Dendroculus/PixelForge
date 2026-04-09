@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import WorkspaceLayout from '../../components/Layout/WorkspaceLayout';
 import UploadDropzone from '../../components/Upload/UploadDropzone';
-import ResultViewer from '../../components/Upscale/UpscaleResultViewer';
+import ResultViewer from '../../components/Workspace/ResultViewer';
 import ProgressBar from '../../components/Common/ProgressBar';
-import ActionControls from '../../components/Upscale/ActionControls';
+import ActionControls from '../../components/Workspace/ActionControls';
 import WorkspaceModals from '../../components/Workspace/WorkspaceModals';
 import WorkspaceLimitCard from '../../components/Workspace/WorkspaceLimitCard';
 import WorkspaceMarketing from '../../components/Workspace/WorkspaceMarketing';
