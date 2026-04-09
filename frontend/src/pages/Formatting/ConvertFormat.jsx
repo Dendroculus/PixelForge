@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { APP_CONFIG } from '../../config';
 import UploadCard from '../../components/Upload/UploadCard';
-import ToolWorkspaceShell from '../../components/ToolWorkspaceShell';
+import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
 import EmptyWorkspaceState from '../../components/Common/EmptyWorkspaceState';
 
 const OUTPUT_FORMATS = ['jpg', 'png', 'webp', 'jpeg'];
