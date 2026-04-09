@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import UploadCard from '../../components/upload/UploadCard';
-import ToolWorkspaceShell from '../../components/layout/ToolWorkspaceShell';
+import UploadCard from '../../components/Upload/UploadCard';
+import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
 import EmptyWorkspaceState from '../../components/Common/EmptyWorkspaceState';
 import { useWorkspaceFile } from '../../hooks/useWorkspaceFile';
 
@@ -56,7 +56,7 @@ export default function ColorPalette() {
 
   const [paletteStyle, setPaletteStyle] = useState(() => {
     if (typeof window === 'undefined') return 'square';
-    return localStorage.getItem('paletteStyle') || 'square'; // "square" | "circle"
+    return localStorage.getItem('paletteStyle') || 'square';
   });
 
   const {
@@ -74,7 +74,6 @@ export default function ColorPalette() {
     }
   }, [paletteStyle]);
 
-  // Keep number of picker points in sync with slider
   useEffect(() => {
     setPoints((prev) => {
       if (prev.length === paletteCount) return prev;
@@ -94,19 +93,33 @@ export default function ColorPalette() {
     const iw = img.naturalWidth || 1;
     const ih = img.naturalHeight || 1;
 
-    const scale = Math.min(cw / iw, ch / ih); // object-contain
+    const padding = 8; 
+    const availableWidth = cw - (padding * 2);
+    const availableHeight = ch - (padding * 2);
+
+    const scale = Math.min(availableWidth / iw, availableHeight / ih); 
     const width = iw * scale;
     const height = ih * scale;
-    const left = (cw - width) / 2;
-    const top = (ch - height) / 2;
+
+    const left = padding + (availableWidth - width) / 2;
+    const top = padding + (availableHeight - height) / 2;
 
     setImageRect({ left, top, width, height });
   }, []);
 
   useEffect(() => {
+    const box = previewContainerRef.current;
+    if (!box) return;
+
     updateImageRect();
-    window.addEventListener('resize', updateImageRect);
-    return () => window.removeEventListener('resize', updateImageRect);
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateImageRect();
+    });
+
+    resizeObserver.observe(box);
+
+    return () => resizeObserver.disconnect();
   }, [updateImageRect, previewUrl]);
 
   const buildSamplingCanvas = useCallback(async () => {
@@ -158,7 +171,6 @@ export default function ColorPalette() {
     }
   }, [previewUrl, setError, buildSamplingCanvas]);
 
-  // Initial sample on image load or point count change
   useEffect(() => {
     if (!previewUrl || !points.length) return;
     samplePaletteFromPoints(points);
@@ -187,9 +199,16 @@ export default function ColorPalette() {
     const localX = clientX - rect.left;
     const localY = clientY - rect.top;
 
-    // Clamp to actual visible image area
-    const clampedX = clamp(localX, imageRect.left, imageRect.left + imageRect.width);
-    const clampedY = clamp(localY, imageRect.top, imageRect.top + imageRect.height);
+    const HANDLE_SIZE = 22;
+    const HANDLE_RADIUS = HANDLE_SIZE / 2;
+
+    const minX = imageRect.left + HANDLE_RADIUS;
+    const maxX = imageRect.left + imageRect.width - HANDLE_RADIUS;
+    const minY = imageRect.top + HANDLE_RADIUS;
+    const maxY = imageRect.top + imageRect.height - HANDLE_RADIUS;
+
+    const clampedX = clamp(localX, minX, maxX);
+    const clampedY = clamp(localY, minY, maxY);
 
     const nx = (clampedX - imageRect.left) / imageRect.width;
     const ny = (clampedY - imageRect.top) / imageRect.height;
@@ -219,7 +238,6 @@ export default function ColorPalette() {
     window.addEventListener('pointerup', onUp, { once: true });
   }, [movePointFromClient, samplePaletteFromPoints]);
 
-  // Live updates while dragging
   useEffect(() => {
     if (activePointId == null) return;
     const t = setTimeout(() => samplePaletteFromPoints(points), 16);
