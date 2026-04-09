@@ -1,31 +1,9 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
-import { apiService } from '../services/apiService';
-import { clearAppSession } from '../utils/session';
-import { STORAGE_KEYS } from '../config';
+import { apiService } from '../../services/apiService';
+import { clearAppSession } from '../../utils/session';
+import { STORAGE_KEYS } from '../../config';
 
-/**
- * Handles upload + polling flow for image upscaling.
- *
- * @param {Function} setJobId
- * @param {Function} setProgress
- * @param {Function} setResultUrl
- * @param {Function} setIsProcessing
- * @param {Function} resetTurnstile
- * @param {string|null} previewUrl
- * @param {Function} setSelectedFile
- * @param {Function} setPreviewUrl
- * @param {Function} setAppAlert
- * @param {string|null} turnstileToken
- * @param {Object} turnstileRef
- * @param {Function} setTurnstileToken
- * @param {File|null} selectedFile
- * @param {Function} recordUsage
- * @param {Function} forceMaxLimit
- * @param {number} scale
- *
- * @returns {{ pollForResult: Function, handleUpscale: Function }}
- */
-export function useUpscaleActions({
+export function useActions({
   setJobId,
   setProgress,
   setResultUrl,
@@ -41,7 +19,7 @@ export function useUpscaleActions({
   selectedFile,
   recordUsage,
   forceMaxLimit,
-  scale,
+  apiCallFn, 
 }) {
   const [isWaitingForToken, setIsWaitingForToken] = useState(false);
   const pendingFileRef = useRef(null);
@@ -53,11 +31,6 @@ export function useUpscaleActions({
     }
   }, [selectedFile]);
 
-  /**
-   * Polls backend until job completes or fails.
-   *
-   * @param {string} id - Job ID
-   */
   const pollForResult = useCallback((id) => {
     setJobId(id);
 
@@ -142,24 +115,11 @@ export function useUpscaleActions({
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, [
-    setProgress,
-    resetTurnstile,
-    previewUrl,
-    setJobId,
-    setResultUrl,
-    setIsProcessing,
-    setSelectedFile,
-    setPreviewUrl,
-    setAppAlert,
-    recordUsage,
+    setProgress, resetTurnstile, previewUrl, setJobId, setResultUrl, 
+    setIsProcessing, setSelectedFile, setPreviewUrl, setAppAlert, recordUsage,
   ]);
 
-  /**
-   * Initiates upload and starts polling flow.
-   *
-   * @param {File|Blob|null} overrideFile - Optional override file
-   */
-  const handleUpscale = useCallback(async (overrideFile = null) => {
+  const handleProcess = useCallback(async (overrideFile = null) => {
     const fileToUse = overrideFile instanceof Blob ? overrideFile : selectedFile;
     if (!fileToUse) return;
 
@@ -183,7 +143,8 @@ export function useUpscaleActions({
     pendingFileRef.current = null;
 
     try {
-      const data = await apiService.uploadImage(fileToUse, token, scale);
+      const data = await apiCallFn(fileToUse, token);
+      
       localStorage.setItem(STORAGE_KEYS.JOB_ID, data.job_id);
       pollForResult(data.job_id);
     } catch (error) {
@@ -200,24 +161,15 @@ export function useUpscaleActions({
       resetTurnstile();
     }
   }, [
-    selectedFile,
-    turnstileToken,
-    pollForResult,
-    previewUrl,
-    resetTurnstile,
-    setIsProcessing,
-    turnstileRef,
-    setTurnstileToken,
-    forceMaxLimit,
-    setAppAlert,
-    scale,
+    selectedFile, turnstileToken, pollForResult, previewUrl, resetTurnstile, 
+    setIsProcessing, turnstileRef, setTurnstileToken, forceMaxLimit, setAppAlert, apiCallFn
   ]);
 
   useEffect(() => {
     if (isWaitingForToken && turnstileToken && pendingFileRef.current) {
-      handleUpscale(pendingFileRef.current);
+      handleProcess(pendingFileRef.current);
     }
-  }, [isWaitingForToken, turnstileToken, handleUpscale]);
+  }, [isWaitingForToken, turnstileToken, handleProcess]);
 
-  return { pollForResult, handleUpscale };
+  return { pollForResult, handleProcess };
 }

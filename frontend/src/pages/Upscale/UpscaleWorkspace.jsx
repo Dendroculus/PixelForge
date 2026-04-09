@@ -5,7 +5,7 @@ import ResultViewer from '../../components/Upscale/UpscaleResultViewer';
 import ProgressBar from '../../components/Common/ProgressBar';
 import ActionControls from '../../components/Upscale/ActionControls';
 import LegalModal from '../../components/Common/LegalModal';
-import { useUpscalePipeline } from '../../hooks/useUpscalePipeline';
+import { useUpscalePipeline } from '../../hooks/pipeline/useUpscalePipeline';
 import { useSimulatedProgress } from '../../hooks/useSimulatedProgress';
 import { clearAppSession } from '../../utils/session';
 import { APP_CONFIG as config, STORAGE_KEYS } from '../../config';

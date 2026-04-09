@@ -55,6 +55,7 @@ class LimitConfig:
     POLL_RATE_LIMIT: str = "60/minute"
     SAS_EXPIRATION_MINUTES: int = 11
     DAILY_USAGE_LIMIT: int = 3
+    REMBG_DAILY_USAGE_LIMIT: int = 10  # Added for Background Removal
 
 class DatabaseConfig:
     POOL_MIN_SIZE = 1

@@ -9,11 +9,14 @@ function getStatusLabel(progress) {
   if (progress < 99) return "Polishing final 4K output...";
   return "Finalizing download...";
 }
-export default function ProgressBar({ progress }) {
+
+export default function ProgressBar({ progress, customText }) {
+  const displayText = customText || getStatusLabel(progress);
+
   return (
     <div className="w-full space-y-2">
       <div className="flex justify-between text-xs font-bold text-slate-700 px-1">
-        <span>{getStatusLabel(progress)}</span>
+        <span>{displayText}</span>
         <span>{Math.round(progress)}%</span>
       </div>
       <div className="w-full bg-white/50 rounded-full h-2.5 border border-white/40 shadow-inner">
@@ -28,4 +31,5 @@ export default function ProgressBar({ progress }) {
 
 ProgressBar.propTypes = {
   progress: PropTypes.number.isRequired,
+  customText: PropTypes.string, 
 };
