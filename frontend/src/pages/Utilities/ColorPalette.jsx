@@ -1,7 +1,7 @@
-import { useCallback, useState, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import UploadCard from '../../components/Upload/UploadCard';
-import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
+import UploadCard from '../../components/upload/UploadCard';
+import ToolWorkspaceShell from '../../components/layout/ToolWorkspaceShell';
 import EmptyWorkspaceState from '../../components/Common/EmptyWorkspaceState';
 import { useWorkspaceFile } from '../../hooks/useWorkspaceFile';
 
@@ -14,12 +14,50 @@ function getContrastYIQ(hexcolor) {
   return yiq >= 128 ? 'text-slate-900' : 'text-white';
 }
 
+const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+
+const rgbToHex = (r, g, b) =>
+  '#' +
+  [r, g, b]
+    .map((x) => {
+      const hex = Math.max(0, Math.min(255, x)).toString(16);
+      return hex.length === 1 ? `0${hex}` : hex;
+    })
+    .join('');
+
+function makeInitialPoints(count) {
+  const cols = Math.ceil(Math.sqrt(count));
+  const rows = Math.ceil(count / cols);
+  const pts = [];
+  for (let i = 0; i < count; i += 1) {
+    const c = i % cols;
+    const r = Math.floor(i / cols);
+    const x = cols === 1 ? 0.5 : 0.12 + (c / (cols - 1)) * 0.76;
+    const y = rows === 1 ? 0.5 : 0.12 + (r / (rows - 1)) * 0.76;
+    pts.push({ id: i, x, y });
+  }
+  return pts;
+}
+
 export default function ColorPalette() {
   const fileInputRef = useRef(null);
+  const imageRef = useRef(null);
+  const previewContainerRef = useRef(null);
+  const canvasRef = useRef(null);
+
   const [paletteCount, setPaletteCount] = useState(5);
   const [isProcessing, setIsProcessing] = useState(false);
   const [palette, setPalette] = useState([]);
   const [copiedHex, setCopiedHex] = useState(null);
+
+  const [points, setPoints] = useState(makeInitialPoints(5));
+  const [activePointId, setActivePointId] = useState(null);
+  const [imageRect, setImageRect] = useState({ left: 0, top: 0, width: 1, height: 1 });
+
+  const [paletteStyle, setPaletteStyle] = useState(() => {
+    if (typeof window === 'undefined') return 'square';
+    return localStorage.getItem('paletteStyle') || 'square'; // "square" | "circle"
+  });
 
   const {
     file,
@@ -30,101 +68,163 @@ export default function ColorPalette() {
     resetAll: resetWorkspaceFile,
   } = useWorkspaceFile(fileInputRef);
 
-  const handleReset = useCallback(() => {
-    resetWorkspaceFile();
-    setPalette([]);
-    setIsProcessing(false);
-    setCopiedHex(null);
-  }, [resetWorkspaceFile]);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('paletteStyle', paletteStyle);
+    }
+  }, [paletteStyle]);
 
-  const extractColors = useCallback(async () => {
-    if (!previewUrl || isProcessing) return;
+  // Keep number of picker points in sync with slider
+  useEffect(() => {
+    setPoints((prev) => {
+      if (prev.length === paletteCount) return prev;
+      if (prev.length > paletteCount) return prev.slice(0, paletteCount);
+      const extras = makeInitialPoints(paletteCount).slice(prev.length);
+      return [...prev, ...extras.map((p, i) => ({ ...p, id: prev.length + i }))];
+    });
+  }, [paletteCount]);
+
+  const updateImageRect = useCallback(() => {
+    const img = imageRef.current;
+    const box = previewContainerRef.current;
+    if (!img || !box) return;
+
+    const cw = box.clientWidth;
+    const ch = box.clientHeight;
+    const iw = img.naturalWidth || 1;
+    const ih = img.naturalHeight || 1;
+
+    const scale = Math.min(cw / iw, ch / ih); // object-contain
+    const width = iw * scale;
+    const height = ih * scale;
+    const left = (cw - width) / 2;
+    const top = (ch - height) / 2;
+
+    setImageRect({ left, top, width, height });
+  }, []);
+
+  useEffect(() => {
+    updateImageRect();
+    window.addEventListener('resize', updateImageRect);
+    return () => window.removeEventListener('resize', updateImageRect);
+  }, [updateImageRect, previewUrl]);
+
+  const buildSamplingCanvas = useCallback(async () => {
+    if (!previewUrl) return null;
+
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+
+    await new Promise((resolve, reject) => {
+      img.onload = resolve;
+      img.onerror = reject;
+      img.src = previewUrl;
+    });
+
+    const canvas = canvasRef.current || document.createElement('canvas');
+    canvasRef.current = canvas;
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) throw new Error('Canvas context unavailable');
+
+    canvas.width = img.naturalWidth || img.width;
+    canvas.height = img.naturalHeight || img.height;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    return { canvas, ctx };
+  }, [previewUrl]);
+
+  const samplePaletteFromPoints = useCallback(async (inputPoints) => {
+    if (!previewUrl || !inputPoints?.length) return;
     setIsProcessing(true);
-    setPalette([]);
-    setCopiedHex(null);
+    setError('');
 
     try {
-      const img = new Image();
-      img.crossOrigin = 'Anonymous';
+      const built = await buildSamplingCanvas();
+      if (!built) return;
+      const { canvas, ctx } = built;
 
-      await new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = reject;
-        img.src = previewUrl;
+      const nextPalette = inputPoints.map((p) => {
+        const px = Math.round(clamp(p.x, 0, 1) * (canvas.width - 1));
+        const py = Math.round(clamp(p.y, 0, 1) * (canvas.height - 1));
+        const d = ctx.getImageData(px, py, 1, 1).data;
+        return rgbToHex(d[0], d[1], d[2]);
       });
 
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-
-      const MAX_DIM = 150;
-      let w = img.width;
-      let h = img.height;
-      if (w > h && w > MAX_DIM) {
-        h = Math.round(h * (MAX_DIM / w));
-        w = MAX_DIM;
-      } else if (h > MAX_DIM) {
-        w = Math.round(w * (MAX_DIM / h));
-        h = MAX_DIM;
-      }
-
-      canvas.width = w;
-      canvas.height = h;
-      ctx.drawImage(img, 0, 0, w, h);
-
-      const imgData = ctx.getImageData(0, 0, w, h).data;
-      const colorCounts = {};
-
-      for (let i = 0; i < imgData.length; i += 4) {
-        const a = imgData[i + 3];
-        if (a < 128) continue;
-        const r = Math.round(imgData[i] / 24) * 24;
-        const g = Math.round(imgData[i + 1] / 24) * 24;
-        const b = Math.round(imgData[i + 2] / 24) * 24;
-        const rgb = `${r},${g},${b}`;
-        colorCounts[rgb] = (colorCounts[rgb] || 0) + 1;
-      }
-
-      const sortedColors = Object.entries(colorCounts)
-        .sort(([, countA], [, countB]) => countB - countA)
-        .slice(0, paletteCount * 5);
-
-      const finalPalette = [];
-      for (const [rgbStr] of sortedColors) {
-        const [r, g, b] = rgbStr.split(',').map(Number);
-        const isSimilar = finalPalette.some((existing) => {
-          const [er, eg, eb] = existing.split(',').map(Number);
-          const dist = Math.sqrt((r - er) ** 2 + (g - eg) ** 2 + (b - eb) ** 2);
-          return dist < 45;
-        });
-        if (!isSimilar) finalPalette.push(rgbStr);
-        if (finalPalette.length >= paletteCount) break;
-      }
-
-      const rgbToHex = (r, g, b) =>
-        '#' +
-        [r, g, b]
-          .map((x) => {
-            const hex = Math.max(0, Math.min(255, x)).toString(16);
-            return hex.length === 1 ? `0${hex}` : hex;
-          })
-          .join('');
-
-      setPalette(finalPalette.map((rgb) => {
-        const [r, g, b] = rgb.split(',').map(Number);
-        return rgbToHex(r, g, b);
-      }));
+      setPalette(nextPalette);
     } catch {
       setError('Failed to process image.');
     } finally {
       setIsProcessing(false);
     }
-  }, [previewUrl, isProcessing, paletteCount, setError]);
+  }, [previewUrl, setError, buildSamplingCanvas]);
+
+  // Initial sample on image load or point count change
+  useEffect(() => {
+    if (!previewUrl || !points.length) return;
+    samplePaletteFromPoints(points);
+  }, [previewUrl, points.length, samplePaletteFromPoints]);
+
+  const handleReset = useCallback(() => {
+    resetWorkspaceFile();
+    setPalette([]);
+    setIsProcessing(false);
+    setCopiedHex(null);
+    setPoints(makeInitialPoints(paletteCount));
+    setActivePointId(null);
+  }, [resetWorkspaceFile, paletteCount]);
 
   const copyToClipboard = useCallback((hex) => {
     navigator.clipboard.writeText(hex);
     setCopiedHex(hex);
     setTimeout(() => setCopiedHex(null), 2000);
   }, []);
+
+  const movePointFromClient = useCallback((id, clientX, clientY) => {
+    const box = previewContainerRef.current;
+    if (!box) return;
+
+    const rect = box.getBoundingClientRect();
+    const localX = clientX - rect.left;
+    const localY = clientY - rect.top;
+
+    // Clamp to actual visible image area
+    const clampedX = clamp(localX, imageRect.left, imageRect.left + imageRect.width);
+    const clampedY = clamp(localY, imageRect.top, imageRect.top + imageRect.height);
+
+    const nx = (clampedX - imageRect.left) / imageRect.width;
+    const ny = (clampedY - imageRect.top) / imageRect.height;
+
+    setPoints((prev) => prev.map((p) => (p.id === id ? { ...p, x: nx, y: ny } : p)));
+  }, [imageRect]);
+
+  const onPointPointerDown = useCallback((id) => (e) => {
+    e.preventDefault();
+    setActivePointId(id);
+
+    const onMove = (ev) => {
+      movePointFromClient(id, ev.clientX, ev.clientY);
+    };
+
+    const onUp = () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      setActivePointId(null);
+      setPoints((latest) => {
+        samplePaletteFromPoints(latest);
+        return latest;
+      });
+    };
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp, { once: true });
+  }, [movePointFromClient, samplePaletteFromPoints]);
+
+  // Live updates while dragging
+  useEffect(() => {
+    if (activePointId == null) return;
+    const t = setTimeout(() => samplePaletteFromPoints(points), 16);
+    return () => clearTimeout(t);
+  }, [points, activePointId, samplePaletteFromPoints]);
 
   return (
     <section className="flex-1 w-full max-w-6xl mx-auto px-4 pt-6 pb-16">
@@ -156,31 +256,88 @@ export default function ColorPalette() {
             <AnimatePresence>
               {palette.length > 0 && (
                 <motion.div initial={{ opacity: 0, height: 0, scale: 0.95 }} animate={{ opacity: 1, height: 'auto', scale: 1 }} exit={{ opacity: 0, height: 0 }} className="mb-4 flex flex-col">
-                  <label className="mb-2 w-full text-left text-sm font-bold text-slate-700">Palette</label>
-                  <div className="flex h-14 w-full overflow-hidden rounded-xl border border-slate-200/60 bg-white shadow-sm">
-                    {palette.map((hex, i) => (
-                      <motion.button
-                        key={`palette-block-${hex}-${i}`}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: i * 0.05 }}
-                        onClick={() => copyToClipboard(hex)}
-                        className="group relative flex-1 transition-all duration-300 ease-in-out hover:flex-[1.5] focus:outline-none"
-                        style={{ backgroundColor: hex }}
-                        title={`Copy ${hex.toUpperCase()}`}
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <label className="text-sm font-bold text-slate-700">Palette</label>
+
+                    <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 text-[11px] font-bold">
+                      <button
+                        type="button"
+                        onClick={() => setPaletteStyle('square')}
+                        className={`px-2.5 py-1 rounded-md transition ${
+                          paletteStyle === 'square'
+                            ? 'bg-indigo-600 text-white'
+                            : 'text-slate-600 hover:bg-slate-100'
+                        }`}
                       >
-                        <div className="absolute inset-0 flex items-center justify-center bg-black/10 opacity-0 backdrop-blur-[2px] transition-all duration-300 group-hover:opacity-100">
-                          {copiedHex === hex ? (
-                            <svg className={`h-5 w-5 ${getContrastYIQ(hex)}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                            </svg>
-                          ) : (
-                            <span className={`hidden whitespace-nowrap text-[10px] font-black tracking-wider sm:block ${getContrastYIQ(hex)}`}>{hex.toUpperCase()}</span>
-                          )}
-                        </div>
-                      </motion.button>
-                    ))}
+                        Square
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaletteStyle('circle')}
+                        className={`px-2.5 py-1 rounded-md transition ${
+                          paletteStyle === 'circle'
+                            ? 'bg-indigo-600 text-white'
+                            : 'text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        Circle
+                      </button>
+                    </div>
                   </div>
+
+                  {paletteStyle === 'square' ? (
+                    <div className="flex h-14 w-full overflow-hidden rounded-xl border border-slate-200/60 bg-white shadow-sm">
+                      {palette.map((hex, i) => (
+                        <motion.button
+                          key={`palette-block-${hex}-${i}`}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: i * 0.05 }}
+                          onClick={() => copyToClipboard(hex)}
+                          className="group relative flex-1 transition-all duration-300 ease-in-out hover:flex-[1.5] focus:outline-none"
+                          style={{ backgroundColor: hex }}
+                          title={`Copy ${hex.toUpperCase()}`}
+                        >
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/10 opacity-0 backdrop-blur-[2px] transition-all duration-300 group-hover:opacity-100">
+                            {copiedHex === hex ? (
+                              <svg className={`h-5 w-5 ${getContrastYIQ(hex)}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            ) : (
+                              <span className={`hidden whitespace-nowrap text-[10px] font-black tracking-wider sm:block ${getContrastYIQ(hex)}`}>{hex.toUpperCase()}</span>
+                            )}
+                          </div>
+                        </motion.button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-wrap gap-3">
+                      {palette.map((hex, i) => (
+                        <motion.button
+                          key={`palette-circle-${hex}-${i}`}
+                          initial={{ opacity: 0, scale: 0.9 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: i * 0.04 }}
+                          onClick={() => copyToClipboard(hex)}
+                          className="group relative h-11 w-11 sm:h-12 sm:w-12 rounded-full border border-slate-200/70 shadow-sm transition-transform hover:scale-110 focus:outline-none"
+                          style={{ backgroundColor: hex }}
+                          title={`Copy ${hex.toUpperCase()}`}
+                        >
+                          <span className="absolute inset-0 grid place-items-center">
+                            {copiedHex === hex ? (
+                              <svg className={`h-4 w-4 ${getContrastYIQ(hex)}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            ) : (
+                              <span className={`hidden text-[9px] font-black tracking-wider group-hover:block ${getContrastYIQ(hex)}`}>
+                                {hex.replace('#', '')}
+                              </span>
+                            )}
+                          </span>
+                        </motion.button>
+                      ))}
+                    </div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -203,23 +360,56 @@ export default function ColorPalette() {
                 Upload Another Image
               </button>
             )}
-            <button onClick={extractColors} disabled={!file || isProcessing} className="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white transition-all hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none">
+            <button onClick={() => samplePaletteFromPoints(points)} disabled={!file || isProcessing} className="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white transition-all hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none">
               {isProcessing ? 'Analyzing Pixels...' : 'Extract Palette'}
             </button>
           </div>
         }
         rightHeader={<h3 className="flex items-center justify-between text-sm font-bold text-slate-800">Preview Workspace</h3>}
         rightBody={
-          <div className="absolute inset-2 flex items-center justify-center">
-            {previewUrl ? (
-              <img
-                src={previewUrl}
-                alt="Original"
-                className={`max-h-full max-w-full object-contain ${isProcessing ? 'scale-105 opacity-60 blur-md grayscale transition-all duration-700' : 'transition-all duration-700 opacity-100'}`}
-              />
-            ) : (
-              <EmptyWorkspaceState />
-            )}
+          <div className="absolute inset-2 flex flex-col">
+            <div
+              ref={previewContainerRef}
+              className="relative flex-1 min-h-0 w-full rounded-xl overflow-hidden flex items-center justify-center bg-black/5 touch-none"
+            >
+              {previewUrl ? (
+                <>
+                  <img
+                    ref={imageRef}
+                    src={previewUrl}
+                    alt="Original"
+                    onLoad={updateImageRect}
+                    className={`absolute inset-0 w-full h-full object-contain p-2 ${
+                      isProcessing ? 'scale-105 opacity-60 blur-[1px] grayscale-[0.1] transition-all duration-200' : 'transition-all duration-200 opacity-100'
+                    }`}
+                  />
+
+                  {points.map((p, i) => {
+                    const hex = palette[i] || '#ffffff';
+                    return (
+                      <button
+                        key={`picker-${p.id}`}
+                        onPointerDown={onPointPointerDown(p.id)}
+                        className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/90 shadow-[0_0_0_1px_rgba(15,23,42,0.55)] cursor-grab active:cursor-grabbing"
+                        style={{
+                          left: `${imageRect.left + p.x * imageRect.width}px`,
+                          top: `${imageRect.top + p.y * imageRect.height}px`,
+                          width: 22,
+                          height: 22,
+                          backgroundColor: hex,
+                        }}
+                        title={hex.toUpperCase()}
+                        aria-label={`Move color picker ${i + 1}`}
+                      />
+                    );
+                  })}
+                </>
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <EmptyWorkspaceState />
+                </div>
+              )}
+            </div>
           </div>
         }
       />
