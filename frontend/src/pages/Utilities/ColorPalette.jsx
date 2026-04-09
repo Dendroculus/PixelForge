@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import UploadCard from '../../components/UploadCard';
-import ToolWorkspaceShell from '../../components/ToolWorkspaceShell';
-import EmptyWorkspaceState from '../../components/EmptyWorkspaceState';
+import UploadCard from '../../components/Upload/UploadCard';
+import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
+import EmptyWorkspaceState from '../../components/Common/EmptyWorkspaceState';
 
 function getContrastYIQ(hexcolor) {
   const hex = hexcolor.replace('#', '');

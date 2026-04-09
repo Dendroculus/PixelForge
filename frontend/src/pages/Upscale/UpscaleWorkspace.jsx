@@ -1,15 +1,15 @@
 import { useState } from 'react';
-import WorkspaceLayout from '../../components/WorkspaceLayout';
-import UploadDropzone from '../../components/UploadDropzone';
-import ResultViewer from '../../components/UpscaleResultViewer';
-import ProgressBar from '../../components/ProgressBar';
-import ActionControls from '../../components/ActionControls';
-import LegalModal from '../../components/LegalModal';
+import WorkspaceLayout from '../../components/Layout/WorkspaceLayout';
+import UploadDropzone from '../../components/Upload/UploadDropzone';
+import ResultViewer from '../../components/Upscale/UpscaleResultViewer';
+import ProgressBar from '../../components/Common/ProgressBar';
+import ActionControls from '../../components/Upscale/ActionControls';
+import LegalModal from '../../components/Common/LegalModal';
 import { useUpscalePipeline } from '../../hooks/useUpscalePipeline';
 import { useSimulatedProgress } from '../../hooks/useSimulatedProgress';
 import { clearAppSession } from '../../utils/session';
 import { APP_CONFIG as config, STORAGE_KEYS } from '../../config';
-import CountdownTimer from '../../components/CountdownTimer';
+import CountdownTimer from '../../components/Common/CountdownTimer';
 
 export default function UpscaleWorkspace() {
   const [isResultLoaded, setIsResultLoaded] = useState(false);

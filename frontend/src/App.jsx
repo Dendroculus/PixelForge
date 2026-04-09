@@ -1,11 +1,11 @@
 import { useState, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import routes from './routes';
-import Navbar from './components/NavBar';
-import Header from './components/Header';
-import Footer from './components/Footer';
+import Navbar from './components/Layout/NavBar';
+import Header from './components/Layout/Header';
+import Footer from './components/Layout/Footer';
 import NotFound from './pages/Special/NotFound';
-import LegalModal from './components/LegalModal';
+import LegalModal from './components/Common/LegalModal';
 import { legalModalData } from './data/legalModalData';
 
 function GlobalHeader() {
