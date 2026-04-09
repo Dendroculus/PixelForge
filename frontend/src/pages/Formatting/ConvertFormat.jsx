@@ -2,9 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { APP_CONFIG } from '../../config';
-import UploadCard from '../../components/UploadCard';
+import UploadCard from '../../components/Upload/UploadCard';
 import ToolWorkspaceShell from '../../components/ToolWorkspaceShell';
-import EmptyWorkspaceState from '../../components/EmptyWorkspaceState';
+import EmptyWorkspaceState from '../../components/Common/EmptyWorkspaceState';
 
 const OUTPUT_FORMATS = ['jpg', 'png', 'webp', 'jpeg'];
 

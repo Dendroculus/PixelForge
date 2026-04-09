@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { APP_CONFIG } from '../../config';
-import UploadCard from '../../components/UploadCard';
-import ToolWorkspaceShell from '../../components/ToolWorkspaceShell';
-import EmptyWorkspaceState from '../../components/EmptyWorkspaceState';
+import UploadCard from '../../components/Upload/UploadCard';
+import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
+import EmptyWorkspaceState from '../../components/Common/EmptyWorkspaceState';
 
 function bytesToMB(bytes) {
   return (bytes / (1024 * 1024)).toFixed(2);

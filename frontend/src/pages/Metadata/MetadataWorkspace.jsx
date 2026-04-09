@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import exifr from 'exifr';
-import UploadDropzone from '../../components/UploadDropzone';
+import UploadDropzone from '../../components/Upload/UploadDropzone';
 
 export default function MetadataWorkspace() {
   const [selectedFile, setSelectedFile] = useState(null);

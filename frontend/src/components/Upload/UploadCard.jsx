@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { validateImageUpload } from '../utils/fileValidation';
+import { validateImageUpload } from '../../utils/fileValidation';
 
 export default function UploadCard({
   inputId,
