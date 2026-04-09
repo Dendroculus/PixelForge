@@ -171,10 +171,16 @@ export default function ColorPalette() {
     }
   }, [previewUrl, setError, buildSamplingCanvas]);
 
+  const latestPointsRef = useRef(points);
+
   useEffect(() => {
-    if (!previewUrl || !points.length) return;
-    samplePaletteFromPoints(points);
-  }, [previewUrl, points.length, samplePaletteFromPoints]);
+    latestPointsRef.current = points;
+  }, [points]);
+
+  useEffect(() => {
+    if (!previewUrl || !latestPointsRef.current.length) return;
+    samplePaletteFromPoints(latestPointsRef.current);
+  }, [previewUrl, samplePaletteFromPoints]);
 
   const handleReset = useCallback(() => {
     resetWorkspaceFile();
