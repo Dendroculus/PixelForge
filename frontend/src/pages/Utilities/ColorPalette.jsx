@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import UploadCard from '../../components/Upload/UploadCard';
 import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
 import EmptyWorkspaceState from '../../components/Common/EmptyWorkspaceState';
+import { useWorkspaceFile } from '../../hooks/useWorkspaceFile';
 
 function getContrastYIQ(hexcolor) {
   const hex = hexcolor.replace('#', '');
@@ -14,43 +15,27 @@ function getContrastYIQ(hexcolor) {
 }
 
 export default function ColorPalette() {
-  const [file, setFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState('');
+  const fileInputRef = useRef(null);
   const [paletteCount, setPaletteCount] = useState(5);
   const [isProcessing, setIsProcessing] = useState(false);
   const [palette, setPalette] = useState([]);
   const [copiedHex, setCopiedHex] = useState(null);
-  const [error, setError] = useState('');
 
-  const fileInputRef = useRef(null);
+  const {
+    file,
+    previewUrl,
+    error,
+    setError,
+    onFileChange,
+    resetAll: resetWorkspaceFile,
+  } = useWorkspaceFile(fileInputRef);
 
-  const revokeUrl = useCallback((url) => {
-    if (url) URL.revokeObjectURL(url);
-  }, []);
-
-  const resetAll = useCallback(() => {
-    revokeUrl(previewUrl);
-    setFile(null);
-    setPreviewUrl('');
+  const handleReset = useCallback(() => {
+    resetWorkspaceFile();
     setPalette([]);
     setIsProcessing(false);
     setCopiedHex(null);
-    setError('');
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  }, [previewUrl, revokeUrl]);
-
-  const handleFileSelect = useCallback((selectedFile) => {
-    resetAll();
-    setFile(selectedFile);
-    setPreviewUrl(URL.createObjectURL(selectedFile));
-  }, [resetAll]);
-
-  const onFileChange = useCallback((event) => {
-    const picked = event.target.files?.[0];
-    if (!picked) return;
-    setError('');
-    handleFileSelect(picked);
-  }, [handleFileSelect]);
+  }, [resetWorkspaceFile]);
 
   const extractColors = useCallback(async () => {
     if (!previewUrl || isProcessing) return;
@@ -133,15 +118,13 @@ export default function ColorPalette() {
     } finally {
       setIsProcessing(false);
     }
-  }, [previewUrl, isProcessing, paletteCount]);
+  }, [previewUrl, isProcessing, paletteCount, setError]);
 
   const copyToClipboard = useCallback((hex) => {
     navigator.clipboard.writeText(hex);
     setCopiedHex(hex);
     setTimeout(() => setCopiedHex(null), 2000);
   }, []);
-
-  useEffect(() => () => revokeUrl(previewUrl), [previewUrl, revokeUrl]);
 
   return (
     <section className="flex-1 w-full max-w-6xl mx-auto px-4 pt-6 pb-16">
@@ -152,7 +135,7 @@ export default function ColorPalette() {
           <>
             {!file && (
               <div className="mb-4 min-h-32">
-                <UploadCard inputId="palette-file-input" inputRef={fileInputRef} onChange={onFileChange} helperText="Any format up to 10MB" />
+                <UploadCard inputId="palette-file-input" inputRef={fileInputRef} onChange={onFileChange} helperText="Any format up to 10MB" maxSizeMB={10} />
               </div>
             )}
 
@@ -216,7 +199,7 @@ export default function ColorPalette() {
         leftFooter={
           <div className="flex flex-col gap-3">
             {file && (
-              <button onClick={resetAll} disabled={isProcessing} className="inline-flex w-full items-center justify-center rounded-xl border border-slate-200/60 bg-white/50 px-5 py-3.5 text-sm font-bold text-slate-600 shadow-sm transition-all hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50">
+              <button onClick={handleReset} disabled={isProcessing} className="inline-flex w-full items-center justify-center rounded-xl border border-slate-200/60 bg-white/50 px-5 py-3.5 text-sm font-bold text-slate-600 shadow-sm transition-all hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50">
                 Upload Another Image
               </button>
             )}

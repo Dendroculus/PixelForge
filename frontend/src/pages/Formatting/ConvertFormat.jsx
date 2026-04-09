@@ -5,6 +5,7 @@ import { APP_CONFIG } from '../../config';
 import UploadCard from '../../components/Upload/UploadCard';
 import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
 import EmptyWorkspaceState from '../../components/Common/EmptyWorkspaceState';
+import { useWorkspaceFile } from '../../hooks/useWorkspaceFile';
 
 const OUTPUT_FORMATS = ['jpg', 'png', 'webp', 'jpeg'];
 
@@ -32,16 +33,25 @@ export default function ConvertFormat() {
   const dropdownRef = useRef(null);
   const dropdownMenuRef = useRef(null);
 
-  const [file, setFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState('');
   const [targetFormat, setTargetFormat] = useState('png');
   const [quality, setQuality] = useState(0.92);
   const [isConverting, setIsConverting] = useState(false);
-  const [resultBlob, setResultBlob] = useState(null);
-  const [resultUrl, setResultUrl] = useState('');
-  const [error, setError] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [dropdownStyle, setDropdownStyle] = useState(null);
+
+  const {
+    file,
+    previewUrl,
+    resultBlob,
+    setResultBlob,
+    resultUrl,
+    setResultUrl,
+    error,
+    setError,
+    onFileChange,
+    resetAll,
+    cleanupResult,
+  } = useWorkspaceFile(fileInputRef);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -53,43 +63,11 @@ export default function ConvertFormat() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const revokeUrl = useCallback((url) => {
-    if (url) URL.revokeObjectURL(url);
-  }, []);
-
-  const cleanupResult = useCallback(() => {
-    revokeUrl(resultUrl);
-    setResultBlob(null);
-    setResultUrl('');
-  }, [resultUrl, revokeUrl]);
-
-  const cleanupPreview = useCallback(() => {
-    revokeUrl(previewUrl);
-    setPreviewUrl('');
-  }, [previewUrl, revokeUrl]);
-
-  const resetAll = useCallback(() => {
-    cleanupResult();
-    cleanupPreview();
-    setFile(null);
-    setError('');
+  const handleReset = useCallback(() => {
+    resetAll();
     setIsConverting(false);
     setIsDropdownOpen(false);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  }, [cleanupPreview, cleanupResult]);
-
-  const onFileChange = useCallback(
-    (event) => {
-      const picked = event.target.files?.[0];
-      if (!picked) return;
-      setError('');
-      cleanupResult();
-      cleanupPreview();
-      setFile(picked);
-      setPreviewUrl(URL.createObjectURL(picked));
-    },
-    [cleanupPreview, cleanupResult]
-  );
+  }, [resetAll]);
 
   const convertImage = useCallback(async () => {
     if (!file || isConverting) return;
@@ -135,15 +113,10 @@ export default function ConvertFormat() {
     } finally {
       setIsConverting(false);
     }
-  }, [cleanupResult, file, isConverting, quality, targetFormat]);
+  }, [cleanupResult, file, isConverting, quality, targetFormat, setError, setResultBlob, setResultUrl]);
 
   const canConvert = useMemo(() => Boolean(file) && !isConverting, [file, isConverting]);
   const downloadName = useMemo(() => makeDownloadName(file?.name, targetFormat), [file?.name, targetFormat]);
-
-  useEffect(() => () => {
-    revokeUrl(previewUrl);
-    revokeUrl(resultUrl);
-  }, [previewUrl, resultUrl, revokeUrl]);
 
   const updateDropdownPosition = useCallback(() => {
     if (!dropdownRef.current) return;
@@ -232,7 +205,7 @@ export default function ConvertFormat() {
             <button type="button" onClick={convertImage} disabled={!canConvert} className="inline-flex flex-1 items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white transition-all hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none">
               {isConverting ? 'Converting...' : 'Convert Image'}
             </button>
-            <button type="button" onClick={resetAll} className="inline-flex items-center justify-center rounded-xl border border-slate-200/60 bg-white/50 px-5 py-3.5 text-sm font-bold text-slate-600 shadow-sm transition-all hover:bg-white hover:text-slate-900">
+            <button type="button" onClick={handleReset} className="inline-flex items-center justify-center rounded-xl border border-slate-200/60 bg-white/50 px-5 py-3.5 text-sm font-bold text-slate-600 shadow-sm transition-all hover:bg-white hover:text-slate-900">
               Reset
             </button>
           </div>

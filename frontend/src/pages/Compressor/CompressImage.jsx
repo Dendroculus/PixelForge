@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { APP_CONFIG } from '../../config';
 import UploadCard from '../../components/Upload/UploadCard';
 import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
 import EmptyWorkspaceState from '../../components/Common/EmptyWorkspaceState';
+import { useWorkspaceFile } from '../../hooks/useWorkspaceFile';
 
 function bytesToMB(bytes) {
   return (bytes / (1024 * 1024)).toFixed(2);
@@ -19,51 +20,27 @@ function makeDownloadName(originalName) {
 
 export default function CompressImage() {
   const fileInputRef = useRef(null);
-
-  const [file, setFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState('');
   const [quality, setQuality] = useState(0.6);
   const [isCompressing, setIsCompressing] = useState(false);
-  const [resultBlob, setResultBlob] = useState(null);
-  const [resultUrl, setResultUrl] = useState('');
-  const [error, setError] = useState('');
 
-  const revokeUrl = useCallback((url) => {
-    if (url) URL.revokeObjectURL(url);
-  }, []);
+  const {
+    file,
+    previewUrl,
+    resultBlob,
+    setResultBlob,
+    resultUrl,
+    setResultUrl,
+    error,
+    setError,
+    onFileChange,
+    resetAll,
+    cleanupResult,
+  } = useWorkspaceFile(fileInputRef);
 
-  const cleanupResult = useCallback(() => {
-    revokeUrl(resultUrl);
-    setResultBlob(null);
-    setResultUrl('');
-  }, [resultUrl, revokeUrl]);
-
-  const cleanupPreview = useCallback(() => {
-    revokeUrl(previewUrl);
-    setPreviewUrl('');
-  }, [previewUrl, revokeUrl]);
-
-  const resetAll = useCallback(() => {
-    cleanupResult();
-    cleanupPreview();
-    setFile(null);
-    setError('');
+  const handleReset = useCallback(() => {
+    resetAll();
     setIsCompressing(false);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  }, [cleanupPreview, cleanupResult]);
-
-  const onFileChange = useCallback(
-    (event) => {
-      const picked = event.target.files?.[0];
-      if (!picked) return;
-      setError('');
-      cleanupResult();
-      cleanupPreview();
-      setFile(picked);
-      setPreviewUrl(URL.createObjectURL(picked));
-    },
-    [cleanupPreview, cleanupResult]
-  );
+  }, [resetAll]);
 
   const compressImage = useCallback(async () => {
     if (!file || isCompressing) return;
@@ -104,7 +81,7 @@ export default function CompressImage() {
     } finally {
       setIsCompressing(false);
     }
-  }, [cleanupResult, file, isCompressing, quality]);
+  }, [cleanupResult, file, isCompressing, quality, setError, setResultBlob, setResultUrl]);
 
   const canCompress = useMemo(() => Boolean(file) && !isCompressing, [file, isCompressing]);
   const downloadName = useMemo(() => makeDownloadName(file?.name), [file?.name]);
@@ -115,11 +92,6 @@ export default function CompressImage() {
     if (diff <= 0) return 0;
     return Math.round((diff / file.size) * 100);
   }, [file, resultBlob]);
-
-  useEffect(() => () => {
-    revokeUrl(previewUrl);
-    revokeUrl(resultUrl);
-  }, [previewUrl, resultUrl, revokeUrl]);
 
   return (
     <section className="flex-1 w-full max-w-6xl mx-auto px-4 pt-6 pb-16">
@@ -191,7 +163,7 @@ export default function CompressImage() {
             <button type="button" onClick={compressImage} disabled={!canCompress} className="inline-flex flex-1 items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white transition-all hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none">
               {isCompressing ? 'Compressing...' : 'Compress Image'}
             </button>
-            <button type="button" onClick={resetAll} className="inline-flex items-center justify-center rounded-xl border border-slate-200/60 bg-white/50 px-5 py-3.5 text-sm font-bold text-slate-600 shadow-sm transition-all hover:bg-white hover:text-slate-900">
+            <button type="button" onClick={handleReset} className="inline-flex items-center justify-center rounded-xl border border-slate-200/60 bg-white/50 px-5 py-3.5 text-sm font-bold text-slate-600 shadow-sm transition-all hover:bg-white hover:text-slate-900">
               Reset
             </button>
           </div>
