@@ -1,27 +1,35 @@
 import { clearIDB } from './idb';
-import { STORAGE_KEYS } from '../config';
+import { makeStorageKeys } from './storageKeys';
 
 /**
- * Clears all persisted app session state from IndexedDB and localStorage.
+ * Clears feature-specific persisted app session state from IndexedDB and localStorage.
  * Also revokes the object URL for preview image if provided.
  *
- * @param {string|null} [previewUrl=null] - Optional object URL created with URL.createObjectURL for preview cleanup.
+ * @param {string|null} previewUrl - Optional object URL created with URL.createObjectURL for preview cleanup.
+ * @param {string} feature - The feature namespace to clear (e.g., 'upscale' or 'rembg')
  * @returns {Promise<void>}
  */
-export const clearAppSession = async (previewUrl = null) => {
-  try {
-    await clearIDB();
-  } catch (e) {
-    console.error('Error clearing IDB:', e);
+export const clearAppSession = async (previewUrl = null, feature) => {
+  if (!feature) {
+    console.warn('clearAppSession called without feature parameter. Session clear aborted to prevent global data loss.');
+    return;
   }
 
-  localStorage.removeItem(STORAGE_KEYS.JOB_ID);
-  localStorage.removeItem(STORAGE_KEYS.PROGRESS);
-  localStorage.removeItem(STORAGE_KEYS.RESULT_URL);
-  localStorage.removeItem(STORAGE_KEYS.IS_PROCESSING);
-  localStorage.removeItem(STORAGE_KEYS.REFRESH_COUNT);
-  localStorage.removeItem(STORAGE_KEYS.RESULT_TIMESTAMP);
-  localStorage.removeItem(STORAGE_KEYS.UPLOAD_TIMESTAMP); // NEW
+  try {
+    await clearIDB(feature);
+  } catch (e) {
+    console.error(`Error clearing IDB for feature ${feature}:`, e);
+  }
+
+  const storageKeys = makeStorageKeys(feature);
+
+  localStorage.removeItem(storageKeys.JOB_ID);
+  localStorage.removeItem(storageKeys.PROGRESS);
+  localStorage.removeItem(storageKeys.RESULT_URL);
+  localStorage.removeItem(storageKeys.IS_PROCESSING);
+  localStorage.removeItem(storageKeys.REFRESH_COUNT);
+  localStorage.removeItem(storageKeys.RESULT_TIMESTAMP);
+  localStorage.removeItem(storageKeys.UPLOAD_TIMESTAMP);
 
   if (previewUrl) {
     URL.revokeObjectURL(previewUrl);

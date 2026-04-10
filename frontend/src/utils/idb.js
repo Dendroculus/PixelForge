@@ -1,6 +1,5 @@
 const DB_NAME = 'PixelForgeDB';
 const STORE_NAME = 'files';
-const FILE_KEY = 'currentFile';
 
 const initDB = () => {
   return new Promise((resolve, reject) => {
@@ -16,34 +15,39 @@ const initDB = () => {
   });
 };
 
-export const saveFileToIDB = async (file) => {
+const getFileKey = (feature) => {
+  if (!feature) throw new Error('Feature parameter is required for IDB operations');
+  return `currentFile_${feature}`;
+};
+
+export const saveFileToIDB = async (file, feature) => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE_NAME, 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
-    const request = store.put(file, FILE_KEY);
+    const request = store.put(file, getFileKey(feature));
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
   });
 };
 
-export const loadFileFromIDB = async () => {
+export const loadFileFromIDB = async (feature) => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE_NAME, 'readonly');
     const store = transaction.objectStore(STORE_NAME);
-    const request = store.get(FILE_KEY);
+    const request = store.get(getFileKey(feature));
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
 };
 
-export const clearIDB = async () => {
+export const clearIDB = async (feature) => {
   const db = await initDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE_NAME, 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
-    const request = store.delete(FILE_KEY);
+    const request = store.delete(getFileKey(feature));
     request.onsuccess = () => resolve();
     request.onerror = () => reject(request.error);
   });

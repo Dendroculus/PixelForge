@@ -3,9 +3,12 @@ import { saveFileToIDB } from '../../utils/idb';
 import { clearAppSession } from '../../utils/session';
 import { useSessionPersistence } from '../useSessionPersistence';
 import { useUsageLimit } from '../useUsageLimit';
-import { STORAGE_KEYS } from '../../config';
+import { makeStorageKeys, migrateStorageKeys } from '../../utils/storageKeys';
 
 export function usePipeline(setProgress, usePipelineActions, feature = 'upscale') {
+  migrateStorageKeys(feature);
+  const storageKeys = makeStorageKeys(feature);
+
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -16,7 +19,7 @@ export function usePipeline(setProgress, usePipelineActions, feature = 'upscale'
   const [scale, setScale] = useState(2);
 
   const [appAlert, setAppAlert] = useState(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.ALERT);
+    const saved = localStorage.getItem(storageKeys.ALERT);
     return saved ? { show: true, type: saved } : { show: false, type: null };
   });
 
@@ -27,13 +30,12 @@ export function usePipeline(setProgress, usePipelineActions, feature = 'upscale'
     setTurnstileToken(null);
   }, []);
 
-  // Pass the specific feature to the usage limit hook
   const { usesRemaining, resetTimestamp, recordUsage, forceMaxLimit, isLoading, maxLimit } = useUsageLimit(feature);
 
   const { pollForResult, handleProcess } = usePipelineActions({
     setJobId, setProgress, setResultUrl, setIsProcessing, resetTurnstile, previewUrl,
     setSelectedFile, setPreviewUrl, setAppAlert, turnstileToken, turnstileRef,
-    setTurnstileToken, selectedFile, recordUsage, forceMaxLimit, scale, 
+    setTurnstileToken, selectedFile, recordUsage, forceMaxLimit, scale, storageKeys, feature
   });
 
   useSessionPersistence({
@@ -44,19 +46,19 @@ export function usePipeline(setProgress, usePipelineActions, feature = 'upscale'
         console.error(`Pipeline execution error: ${err}`);
       });
     },
-    resultUrl, previewUrl,
+    resultUrl, previewUrl, storageKeys, feature
   });
 
   const handleFileSelect = async (file) => {
-    localStorage.removeItem(STORAGE_KEYS.RESULT_URL);
-    localStorage.removeItem(STORAGE_KEYS.JOB_ID);
-    localStorage.removeItem(STORAGE_KEYS.IS_PROCESSING);
-    localStorage.removeItem(STORAGE_KEYS.PROGRESS);
-    localStorage.removeItem(STORAGE_KEYS.REFRESH_COUNT);
-    localStorage.removeItem(STORAGE_KEYS.RESULT_TIMESTAMP);
+    localStorage.removeItem(storageKeys.RESULT_URL);
+    localStorage.removeItem(storageKeys.JOB_ID);
+    localStorage.removeItem(storageKeys.IS_PROCESSING);
+    localStorage.removeItem(storageKeys.PROGRESS);
+    localStorage.removeItem(storageKeys.REFRESH_COUNT);
+    localStorage.removeItem(storageKeys.RESULT_TIMESTAMP);
 
-    await saveFileToIDB(file);
-    localStorage.setItem(STORAGE_KEYS.UPLOAD_TIMESTAMP, Date.now().toString());
+    await saveFileToIDB(file, feature);
+    localStorage.setItem(storageKeys.UPLOAD_TIMESTAMP, Date.now().toString());
 
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
@@ -65,14 +67,14 @@ export function usePipeline(setProgress, usePipelineActions, feature = 'upscale'
   };
 
   const handleCancel = async () => {
-    await clearAppSession(previewUrl);
+    await clearAppSession(previewUrl, feature);
     setSelectedFile(null);
     setPreviewUrl(null);
     setResultUrl(null);
     setJobId(null);
     setIsProcessing(false);
     resetTurnstile();
-    localStorage.removeItem(STORAGE_KEYS.REFRESH_COUNT);
+    localStorage.removeItem(storageKeys.REFRESH_COUNT);
   };
 
   return {
