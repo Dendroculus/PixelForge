@@ -1,13 +1,16 @@
 import PropTypes from 'prop-types';
 import LegalModal from '../Common/LegalModal';
 import CountdownTimer from '../Common/CountdownTimer';
-import { APP_CONFIG as config, STORAGE_KEYS } from '../../config';
+import { APP_CONFIG as config } from '../../config';
+import { makeStorageKeys } from '../../utils/storageKeys';
 
 export default function WorkspaceModals({ appAlert, setAppAlert, featureName }) {
+  const storageKeys = makeStorageKeys(featureName);
+
   const closeAndClear = () => {
     setAppAlert({ show: false, type: null });
-    localStorage.removeItem(STORAGE_KEYS.ALERT);
-    localStorage.removeItem(STORAGE_KEYS.REFRESH_COUNT);
+    localStorage.removeItem(storageKeys.ALERT);
+    localStorage.removeItem(storageKeys.REFRESH_COUNT);
   };
 
   const imageTypeName = featureName === 'upscale' ? 'upscaled' : 'transparent';
@@ -49,7 +52,7 @@ export default function WorkspaceModals({ appAlert, setAppAlert, featureName }) 
           <p>
             Please remember to download it before it expires in{' '}
             <CountdownTimer
-              targetTimestamp={Number(localStorage.getItem(STORAGE_KEYS.RESULT_TIMESTAMP)) + config.RESULT_EXPIRATION_TIME}
+              targetTimestamp={Number(localStorage.getItem(storageKeys.RESULT_TIMESTAMP)) + config.RESULT_EXPIRATION_TIME}
               isWarning={true}
               onExpire={() => setAppAlert({ show: true, type: 'expired' })}
             />
@@ -62,7 +65,7 @@ export default function WorkspaceModals({ appAlert, setAppAlert, featureName }) 
         isOpen={appAlert.show && appAlert.type === 'expired'}
         onClose={() => {
           setAppAlert({ show: false, type: null });
-          localStorage.removeItem(STORAGE_KEYS.ALERT);
+          localStorage.removeItem(storageKeys.ALERT);
         }}
         title="Session Expired ⏱️"
       >

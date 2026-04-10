@@ -9,7 +9,6 @@ import WorkspaceLimitCard from '../../components/Workspace/WorkspaceLimitCard';
 import WorkspaceMarketing from '../../components/Workspace/WorkspaceMarketing';
 import { useUpscalePipeline } from '../../hooks/pipeline/useUpscalePipeline';
 import { useSimulatedProgress } from '../../hooks/useSimulatedProgress';
-import { clearAppSession } from '../../utils/session';
 import { APP_CONFIG as config } from '../../config';
 
 export default function UpscaleWorkspace() {
@@ -85,9 +84,9 @@ export default function UpscaleWorkspace() {
                 {resultUrl && selectedFile && (
                   <div className="flex gap-3 mt-auto pt-2">
                     <button onClick={handleCancel} className="inline-flex items-center justify-center rounded-xl border border-slate-200/60 bg-white/50 px-5 py-3.5 text-sm font-bold text-slate-600 transition-all hover:bg-white hover:text-slate-900 shadow-sm">Upload Another</button>
-                    <a href={resultUrl} download={`4K-${selectedFile.name}`} onClick={(e) => { if (!isResultLoaded) { e.preventDefault(); return; } clearAppSession(previewUrl); handleCancel(); }} className={`flex-1 inline-flex items-center justify-center rounded-xl px-5 py-3.5 text-sm font-bold text-white transition-all ${!isResultLoaded ? 'bg-slate-400 pointer-events-none opacity-70' : 'bg-emerald-500 hover:bg-emerald-400 hover:shadow-lg'}`}>
-                      {isResultLoaded ? 'Download Result' : 'Loading Image...'}
-                    </a>
+                  <a href={resultUrl} download={`4K-${selectedFile.name}`} onClick={(e) => { if (!isResultLoaded) { e.preventDefault(); return; } handleCancel(); }} className={`flex-1 inline-flex items-center justify-center rounded-xl px-5 py-3.5 text-sm font-bold text-white transition-all ${!isResultLoaded ? 'bg-slate-400 pointer-events-none opacity-70' : 'bg-emerald-500 hover:bg-emerald-400 hover:shadow-lg'}`}>
+                    {isResultLoaded ? 'Download Result' : 'Loading Image...'}
+                  </a>
                   </div>
                 )}
               </>

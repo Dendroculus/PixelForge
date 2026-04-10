@@ -1,7 +1,6 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { apiService } from '../../services/apiService';
 import { clearAppSession } from '../../utils/session';
-import { STORAGE_KEYS } from '../../config';
 
 export function useActions({
   setJobId,
@@ -19,7 +18,9 @@ export function useActions({
   selectedFile,
   recordUsage,
   forceMaxLimit,
-  apiCallFn, 
+  apiCallFn,
+  storageKeys,
+  feature
 }) {
   const [isWaitingForToken, setIsWaitingForToken] = useState(false);
   const pendingFileRef = useRef(null);
@@ -43,14 +44,14 @@ export function useActions({
     const maxDurationMs = 600000;
 
     const handleFailure = async () => {
-      await clearAppSession(previewUrl);
+      await clearAppSession(previewUrl, feature);
       setSelectedFile(null);
       setPreviewUrl(null);
       setResultUrl(null);
       setJobId(null);
       setIsProcessing(false);
       resetTurnstile();
-      localStorage.setItem(STORAGE_KEYS.ALERT, 'dos');
+      localStorage.setItem(storageKeys.ALERT, 'dos');
       setAppAlert({ show: true, type: 'dos' });
     };
 
@@ -66,14 +67,14 @@ export function useActions({
         const result = await apiService.pollResult(id);
 
         if (result.success) {
-          localStorage.removeItem(STORAGE_KEYS.JOB_ID);
-          localStorage.removeItem(STORAGE_KEYS.PROGRESS);
-          localStorage.removeItem(STORAGE_KEYS.IS_PROCESSING);
-          localStorage.removeItem(STORAGE_KEYS.REFRESH_COUNT);
+          localStorage.removeItem(storageKeys.JOB_ID);
+          localStorage.removeItem(storageKeys.PROGRESS);
+          localStorage.removeItem(storageKeys.IS_PROCESSING);
+          localStorage.removeItem(storageKeys.REFRESH_COUNT);
 
           const timestamp = Date.now().toString();
-          localStorage.setItem(STORAGE_KEYS.RESULT_URL, result.data.url);
-          localStorage.setItem(STORAGE_KEYS.RESULT_TIMESTAMP, timestamp);
+          localStorage.setItem(storageKeys.RESULT_URL, result.data.url);
+          localStorage.setItem(storageKeys.RESULT_TIMESTAMP, timestamp);
 
           setProgress(100);
           recordUsage();
@@ -116,7 +117,7 @@ export function useActions({
     };
   }, [
     setProgress, resetTurnstile, previewUrl, setJobId, setResultUrl, 
-    setIsProcessing, setSelectedFile, setPreviewUrl, setAppAlert, recordUsage,
+    setIsProcessing, setSelectedFile, setPreviewUrl, setAppAlert, recordUsage, storageKeys, feature
   ]);
 
   const handleProcess = useCallback(async (overrideFile = null) => {
@@ -124,7 +125,7 @@ export function useActions({
     if (!fileToUse) return;
 
     setIsProcessing(true);
-    localStorage.setItem(STORAGE_KEYS.IS_PROCESSING, 'true');
+    localStorage.setItem(storageKeys.IS_PROCESSING, 'true');
 
     let token = turnstileToken;
 
@@ -145,24 +146,24 @@ export function useActions({
     try {
       const data = await apiCallFn(fileToUse, token);
       
-      localStorage.setItem(STORAGE_KEYS.JOB_ID, data.job_id);
+      localStorage.setItem(storageKeys.JOB_ID, data.job_id);
       pollForResult(data.job_id);
     } catch (error) {
       if (error.message === 'LIMIT_REACHED') {
         forceMaxLimit();
-        localStorage.setItem(STORAGE_KEYS.ALERT, 'limit_reached');
+        localStorage.setItem(storageKeys.ALERT, 'limit_reached');
         setAppAlert({ show: true, type: 'limit_reached' });
       } else {
         setAppAlert({ show: true, type: 'dos' });
       }
 
       setIsProcessing(false);
-      await clearAppSession(previewUrl);
+      await clearAppSession(previewUrl, feature);
       resetTurnstile();
     }
   }, [
     selectedFile, turnstileToken, pollForResult, previewUrl, resetTurnstile, 
-    setIsProcessing, turnstileRef, setTurnstileToken, forceMaxLimit, setAppAlert, apiCallFn
+    setIsProcessing, turnstileRef, setTurnstileToken, forceMaxLimit, setAppAlert, apiCallFn, storageKeys, feature
   ]);
 
   useEffect(() => {
