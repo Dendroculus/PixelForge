@@ -2,8 +2,15 @@ const apiUrl =
   import.meta.env.VITE_API_BASE_URL ||
   (import.meta.env.DEV ? 'http://127.0.0.1:8000/api' : '');
 
+const DEBUG_API = import.meta.env.DEV && false; 
+const debugLog = (...args) => {
+  if (DEBUG_API) console.log(...args);
+};
+
 export const apiService = {
   async uploadImage(file, turnstileToken, scale = 2) {
+    debugLog('[uploadImage] init ->', `${apiUrl}/upscale/init`);
+
     const initResponse = await fetch(`${apiUrl}/upscale/init`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -13,13 +20,22 @@ export const apiService = {
       }),
     });
 
+    debugLog('[uploadImage] init status ->', initResponse.status);
+
     if (initResponse.status === 429) throw new Error('LIMIT_REACHED');
     if (!initResponse.ok) {
-      const errData = await initResponse.json();
-      throw new Error(errData.detail || 'Initialization failed');
+      let detail = 'Initialization failed';
+      try {
+        const errData = await initResponse.json();
+        detail = errData?.detail || detail;
+      } catch {
+        // ignore non-json errors
+      }
+      throw new Error(detail);
     }
 
     const { job_id, safe_filename, upload_url } = await initResponse.json();
+    debugLog('[uploadImage] upload_url ->', upload_url);
 
     const azureResponse = await fetch(upload_url, {
       method: 'PUT',
@@ -30,7 +46,14 @@ export const apiService = {
       body: file,
     });
 
-    if (!azureResponse.ok) throw new Error('Cloud upload failed');
+    debugLog('[uploadImage] azure PUT status ->', azureResponse.status);
+
+    if (!azureResponse.ok) {
+      const text = await azureResponse.text().catch(() => '');
+      throw new Error(`Cloud upload failed (${azureResponse.status}) ${text}`);
+    }
+
+    debugLog('[uploadImage] start ->', `${apiUrl}/upscale/start`);
 
     const startResponse = await fetch(`${apiUrl}/upscale/start`, {
       method: 'POST',
@@ -42,15 +65,25 @@ export const apiService = {
       }),
     });
 
+    debugLog('[uploadImage] start status ->', startResponse.status);
+
     if (!startResponse.ok) {
-      const errData = await startResponse.json();
-      throw new Error(errData.detail || 'Failed to start processing');
+      let detail = 'Failed to start processing';
+      try {
+        const errData = await startResponse.json();
+        detail = errData?.detail || detail;
+      } catch {
+        // ignore non-json errors
+      }
+      throw new Error(detail);
     }
 
     return { job_id };
   },
 
   async removeBackgroundImage(file, turnstileToken) {
+    debugLog('[removeBackgroundImage] init ->', `${apiUrl}/rembg/init`);
+
     const initResponse = await fetch(`${apiUrl}/rembg/init`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -60,13 +93,22 @@ export const apiService = {
       }),
     });
 
+    debugLog('[removeBackgroundImage] init status ->', initResponse.status);
+
     if (initResponse.status === 429) throw new Error('LIMIT_REACHED');
     if (!initResponse.ok) {
-      const errData = await initResponse.json();
-      throw new Error(errData.detail || 'Initialization failed');
+      let detail = 'Initialization failed';
+      try {
+        const errData = await initResponse.json();
+        detail = errData?.detail || detail;
+      } catch {
+        // ignore non-json errors
+      }
+      throw new Error(detail);
     }
 
     const { job_id, safe_filename, upload_url } = await initResponse.json();
+    debugLog('[removeBackgroundImage] upload_url ->', upload_url);
 
     const azureResponse = await fetch(upload_url, {
       method: 'PUT',
@@ -77,7 +119,14 @@ export const apiService = {
       body: file,
     });
 
-    if (!azureResponse.ok) throw new Error('Cloud upload failed');
+    debugLog('[removeBackgroundImage] azure PUT status ->', azureResponse.status);
+
+    if (!azureResponse.ok) {
+      const text = await azureResponse.text().catch(() => '');
+      throw new Error(`Cloud upload failed (${azureResponse.status}) ${text}`);
+    }
+
+    debugLog('[removeBackgroundImage] start ->', `${apiUrl}/rembg/start`);
 
     const startResponse = await fetch(`${apiUrl}/rembg/start`, {
       method: 'POST',
@@ -85,9 +134,17 @@ export const apiService = {
       body: JSON.stringify({ job_id, safe_filename }),
     });
 
+    debugLog('[removeBackgroundImage] start status ->', startResponse.status);
+
     if (!startResponse.ok) {
-      const errData = await startResponse.json();
-      throw new Error(errData.detail || 'Failed to start processing');
+      let detail = 'Failed to start processing';
+      try {
+        const errData = await startResponse.json();
+        detail = errData?.detail || detail;
+      } catch {
+        // ignore non-json errors
+      }
+      throw new Error(detail);
     }
 
     return { job_id };

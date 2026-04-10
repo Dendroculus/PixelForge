@@ -116,16 +116,13 @@ export function useActions({
       if (timeoutId) clearTimeout(timeoutId);
     };
   }, [
-    setProgress, resetTurnstile, previewUrl, setJobId, setResultUrl, 
+    setProgress, resetTurnstile, previewUrl, setJobId, setResultUrl,
     setIsProcessing, setSelectedFile, setPreviewUrl, setAppAlert, recordUsage, storageKeys, feature
   ]);
 
   const handleProcess = useCallback(async (overrideFile = null) => {
     const fileToUse = overrideFile instanceof Blob ? overrideFile : selectedFile;
     if (!fileToUse) return;
-
-    setIsProcessing(true);
-    localStorage.setItem(storageKeys.IS_PROCESSING, 'true');
 
     let token = turnstileToken;
 
@@ -137,15 +134,19 @@ export function useActions({
     if (!token) {
       pendingFileRef.current = fileToUse;
       setIsWaitingForToken(true);
+      setIsProcessing(false);
+      localStorage.removeItem(storageKeys.IS_PROCESSING);
       return;
     }
 
     setIsWaitingForToken(false);
     pendingFileRef.current = null;
 
+    setIsProcessing(true);
+    localStorage.setItem(storageKeys.IS_PROCESSING, 'true');
+
     try {
       const data = await apiCallFn(fileToUse, token);
-      
       localStorage.setItem(storageKeys.JOB_ID, data.job_id);
       pollForResult(data.job_id);
     } catch (error) {
@@ -162,7 +163,7 @@ export function useActions({
       resetTurnstile();
     }
   }, [
-    selectedFile, turnstileToken, pollForResult, previewUrl, resetTurnstile, 
+    selectedFile, turnstileToken, pollForResult, previewUrl, resetTurnstile,
     setIsProcessing, turnstileRef, setTurnstileToken, forceMaxLimit, setAppAlert, apiCallFn, storageKeys, feature
   ]);
 
