@@ -173,5 +173,5 @@ export function useActions({
     }
   }, [isWaitingForToken, turnstileToken, handleProcess]);
 
-  return { pollForResult, handleProcess };
+  return { pollForResult, handleProcess, isWaitingForToken };
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Turnstile } from '@marsidev/react-turnstile';
 import WorkspaceLayout from '../../components/Layout/WorkspaceLayout';
 import UploadDropzone from '../../components/Upload/UploadDropzone';
 import ResultViewer from '../../components/Workspace/ResultViewer';
@@ -21,7 +22,7 @@ export default function UpscaleWorkspace() {
     selectedFile, previewUrl, isProcessing, resultUrl, jobId,
     handleFileSelect, handleCancel, handleUpscale,
     turnstileRef, setTurnstileToken, turnstileToken,
-    appAlert, setAppAlert, usesRemaining, resetTimestamp, isLoading, scale, setScale, maxLimit,
+    appAlert, setAppAlert, usesRemaining, resetTimestamp, isLoading, scale, setScale, maxLimit, isWaitingForToken
   } = useUpscalePipeline(setProgress);
 
   useSimulatedProgress(isProcessing, setProgress, turnstileToken, 'upscale');
@@ -82,31 +83,51 @@ export default function UpscaleWorkspace() {
                       <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMCwwLDAsMC4wNCkiLz48L3N2Zz4=')] opacity-60 pointer-events-none" />
 
                       <div className="relative z-10 flex flex-col gap-6">
-                        <StagedFileCard 
-                          selectedFile={selectedFile} 
-                          isProcessing={isProcessing} 
-                          resultUrl={resultUrl} 
+                        <StagedFileCard
+                          selectedFile={selectedFile}
+                          isProcessing={isProcessing}
+                          resultUrl={resultUrl}
                         />
 
+                        <div style={{ position: 'absolute', left: '-99999px', top: 'auto', width: 1, height: 1, overflow: 'hidden' }}>
+                          <Turnstile
+                            ref={turnstileRef}
+                            siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                            onSuccess={setTurnstileToken}
+                          />
+                        </div>
+
                         <div className="bg-white/60 rounded-2xl p-4 border border-white shadow-sm">
-                          {isProcessing && (
+                          {(isProcessing || isWaitingForToken) && (
                             <div className="w-full py-1">
-                              <ProgressBar progress={progress} />
+                              <ProgressBar
+                                progress={progress}
+                                customText={isWaitingForToken ? "Verifying secure connection, don't refresh..." : undefined}
+                              />
                             </div>
                           )}
 
-                          {!isProcessing && !resultUrl && (
+                          {!isProcessing && !isWaitingForToken && !resultUrl && (
                             <div className="flex flex-col gap-4">
-                              <ActionControls jobId={jobId} isProcessing={isProcessing} handleCancel={handleCancel} handleUpscale={handleUpscale} turnstileRef={turnstileRef} setTurnstileToken={setTurnstileToken} scale={scale} setScale={setScale} />
+                              <ActionControls
+                                jobId={jobId}
+                                isProcessing={isProcessing}
+                                handleCancel={handleCancel}
+                                handleUpscale={handleUpscale}
+                                turnstileRef={turnstileRef}
+                                setTurnstileToken={setTurnstileToken}
+                                scale={scale}
+                                setScale={setScale}
+                              />
                             </div>
                           )}
 
-                          <ResultActions 
-                            resultUrl={resultUrl} 
-                            selectedFile={selectedFile} 
-                            isResultLoaded={isResultLoaded} 
+                          <ResultActions
+                            resultUrl={resultUrl}
+                            selectedFile={selectedFile}
+                            isResultLoaded={isResultLoaded}
                             handleCancel={handleCancel}
-                            downloadPrefix="4K-" 
+                            downloadPrefix="4K-"
                           />
                         </div>
                       </div>

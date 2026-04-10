@@ -8,8 +8,8 @@ export default function ActionControls({
   handleUpscale,
   turnstileRef,
   setTurnstileToken,
-  scale,      
-  setScale,   
+  scale,
+  setScale,
 }) {
   const isSubmitDisabled = isProcessing || !!jobId;
 
@@ -72,6 +72,6 @@ ActionControls.propTypes = {
   handleUpscale: PropTypes.func.isRequired,
   turnstileRef: PropTypes.object.isRequired,
   setTurnstileToken: PropTypes.func.isRequired,
-  scale: PropTypes.number.isRequired,  
-  setScale: PropTypes.func.isRequired, 
+  scale: PropTypes.number.isRequired,
+  setScale: PropTypes.func.isRequired,
 };

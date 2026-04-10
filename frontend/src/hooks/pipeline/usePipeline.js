@@ -32,7 +32,7 @@ export function usePipeline(setProgress, usePipelineActions, feature = 'upscale'
 
   const { usesRemaining, resetTimestamp, recordUsage, forceMaxLimit, isLoading, maxLimit } = useUsageLimit(feature);
 
-  const { pollForResult, handleProcess } = usePipelineActions({
+  const { pollForResult, handleProcess, isWaitingForToken } = usePipelineActions({
     setJobId, setProgress, setResultUrl, setIsProcessing, resetTurnstile, previewUrl,
     setSelectedFile, setPreviewUrl, setAppAlert, turnstileToken, turnstileRef,
     setTurnstileToken, selectedFile, recordUsage, forceMaxLimit, scale, storageKeys, feature
@@ -81,6 +81,6 @@ export function usePipeline(setProgress, usePipelineActions, feature = 'upscale'
     selectedFile, previewUrl, isProcessing, resultUrl, jobId,
     turnstileToken, setTurnstileToken, turnstileRef, handleFileSelect,
     handleCancel, handleProcess, appAlert, setAppAlert,
-    usesRemaining, resetTimestamp, isLoading, scale, setScale, maxLimit, 
+    usesRemaining, resetTimestamp, isLoading, scale, setScale, maxLimit, isWaitingForToken 
   };
 }
