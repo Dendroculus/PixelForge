@@ -22,6 +22,7 @@ export default function RemoveBG() {
     handleFileSelect, handleCancel, handleProcess,
     turnstileRef, setTurnstileToken, turnstileToken,
     appAlert, setAppAlert, usesRemaining, resetTimestamp, isLoading, maxLimit,
+    isWaitingForToken
   } = useRemBGPipeline(setProgress);
 
   useSimulatedProgress(isProcessing, setProgress, turnstileToken, 'rembg');
@@ -30,7 +31,7 @@ export default function RemoveBG() {
   const showLoadingCard = !selectedFile && !isProcessing && !jobId && isLoading;
 
   const getRemBGProgressText = () => {
-    if (progress === 0) return "Verifying secure connection, don't refresh...";
+    if (isWaitingForToken) return "Verifying secure connection, don't refresh...";
     if (progress < 30) return "Uploading to Cloud GPUs...";
     if (progress < 50) return "Analyzing pixel structures...";
     if (progress < 70) return "Running edge detection model...";
@@ -100,7 +101,7 @@ export default function RemoveBG() {
                         />
 
                         <div className="bg-white/60 rounded-2xl p-4 border border-white shadow-sm">
-                          {isProcessing && (
+                          {(isProcessing || isWaitingForToken) && (
                             <div className="w-full py-1">
                               <ProgressBar progress={progress} customText={getRemBGProgressText()} />
                             </div>
@@ -111,14 +112,26 @@ export default function RemoveBG() {
                               <div className="w-full flex justify-center">
                                 <Turnstile ref={turnstileRef} siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} onSuccess={setTurnstileToken} />
                               </div>
-                              <div className="flex gap-2 w-full">
-                                <button onClick={handleCancel} className="px-4 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all border border-transparent hover:border-slate-200">Cancel</button>
-                                <button onClick={handleProcess} disabled={!!jobId} className="flex-1 flex items-center justify-center px-4 py-2.5 text-sm font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 shadow-md hover:shadow-lg transition-all">
-                                  Remove Background
-                                </button>
-                              </div>
+
+                          {!isWaitingForToken && (
+                            <div className="flex gap-2 w-full">
+                              <button
+                                onClick={handleCancel}
+                                className="px-4 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all border border-transparent hover:border-slate-200"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={handleProcess}
+                                disabled={!!jobId}
+                                className="flex-1 flex items-center justify-center px-4 py-2.5 text-sm font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 shadow-md hover:shadow-lg transition-all"
+                              >
+                                Remove Background
+                              </button>
                             </div>
                           )}
+                        </div>
+                      )}
 
                           <ResultActions 
                             resultUrl={resultUrl} 
