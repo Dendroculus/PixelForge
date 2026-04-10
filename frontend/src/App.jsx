@@ -20,6 +20,10 @@ function GlobalHeader() {
       words: ["upscale.", "enhance.", "enlarge."],
       subtitle: "High-performance AI tools for your images. No accounts, no waiting, and no complexity. Just upload and go."
     },
+    '/remove-bg': {
+      words: ["remove.", "isolate.", "transparent."],
+      subtitle: "Instantly remove backgrounds from any image with our AI-powered tool. Perfect for product photos, portraits, and creative projects."
+    },
     '/metadata': {
       words: ["clean.", "sanitize.", "strip."],
       subtitle: "Instantly strip hidden EXIF data and camera settings from your photos for absolute privacy."
