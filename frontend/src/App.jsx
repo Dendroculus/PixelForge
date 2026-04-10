@@ -6,7 +6,7 @@ import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
 import NotFound from './pages/Special/NotFound';
 import LegalModal from './components/Common/LegalModal';
-import { legalModalData } from './data/legalModalData';
+import { legalModalData } from './data/modals/legalModalData';
 
 function GlobalHeader() {
   const location = useLocation();

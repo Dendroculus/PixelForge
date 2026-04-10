@@ -1,20 +1,11 @@
 import { useState } from 'react';
-import { Turnstile } from '@marsidev/react-turnstile';
-import WorkspaceLayout from '../../components/Layout/WorkspaceLayout';
-import UploadDropzone from '../../components/Upload/UploadDropzone';
-import ResultViewer from '../../components/Workspace/ResultViewer';
-import ProgressBar from '../../components/Common/ProgressBar';
-import WorkspaceModals from '../../components/Workspace/WorkspaceModals';
-import WorkspaceLimitCard from '../../components/Workspace/WorkspaceLimitCard';
-import WorkspaceMarketing from '../../components/Workspace/WorkspaceMarketing';
-import StagedFileCard from '../../components/Workspace/StagedFileCard';
-import ResultActions from '../../components/Workspace/ResultActions';
+import AiFeatureWorkspace from '../../components/Workspace/AiFeatureWorkspace';
+import RemoveBgControls from '../../components/Workspace/controls/RemoveBgControls';
 import { useRemBGPipeline } from '../../hooks/pipeline/useRemBGPipeline';
 import { useSimulatedProgress } from '../../hooks/useSimulatedProgress';
-import { APP_CONFIG as config } from '../../config';
+import { marketingProps } from '../../data/feature/remBgMarketing';
 
 export default function RemoveBG() {
-  const [isResultLoaded, setIsResultLoaded] = useState(false);
   const [progress, setProgress] = useState(0);
 
   const {
@@ -27,152 +18,58 @@ export default function RemoveBG() {
 
   useSimulatedProgress(isProcessing, setProgress, turnstileToken, 'rembg');
 
-  const showLimitCard = !selectedFile && !isProcessing && !jobId && !isLoading && usesRemaining <= 0;
-  const showLoadingCard = !selectedFile && !isProcessing && !jobId && isLoading;
-
-  const getRemBGProgressText = () => {
-    if (isWaitingForToken) return "Verifying secure connection, don't refresh...";
-    if (progress < 30) return "Uploading to Cloud GPUs...";
-    if (progress < 50) return "Analyzing pixel structures...";
-    if (progress < 70) return "Running edge detection model...";
-    if (progress < 90) return "Generating transparency mask...";
-    if (progress < 99) return "Polishing final PNG output...";
-    return "Finalizing download...";
-  };
-
-  const marketingProps = {
-    subtitle: "Flawless background removal powered by state-of-the-art vision AI.",
-    features: [
-      {
-        icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5" /></svg>,
-        title: 'Precision Edge Detection', desc: 'Advanced segmentation models cleanly isolate tricky subjects like hair, fur, and intricate edges.'
-      },
-      {
-        icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>,
-        title: 'Secure & Private', desc: 'Your images are processed securely and removed by automated retention cleanup. No data is sold or shared.'
-      },
-      {
-        icon: <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>,
-        title: 'Fast & Automated', desc: 'Our cloud-accelerated pipeline isolates your subject and drops the background in seconds.'
-      }
-    ],
-    steps: [
-      { step: '01', title: 'Upload', desc: 'Drag & drop or click to upload any photo with a clear subject.' },
-      { step: '02', title: 'Extract', desc: 'Our AI model scans the image and automatically masks the background.' },
-      { step: '03', title: 'Download', desc: 'Download your new image as a transparent PNG instantly.' },
-    ]
-  };
+  const emptyState = (
+    <div className="text-center px-4 z-10">
+      <div className="w-16 h-16 rounded-full bg-white/50 flex items-center justify-center mx-auto mb-3 shadow-sm border border-white">
+        <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+        </svg>
+      </div>
+      <p className="text-sm font-medium text-slate-400">Workspace is empty</p>
+    </div>
+  );
 
   return (
-    <div className="w-full">
-      <section className="flex-1 w-full max-w-6xl mx-auto px-4 pt-6 pb-16">
-        {showLoadingCard || showLimitCard ? (
-          <WorkspaceLimitCard showLoading={showLoadingCard} showLimit={showLimitCard} maxLimit={maxLimit} resetTimestamp={resetTimestamp} featureText="background removals" />
-        ) : (
-          <WorkspaceLayout
-            leftPanel={
-              <div className="flex flex-col h-full min-h-72">
-                <div className="flex items-center gap-2 mb-5">
-                  <span className="px-2.5 py-1 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black tracking-wider uppercase border border-indigo-200 shadow-sm">AI Powered</span>
-                </div>
-
-                {!selectedFile ? (
-                  <div className="flex flex-col flex-1 justify-center pb-4">
-                    <UploadDropzone onFileSelect={handleFileSelect} />
-                    {!isProcessing && !jobId && (
-                      <div className="text-center mt-4 text-sm font-medium text-slate-500">
-                        Free Uses Remaining: <span className="font-bold text-slate-700 bg-white/60 px-2 py-0.5 rounded-md border border-white/80 ml-1">{usesRemaining} / {maxLimit}</span>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex flex-col flex-1 justify-center relative w-full py-4">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-linear-to-tr from-indigo-300/20 via-purple-300/10 to-emerald-300/20 blur-3xl rounded-full pointer-events-none -z-10" />
-
-                    <div className="relative bg-white/50 backdrop-blur-2xl border border-white/80 shadow-2xl shadow-slate-200/50 rounded-4xl p-5 sm:p-6 overflow-hidden w-full max-w-md mx-auto">
-                      <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMCwwLDAsMC4wNCkiLz48L3N2Zz4=')] opacity-60 pointer-events-none" />
-
-                      <div className="relative z-10 flex flex-col gap-6">
-                        
-                        <StagedFileCard 
-                          selectedFile={selectedFile} 
-                          isProcessing={isProcessing} 
-                          resultUrl={resultUrl} 
-                        />
-
-                        <div className="bg-white/60 rounded-2xl p-4 border border-white shadow-sm">
-                          {(isProcessing || isWaitingForToken) && (
-                            <div className="w-full py-1">
-                              <ProgressBar progress={progress} customText={getRemBGProgressText()} />
-                            </div>
-                          )}
-
-                          {!isProcessing && !resultUrl && (
-                            <div className="flex flex-col items-center justify-center gap-4 w-full">
-                              <div className="w-full flex justify-center">
-                                <Turnstile ref={turnstileRef} siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY} onSuccess={setTurnstileToken} />
-                              </div>
-
-                          {!isWaitingForToken && (
-                            <div className="flex gap-2 w-full">
-                              <button
-                                onClick={handleCancel}
-                                className="px-4 py-2.5 text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-white rounded-xl transition-all border border-transparent hover:border-slate-200"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                onClick={handleProcess}
-                                disabled={!!jobId}
-                                className="flex-1 flex items-center justify-center px-4 py-2.5 text-sm font-bold text-white bg-slate-900 rounded-xl hover:bg-slate-800 shadow-md hover:shadow-lg transition-all"
-                              >
-                                Remove Background
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      )}
-
-                          <ResultActions 
-                            resultUrl={resultUrl} 
-                            selectedFile={selectedFile} 
-                            isResultLoaded={isResultLoaded} 
-                            handleCancel={handleCancel}
-                            downloadPrefix="NoBG-" 
-                          />
-                        </div>
-
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            }
-            rightPanel={
-              <div className="flex-1 min-h-105 relative rounded-2xl border border-white/50 bg-white/30 flex items-center justify-center overflow-hidden shadow-inner">
-                <div className="absolute inset-0 z-0 opacity-15 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc), repeating-linear-gradient(45deg, #ccc 25%, #fff 25%, #fff 75%, #ccc 75%, #ccc)', backgroundPosition: '0 0, 10px 10px', backgroundSize: '20px 20px' }} />
-                {selectedFile ? (
-                  resultUrl ? <div className="w-full h-full z-10"><ResultViewer originalImage={previewUrl} upscaledImage={resultUrl} onImageLoad={() => setIsResultLoaded(true)} /></div>
-                  : <img src={previewUrl} alt="Upload preview" className={`max-h-96 w-full object-contain p-2 z-10 transition-all duration-700 ${isProcessing ? 'scale-105 opacity-60 blur-sm' : 'opacity-100'}`} />
-                ) : (
-                  <div className="text-center px-4 z-10">
-                    <div className="w-16 h-16 rounded-full bg-white/50 flex items-center justify-center mx-auto mb-3 shadow-sm border border-white"><svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg></div>
-                    <p className="text-sm font-medium text-slate-400">Workspace is empty</p>
-                  </div>
-                )}
-              </div>
-            }
-          />
-        )}
-
-        <div className="mt-6 flex items-center justify-center gap-4 text-xs text-slate-600 font-medium">
-          <span>Supports:</span>
-          {config.ALLOWED_EXTENSIONS.map((fmt) => <span key={fmt} className="px-2 py-0.5 rounded bg-white/40 border border-white/50 text-slate-600 font-mono">.{fmt.toLowerCase()}</span>)}
-        </div>
-      </section>
-
-      <WorkspaceMarketing {...marketingProps} />
-      <WorkspaceModals appAlert={appAlert} setAppAlert={setAppAlert} featureName="rembg" />
-    </div>
+    <AiFeatureWorkspace
+      selectedFile={selectedFile}
+      previewUrl={previewUrl}
+      isProcessing={isProcessing}
+      resultUrl={resultUrl}
+      jobId={jobId}
+      usesRemaining={usesRemaining}
+      resetTimestamp={resetTimestamp}
+      isLoading={isLoading}
+      maxLimit={maxLimit}
+      appAlert={appAlert}
+      setAppAlert={setAppAlert}
+      featureName="rembg"
+      featureText="background removals"
+      marketingProps={marketingProps}
+      onFileSelect={handleFileSelect}
+      onCancel={handleCancel}
+      leftControls={
+        <RemoveBgControls
+          isProcessing={isProcessing}
+          isWaitingForToken={isWaitingForToken}
+          resultUrl={resultUrl}
+          progress={progress}
+          jobId={jobId}
+          handleCancel={handleCancel}
+          handleProcess={handleProcess}
+          turnstileRef={turnstileRef}
+          setTurnstileToken={setTurnstileToken}
+        />
+      }
+      downloadPrefix="NoBG-"
+      rightPanelClassName="flex-1 min-h-105 relative rounded-2xl border border-white/50 bg-white/30 flex items-center justify-center overflow-hidden shadow-inner"
+      previewImageClassName={`max-h-96 w-full object-contain p-2 z-10 transition-all duration-700 ${isProcessing ? 'scale-105 opacity-60 blur-sm' : 'opacity-100'}`}
+      resultContainerClassName="w-full h-full z-10"
+      emptyState={
+        <>
+          <div className="absolute inset-0 z-0 opacity-15 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc), repeating-linear-gradient(45deg, #ccc 25%, #fff 25%, #fff 75%, #ccc 75%, #ccc)', backgroundPosition: '0 0, 10px 10px', backgroundSize: '20px 20px' }} />
+          {emptyState}
+        </>
+      }
+    />
   );
 }
