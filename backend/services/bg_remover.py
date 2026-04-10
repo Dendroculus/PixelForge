@@ -8,17 +8,22 @@ from services.storage import StorageService
 from core.config import MAX_FILE_SIZE_BYTES
 from helper.utils import get_result_filename
 from core.model_registry import ModelRegistry
-from helper.replicate_wrapper import smart_replicate_run
+from services.ai_provider import BaseAIProvider, ReplicateProvider
 
 logger = logging.getLogger(__name__)
 
 class BackgroundRemover:
     """
-    Service for removing backgrounds using Replicate's hosted API.
+    Service for removing backgrounds using an injected AI Provider.
     """
 
-    def __init__(self, max_concurrent_replicate_jobs: int = 5):
-        self._replicate_semaphore = asyncio.Semaphore(max_concurrent_replicate_jobs)
+    def __init__(
+        self, 
+        provider: BaseAIProvider = None,
+        max_concurrent_remote_jobs: int = 5
+    ):
+        self.provider = provider or ReplicateProvider()
+        self._remote_semaphore = asyncio.Semaphore(max_concurrent_remote_jobs)
         self.MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_BYTES
 
     async def run_removal(self, safe_filename: str, job_id: str) -> bool:
@@ -34,12 +39,12 @@ class BackgroundRemover:
             image_stream = io.BytesIO(raw_bytes)
 
             q_start = time.perf_counter()
-            async with self._replicate_semaphore:
+            async with self._remote_semaphore:
                 q_wait = time.perf_counter() - q_start
-                logger.info("Replicate slot acquired (bg remove) job=%s wait=%.3fs", job_id, q_wait)
+                logger.info("Remote slot acquired (bg remove) job=%s wait=%.3fs", job_id, q_wait)
 
                 r0 = time.perf_counter()
-                output_url = await self._process_with_replicate(image_stream)
+                output_url = await self._process_with_ai(image_stream)
                 r1 = time.perf_counter()
 
             d0 = time.perf_counter()
@@ -53,23 +58,22 @@ class BackgroundRemover:
 
             total = time.perf_counter() - started_at
             logger.info(
-                "BG remove done job=%s total=%.3fs upload_read=%.3fs replicate=%.3fs result_download=%.3fs save=%.3fs",
+                "BG remove done job=%s total=%.3fs upload_read=%.3fs remote=%.3fs result_download=%.3fs save=%.3fs",
                 job_id, total, (t1 - t0), (r1 - r0), (d1 - d0), (s1 - s0)
             )
             return True
 
         except Exception as e:
-            logger.error(f"Replicate RemBG Error (Job #{job_id}): {e}")
+            logger.error(f"Remote RemBG Error (Job #{job_id}): {e}")
             return False
 
-    async def _process_with_replicate(self, image_stream: io.BytesIO) -> str:
+    async def _process_with_ai(self, image_stream: io.BytesIO) -> str:
         """
-        Processes the image stream through Replicate.
+        Processes the image stream through the injected AI provider.
         """
         model_id = ModelRegistry.get_replicate_id("rembg")
         try:
-            output = await smart_replicate_run(model_id, params={"image": image_stream})
-            return str(output)
+            return await self.provider.run_model(model_id, params={"image": image_stream})
         finally:
             image_stream.close()
 
@@ -78,7 +82,7 @@ class BackgroundRemover:
         Downloads the processed image result.
         """
         parsed = urllib.parse.urlparse(url)
-        if parsed.scheme != "https" or "replicate.delivery" not in parsed.netloc:
+        if parsed.scheme != "https":
             raise ValueError("Untrusted output source.")
 
         timeout = aiohttp.ClientTimeout(total=60)

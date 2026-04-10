@@ -9,37 +9,30 @@ from services.storage import StorageService
 from core.config import DEFAULT_SCALE, MAX_FILE_SIZE_BYTES, OPTIMIZATION_TARGET_PIXELS
 from core.model_registry import ModelRegistry
 from helper.utils import get_result_filename
-from helper.replicate_wrapper import smart_replicate_run
+from services.ai_provider import BaseAIProvider, ReplicateProvider
 
 logger = logging.getLogger(__name__)
 
 
 class AIUpscaler:
     """
-    Handles full AI image upscaling pipeline using Replicate.
+    Handles full AI image upscaling pipeline using an injected AI provider.
     """
 
     def __init__(
         self,
-        max_concurrent_replicate_jobs: int = 5,
+        provider: BaseAIProvider = None,
+        max_concurrent_remote_jobs: int = 5,
         max_concurrent_cpu_jobs: int = 4,
     ):
-        self._replicate_semaphore = asyncio.Semaphore(max_concurrent_replicate_jobs)
+        self.provider = provider or ReplicateProvider()
+        self._remote_semaphore = asyncio.Semaphore(max_concurrent_remote_jobs)
         self._cpu_semaphore = asyncio.Semaphore(max_concurrent_cpu_jobs)
         self.MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_BYTES
 
     async def run_upscale(self, safe_filename: str, job_id: str, model_type: str, scale: int = 4) -> bool:
         """
         Executes full upscaling workflow for a single job.
-        
-        Args:
-            safe_filename (str): Source file identifier.
-            job_id (str): Unique job identifier.
-            model_type (str): Selected AI model type.
-            scale (int): Upscaling multiplier.
-            
-        Returns:
-            bool: Success status.
         """
         started_at = time.perf_counter()
         try:
@@ -58,7 +51,7 @@ class AIUpscaler:
                 o1 = time.perf_counter()
 
             rep_q0 = time.perf_counter()
-            async with self._replicate_semaphore:
+            async with self._remote_semaphore:
                 rep_wait = time.perf_counter() - rep_q0
                 r0 = time.perf_counter()
                 output_url = await self._process_with_ai(optimized_stream, job_id, model_type, scale)
@@ -85,8 +78,8 @@ class AIUpscaler:
 
             total = time.perf_counter() - started_at
             logger.info(
-                "Upscale done job=%s total=%.3fs read=%.3fs optimize=%.3fs replicate=%.3fs download=%.3fs compress=%.3fs save=%.3fs "
-                "queue_waits(cpu_opt=%.3fs, rep=%.3fs, cpu_cmp=%.3fs)",
+                "Upscale done job=%s total=%.3fs read=%.3fs optimize=%.3fs remote=%.3fs download=%.3fs compress=%.3fs save=%.3fs "
+                "queue_waits(cpu_opt=%.3fs, rem=%.3fs, cpu_cmp=%.3fs)",
                 job_id, total, (t1 - t0), (o1 - o0), (r1 - r0), (d1 - d0), (c1 - c0), (s1 - s0),
                 cpu_wait_opt, rep_wait, cpu_wait_cmp,
             )
@@ -149,7 +142,7 @@ class AIUpscaler:
 
     async def _process_with_ai(self, image_stream: io.BytesIO, job_id: str, model_type: str, scale: int) -> str:
         """
-        Processes the image stream through Replicate.
+        Processes the image stream through the injected AI Provider.
         """
         try:
             model_str = ModelRegistry.get_replicate_id(model_type)
@@ -161,8 +154,7 @@ class AIUpscaler:
         params["image"] = image_stream
 
         try:
-            output = await smart_replicate_run(model_str, params=params)
-            return str(output[0]) if isinstance(output, list) else str(output)
+            return await self.provider.run_model(model_str, params)
         finally:
             image_stream.close()
 
@@ -174,8 +166,6 @@ class AIUpscaler:
 
         if parsed_url.scheme != "https":
             raise ValueError("Insecure protocol")
-        if parsed_url.netloc not in ("replicate.delivery", "pbxt.replicate.delivery"):
-            raise ValueError("Untrusted domain")
 
         timeout = aiohttp.ClientTimeout(total=60)
         async with aiohttp.ClientSession(timeout=timeout) as session:
