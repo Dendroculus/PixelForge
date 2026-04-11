@@ -2,9 +2,16 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import UploadCard from '../../components/Upload/UploadCard';
 import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
-import EmptyWorkspaceState from '../../components/Common/EmptyWorkspaceState';
+import ToolPageWrapper from '../../components/Layout/ToolPageWrapper';
+import PreviewImageBox from '../../components/Workspace/PreviewImageBox';
+import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
 import { useWorkspaceFile } from '../../hooks/useWorkspaceFile';
 
+/**
+ * Calculates YIQ contrast to determine text visibility over backgrounds.
+ * @param {string} hexcolor - Background hex code.
+ * @returns {string} Tailwind text color class.
+ */
 function getContrastYIQ(hexcolor) {
   const hex = hexcolor.replace('#', '');
   const r = parseInt(hex.substr(0, 2), 16);
@@ -39,6 +46,10 @@ function makeInitialPoints(count) {
   return pts;
 }
 
+/**
+ * React component for extracting color palettes from images using interactive pickers.
+ * @returns {JSX.Element} The ColorPalette component.
+ */
 export default function ColorPalette() {
   const fileInputRef = useRef(null);
   const imageRef = useRef(null);
@@ -93,11 +104,11 @@ export default function ColorPalette() {
     const iw = img.naturalWidth || 1;
     const ih = img.naturalHeight || 1;
 
-    const padding = 8; 
+    const padding = 8;
     const availableWidth = cw - (padding * 2);
     const availableHeight = ch - (padding * 2);
 
-    const scale = Math.min(availableWidth / iw, availableHeight / ih); 
+    const scale = Math.min(availableWidth / iw, availableHeight / ih);
     const width = iw * scale;
     const height = ih * scale;
 
@@ -251,10 +262,10 @@ export default function ColorPalette() {
   }, [points, activePointId, samplePaletteFromPoints]);
 
   return (
-    <section className="flex-1 w-full max-w-6xl mx-auto px-4 pt-6 pb-16">
+    <ToolPageWrapper>
       <ToolWorkspaceShell
         minHeight="min-h-96"
-        leftHeader={<div className="flex items-center gap-2"><span className="px-2.5 py-1 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black tracking-wider uppercase border border-indigo-200 shadow-sm">Client-Side</span></div>}
+        leftHeader={<ClientSideHeader />}
         leftBody={
           <>
             {!file && (
@@ -392,51 +403,39 @@ export default function ColorPalette() {
         rightHeader={<h3 className="flex items-center justify-between text-sm font-bold text-slate-800">Preview Workspace</h3>}
         rightBody={
           <div className="absolute inset-2 flex flex-col">
-            <div
-              ref={previewContainerRef}
-              className="relative flex-1 min-h-0 w-full rounded-xl overflow-hidden flex items-center justify-center bg-black/5 touch-none"
+            <PreviewImageBox
+              previewUrl={previewUrl}
+              isProcessing={isProcessing}
+              imageRef={imageRef}
+              onImageLoad={updateImageRect}
+              previewClassName="opacity-100 transition-all duration-200"
+              containerClassName="relative flex-1 min-h-0 w-full rounded-xl overflow-hidden flex items-center justify-center bg-black/5 touch-none"
+              containerRef={previewContainerRef}
             >
-              {previewUrl ? (
-                <>
-                  <img
-                    ref={imageRef}
-                    src={previewUrl}
-                    alt="Original"
-                    onLoad={updateImageRect}
-                    className={`absolute inset-0 w-full h-full object-contain p-2 ${
-                      isProcessing ? 'scale-105 opacity-60 blur-[1px] grayscale-[0.1] transition-all duration-200' : 'transition-all duration-200 opacity-100'
-                    }`}
-                  />
-
-                  {points.map((p, i) => {
-                    const hex = palette[i] || '#ffffff';
-                    return (
-                      <button
-                        key={`picker-${p.id}`}
-                        onPointerDown={onPointPointerDown(p.id)}
-                        className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/90 shadow-[0_0_0_1px_rgba(15,23,42,0.55)] cursor-grab active:cursor-grabbing"
-                        style={{
-                          left: `${imageRect.left + p.x * imageRect.width}px`,
-                          top: `${imageRect.top + p.y * imageRect.height}px`,
-                          width: 22,
-                          height: 22,
-                          backgroundColor: hex,
-                        }}
-                        title={hex.toUpperCase()}
-                        aria-label={`Move color picker ${i + 1}`}
-                      />
-                    );
-                  })}
-                </>
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <EmptyWorkspaceState />
-                </div>
-              )}
-            </div>
+              {previewUrl &&
+                points.map((p, i) => {
+                  const hex = palette[i] || '#ffffff';
+                  return (
+                    <button
+                      key={`picker-${p.id}`}
+                      onPointerDown={onPointPointerDown(p.id)}
+                      className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/90 shadow-[0_0_0_1px_rgba(15,23,42,0.55)] cursor-grab active:cursor-grabbing"
+                      style={{
+                        left: `${imageRect.left + p.x * imageRect.width}px`,
+                        top: `${imageRect.top + p.y * imageRect.height}px`,
+                        width: 22,
+                        height: 22,
+                        backgroundColor: hex,
+                      }}
+                      title={hex.toUpperCase()}
+                      aria-label={`Move color picker ${i + 1}`}
+                    />
+                  );
+                })}
+            </PreviewImageBox>
           </div>
         }
       />
-    </section>
+    </ToolPageWrapper>
   );
 }
