@@ -21,10 +21,10 @@ const routes = [
   //   path: '/image-editor',
   //   component: React.lazy(() => import('./pages/ImageEditor/ImageEditorWorkspace')),
   // },
-  // {
-  //   path: '/resize-image',
-  //   component: React.lazy(() => import('./pages/Resize/ResizeWorkspace')),
-  // },
+  {
+    path: '/resize-image',
+    component: React.lazy(() => import('./pages/SmartEdit/ResizeImage')),
+  },
   // {
   //   path: '/crop-image',
   //   component: React.lazy(() => import('./pages/Crop/CropWorkspace')),
