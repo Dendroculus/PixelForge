@@ -29,10 +29,10 @@ const routes = [
   //   path: '/crop-image',
   //   component: React.lazy(() => import('./pages/Crop/CropWorkspace')),
   // },
-  // {
-  //   path: '/watermark',
-  //   component: React.lazy(() => import('./pages/Watermark/WatermarkWorkspace')),
-  // },
+  {
+    path: '/watermark-adder',
+    component: React.lazy(() => import('./pages/Utilities/WatermarkAdder')),
+  },
   {
     path: '/compress-image',
     component: React.lazy(() =>  import('./pages/Optimize/CompressImage')),

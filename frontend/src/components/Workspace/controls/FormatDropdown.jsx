@@ -5,10 +5,14 @@ import { motion } from 'framer-motion';
 /**
  * Renders a reusable fixed-position format dropdown.
  * @param {{
- *   value: string,
- *   options: string[],
- *   onChange: (value: string) => void,
- *   label?: string
+ * value: string,
+ * options: string[],
+ * onChange: (value: string) => void,
+ * label?: string,
+ * transform?: 'uppercase' | 'lowercase' | 'none',
+ * labelClassName?: string,
+ * buttonClassName?: string,
+ * getOptionStyle?: (opt: string) => object
  * }} props
  * @returns {JSX.Element}
  */
@@ -17,12 +21,22 @@ export default function FormatDropdown({
   options,
   onChange,
   label = 'Convert To',
+  transform = 'uppercase',
+  labelClassName = 'mb-2 block text-sm font-bold text-slate-700',
+  buttonClassName = 'flex w-full items-center justify-between rounded-xl border border-white/60 bg-white/60 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm outline-none transition-all hover:bg-white/80 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100',
+  getOptionStyle = () => ({}),
 }) {
   const triggerRef = useRef(null);
   const menuRef = useRef(null);
 
   const [isOpen, setIsOpen] = useState(false);
   const [menuStyle, setMenuStyle] = useState(null);
+
+  const formatText = (text) => {
+    if (transform === 'uppercase') return String(text).toUpperCase();
+    if (transform === 'lowercase') return String(text).toLowerCase();
+    return String(text);
+  };
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -62,14 +76,14 @@ export default function FormatDropdown({
 
   return (
     <div className="relative" ref={triggerRef}>
-      <label className="mb-2 block text-sm font-bold text-slate-700">{label}</label>
+      {label && <label className={labelClassName}>{label}</label>}
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="flex w-full items-center justify-between rounded-xl border border-white/60 bg-white/60 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm outline-none transition-all hover:bg-white/80 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+        className={buttonClassName}
       >
-        {String(value).toUpperCase()}
-        <svg className={`h-4 w-4 text-slate-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <span className="truncate">{formatText(value)}</span>
+        <svg className={`h-4 w-4 shrink-0 text-slate-500 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
         </svg>
       </button>
@@ -82,9 +96,9 @@ export default function FormatDropdown({
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.15, ease: 'easeOut' }}
           style={menuStyle}
-          className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl"
+          className="overflow-y-auto max-h-60 custom-scrollbar rounded-xl border border-slate-200 bg-white shadow-xl"
         >
-          <div className="flex flex-col p-2">
+          <div className="flex flex-col p-1.5">
             {options.map((opt) => (
               <button
                 key={opt}
@@ -93,9 +107,14 @@ export default function FormatDropdown({
                   onChange(opt);
                   setIsOpen(false);
                 }}
-                className={`rounded-lg px-3 py-2 text-left text-sm font-bold transition-colors ${value === opt ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-gray-100 hover:text-slate-900'}`}
+                style={getOptionStyle(opt)}
+                className={`rounded-md px-3 py-2 text-left text-sm font-bold transition-colors ${
+                  value === opt 
+                    ? 'bg-indigo-100 text-indigo-700' 
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`}
               >
-                {String(opt).toUpperCase()}
+                {formatText(opt)}
               </button>
             ))}
           </div>
