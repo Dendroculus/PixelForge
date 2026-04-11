@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import CountdownTimer from '../Common/CountdownTimer';
+import CountdownTimer from '../../Common/CountdownTimer';
 
 export default function WorkspaceLimitCard({ showLoading, showLimit, maxLimit, resetTimestamp, featureText }) {
   if (showLoading) {

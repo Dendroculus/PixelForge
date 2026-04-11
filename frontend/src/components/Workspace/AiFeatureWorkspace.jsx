@@ -2,12 +2,12 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import WorkspaceLayout from '../../components/Layout/WorkspaceLayout';
 import UploadDropzone from '../../components/Upload/UploadDropzone';
-import ResultViewer from '../../components/Workspace/ResultViewer';
-import WorkspaceModals from '../../components/Workspace/WorkspaceModals';
-import WorkspaceLimitCard from '../../components/Workspace/WorkspaceLimitCard';
-import WorkspaceMarketing from '../../components/Workspace/WorkspaceMarketing';
-import StagedFileCard from '../../components/Workspace/StagedFileCard';
-import ResultActions from '../../components/Workspace/ResultActions';
+import ResultViewer from '../../components/Workspace/display/ResultViewer';
+import WorkspaceModals from '../modals/WorkspaceModals';
+import WorkspaceLimitCard from './cards/WorkspaceLimitCard';
+import WorkspaceMarketing from './cards/WorkspaceMarketing';
+import StagedFileCard from './cards/StagedFileCard';
+import ResultActions from '../Actions/ResultActions';
 import { APP_CONFIG as config, RESULT_LABELS } from '../../config';
 
 /**

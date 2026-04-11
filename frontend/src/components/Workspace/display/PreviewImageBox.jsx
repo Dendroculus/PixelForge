@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import EmptyWorkspaceState from '../Common/EmptyWorkspaceState';
+import EmptyWorkspaceState from '../../Common/EmptyWorkspaceState';
 
 /**
  * Reusable component for displaying image previews and results within tool workspaces.
