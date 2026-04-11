@@ -4,23 +4,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { APP_CONFIG } from '../../config';
 import UploadCard from '../../components/Upload/UploadCard';
 import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
-import EmptyWorkspaceState from '../../components/Common/EmptyWorkspaceState';
+import ToolPageWrapper from '../../components/Layout/ToolPageWrapper';
+import PreviewImageBox from '../../components/Workspace/PreviewImageBox';
+import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
 import { useWorkspaceFile } from '../../hooks/useWorkspaceFile';
+import { bytesToMB, generateSafeFilename } from '../../utils/fileUtils';
+import { processImageWithCanvas } from '../../utils/imageUtils';
 
-const OUTPUT_FORMATS = ['jpg', 'png', 'webp', 'jpeg'];
-
-function bytesToMB(bytes) {
-  return (bytes / (1024 * 1024)).toFixed(2);
-}
-
-function makeDownloadName(originalName, targetExt) {
-  const safeBase = (originalName || 'converted')
-    .replace(/\.[^/.]+$/, '')
-    .replace(/[^\w-]+/g, '_')
-    .slice(0, 80);
-  return `${safeBase || 'converted'}.${targetExt}`;
-}
-
+/**
+ * Maps a file extension to its corresponding MIME type.
+ * @param {string} format - The file extension.
+ * @returns {string} The MIME type.
+ */
 function getMimeFromFormat(format) {
   if (format === 'jpg') return 'image/jpeg';
   if (format === 'png') return 'image/png';
@@ -28,6 +23,10 @@ function getMimeFromFormat(format) {
   return 'image/webp';
 }
 
+/**
+ * React component for converting image formats on the client side.
+ * @returns {JSX.Element} The ConvertFormat component.
+ */
 export default function ConvertFormat() {
   const fileInputRef = useRef(null);
   const dropdownRef = useRef(null);
@@ -77,33 +76,10 @@ export default function ConvertFormat() {
     cleanupResult();
 
     try {
-      const bitmap = await createImageBitmap(file);
-      const canvas = document.createElement('canvas');
-      canvas.width = bitmap.width;
-      canvas.height = bitmap.height;
-
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        bitmap.close();
-        throw new Error('Canvas context unavailable.');
-      }
-
-      if (targetFormat === 'jpg') {
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
-
-      ctx.drawImage(bitmap, 0, 0);
-      bitmap.close();
-
-      const mime = getMimeFromFormat(targetFormat);
-
-      const blob = await new Promise((resolve, reject) => {
-        canvas.toBlob(
-          (b) => (b ? resolve(b) : reject(new Error('Conversion failed. Please try another file.'))),
-          mime,
-          targetFormat === 'png' ? undefined : quality
-        );
+      const blob = await processImageWithCanvas(file, {
+        mimeType: getMimeFromFormat(targetFormat),
+        quality: targetFormat === 'png' ? undefined : quality,
+        fillBackground: targetFormat === 'jpg' || targetFormat === 'jpeg',
       });
 
       setResultBlob(blob);
@@ -116,7 +92,7 @@ export default function ConvertFormat() {
   }, [cleanupResult, file, isConverting, quality, targetFormat, setError, setResultBlob, setResultUrl]);
 
   const canConvert = useMemo(() => Boolean(file) && !isConverting, [file, isConverting]);
-  const downloadName = useMemo(() => makeDownloadName(file?.name, targetFormat), [file?.name, targetFormat]);
+  const downloadName = useMemo(() => generateSafeFilename(file?.name, 'converted', targetFormat), [file?.name, targetFormat]);
 
   const updateDropdownPosition = useCallback(() => {
     if (!dropdownRef.current) return;
@@ -138,10 +114,10 @@ export default function ConvertFormat() {
   }, [isDropdownOpen, updateDropdownPosition]);
 
   return (
-    <section className="flex-1 w-full max-w-6xl mx-auto px-4 pt-6 pb-16">
+    <ToolPageWrapper>
       <ToolWorkspaceShell
         minHeight="min-h-96"
-        leftHeader={<div className="flex items-center gap-2"><span className="px-2.5 py-1 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black tracking-wider uppercase border border-indigo-200 shadow-sm">Client-Side</span></div>}
+        leftHeader={<ClientSideHeader />}
         leftBody={
           <>
             <div className="mb-4">
@@ -169,7 +145,7 @@ export default function ConvertFormat() {
                 {isDropdownOpen && dropdownStyle && createPortal(
                   <motion.div ref={dropdownMenuRef} initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.15, ease: 'easeOut' }} style={dropdownStyle} className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
                     <div className="flex flex-col p-2">
-                      {OUTPUT_FORMATS.map((fmt) => (
+                      {APP_CONFIG.ALLOWED_EXTENSIONS.map((fmt) => (
                         <button key={fmt} type="button" onClick={() => { setTargetFormat(fmt); setIsDropdownOpen(false); }} className={`rounded-lg px-3 py-2 text-left text-sm font-bold transition-colors ${targetFormat === fmt ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-gray-100 hover:text-slate-900'}`}>
                           {fmt.toUpperCase()}
                         </button>
@@ -218,18 +194,11 @@ export default function ConvertFormat() {
         }
         rightBody={
           <div className="absolute inset-2 flex flex-col">
-            <div className="relative flex-1 min-h-0 w-full rounded-xl border border-white/50 bg-white/20 overflow-hidden">
-              {resultUrl ? (
-                <motion.img initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} src={resultUrl} alt="Converted output preview" className="absolute inset-0 w-full h-full object-contain p-2" />
-              ) : previewUrl ? (
-                <motion.img initial={{ opacity: 0 }} animate={{ opacity: 1 }} src={previewUrl} alt="Original preview" className="absolute inset-0 w-full h-full object-contain p-2 opacity-70" />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <EmptyWorkspaceState />
-                </div>
-              )}
-            </div>
-
+            <PreviewImageBox
+              previewUrl={previewUrl}
+              resultUrl={resultUrl}
+              resultAlt="Converted output preview"
+            />
             <AnimatePresence>
               {resultUrl && (
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-3 shrink-0">
@@ -242,6 +211,6 @@ export default function ConvertFormat() {
           </div>
         }
       />
-    </section>
+    </ToolPageWrapper>
   );
 }
