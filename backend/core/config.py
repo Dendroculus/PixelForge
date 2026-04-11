@@ -45,6 +45,7 @@ ALLOWED_MIME_TYPES: FrozenSet[str] = frozenset([
 ])
 
 DEFAULT_SCALE = 4
+MAX_CONCURENT_JOBS = 5
 
 class ContainerNames:
     UPLOAD_CONTAINER: str = "uploads"
@@ -55,7 +56,8 @@ class LimitConfig:
     POLL_RATE_LIMIT: str = "60/minute"
     SAS_EXPIRATION_MINUTES: int = 11
     DAILY_USAGE_LIMIT: int = 3
-    REMBG_DAILY_USAGE_LIMIT: int = 10  # Added for Background Removal
+    REMBG_DAILY_USAGE_LIMIT: int = 10  
+    COLOR_RESTORE_DAILY_USAGE_LIMIT: int = 10
 
 class DatabaseConfig:
     POOL_MIN_SIZE = 1

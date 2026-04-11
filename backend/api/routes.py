@@ -11,6 +11,7 @@ from limiter.usage_limiter import check_daily_limit, increment_daily_limit, get_
 from services.storage import StorageService
 from services.esrgan import ai_upscaler
 from services.bg_remover import bg_remover
+from services.color_restorer import color_restorer
 from api.dependencies import verify_turnstile
 from core.config import LimitConfig as LC
 from helper.utils import get_result_filename
@@ -25,30 +26,42 @@ _pending_jobs = 0
 _pending_jobs_lock = asyncio.Lock()
 _active_jobs = set()
 
+
 class InitRequest(BaseModel):
     cf_turnstile_response: str
     filename: str
+
 
 class StartUpscaleRequest(BaseModel):
     job_id: str
     safe_filename: str
     scale: int = 2
 
+
 class StartRembgRequest(BaseModel):
     job_id: str
     safe_filename: str
+
+
+class StartColorRestoreRequest(BaseModel):
+    job_id: str
+    safe_filename: str
+
 
 def _is_manual_bypass_allowed() -> bool:
     env = os.getenv("ENVIRONMENT", "").lower()
     allow_bypass = os.getenv("ALLOW_TURNSTILE_TEST_BYPASS", "false").lower() in {"1", "true", "yes", "on"}
     return env in {"local", "dev", "development"} and allow_bypass
 
-# --- BACKGROUND TASKS ---
+
 async def process_upscale_task(job_id: str, safe_filename: str, model_type: str, scale: int, client_ip: str) -> None:
     global _pending_jobs
     try:
         success = await ai_upscaler.run_upscale(
-            safe_filename=safe_filename, job_id=job_id, model_type=model_type, scale=scale
+            safe_filename=safe_filename,
+            job_id=job_id,
+            model_type=model_type,
+            scale=scale,
         )
         await StorageService.delete_azure_blob(StorageService.UPLOAD_CONTAINER, safe_filename)
         if success:
@@ -63,6 +76,7 @@ async def process_upscale_task(job_id: str, safe_filename: str, model_type: str,
         _active_jobs.discard(job_id)
         async with _pending_jobs_lock:
             _pending_jobs = max(0, _pending_jobs - 1)
+
 
 async def process_rembg_task(job_id: str, safe_filename: str, client_ip: str) -> None:
     global _pending_jobs
@@ -83,7 +97,25 @@ async def process_rembg_task(job_id: str, safe_filename: str, client_ip: str) ->
             _pending_jobs = max(0, _pending_jobs - 1)
 
 
-# --- COMMON HELPERS ---
+async def process_colorrestore_task(job_id: str, safe_filename: str, client_ip: str) -> None:
+    global _pending_jobs
+    try:
+        success = await color_restorer.run_restore(safe_filename=safe_filename, job_id=job_id)
+        await StorageService.delete_azure_blob(StorageService.UPLOAD_CONTAINER, safe_filename)
+        if success:
+            await increment_daily_limit(client_ip, feature="colorrestore")
+        else:
+            await StorageService.mark_job_failed(job_id)
+    except Exception as e:
+        logger.error("ColorRestore Task error job=%s: %s", job_id, e)
+        await StorageService.mark_job_failed(job_id)
+        await StorageService.delete_azure_blob(StorageService.UPLOAD_CONTAINER, safe_filename)
+    finally:
+        _active_jobs.discard(job_id)
+        async with _pending_jobs_lock:
+            _pending_jobs = max(0, _pending_jobs - 1)
+
+
 async def _handle_init(request: Request, payload: InitRequest, feature: str, limit_24h: int):
     if not (payload.cf_turnstile_response == "manual_test_bypass" and _is_manual_bypass_allowed()):
         await verify_turnstile(payload.cf_turnstile_response)
@@ -95,19 +127,16 @@ async def _handle_init(request: Request, payload: InitRequest, feature: str, lim
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="LIMIT_REACHED")
 
     job_id = uuid.uuid4().hex
-    ext = payload.filename.split('.')[-1].lower() if '.' in payload.filename else 'jpg'
+    ext = payload.filename.split(".")[-1].lower() if "." in payload.filename else "jpg"
     if ext not in {"jpg", "jpeg", "png", "webp"}:
         ext = "jpg"
     safe_filename = f"{job_id}.{ext}"
 
-    try:
-        return {
-            "job_id": job_id,
-            "safe_filename": safe_filename,
-            "upload_url": StorageService.generate_upload_sas(safe_filename)
-        }
-    except Exception as e:
-        raise e
+    return {
+        "job_id": job_id,
+        "safe_filename": safe_filename,
+        "upload_url": StorageService.generate_upload_sas(safe_filename),
+    }
 
 
 async def _handle_start_check(job_id: str):
@@ -122,11 +151,11 @@ async def _handle_start_check(job_id: str):
     _active_jobs.add(job_id)
 
 
-# --- UPSCALE ROUTES ---
 @router.post("/upscale/init")
 @limiter.limit(LC.UPLOAD_RATE_LIMIT)
 async def init_upscale(request: Request, payload: InitRequest):
     return await _handle_init(request, payload, "upscale", LC.DAILY_USAGE_LIMIT)
+
 
 @router.post("/upscale/start", status_code=status.HTTP_202_ACCEPTED)
 @limiter.limit(LC.UPLOAD_RATE_LIMIT)
@@ -137,11 +166,11 @@ async def start_upscale(request: Request, payload: StartUpscaleRequest, backgrou
     return {"message": "Upscale started", "job_id": payload.job_id}
 
 
-# --- REMBG ROUTES ---
 @router.post("/rembg/init")
 @limiter.limit(LC.UPLOAD_RATE_LIMIT)
 async def init_rembg(request: Request, payload: InitRequest):
     return await _handle_init(request, payload, "rembg", LC.REMBG_DAILY_USAGE_LIMIT)
+
 
 @router.post("/rembg/start", status_code=status.HTTP_202_ACCEPTED)
 @limiter.limit(LC.UPLOAD_RATE_LIMIT)
@@ -152,7 +181,21 @@ async def start_rembg(request: Request, payload: StartRembgRequest, background_t
     return {"message": "RemBG started", "job_id": payload.job_id}
 
 
-# --- SHARED ROUTES ---
+@router.post("/colorrestore/init")
+@limiter.limit(LC.UPLOAD_RATE_LIMIT)
+async def init_colorrestore(request: Request, payload: InitRequest):
+    return await _handle_init(request, payload, "colorrestore", LC.REMBG_DAILY_USAGE_LIMIT)
+
+
+@router.post("/colorrestore/start", status_code=status.HTTP_202_ACCEPTED)
+@limiter.limit(LC.UPLOAD_RATE_LIMIT)
+async def start_colorrestore(request: Request, payload: StartColorRestoreRequest, background_tasks: BackgroundTasks):
+    await _handle_start_check(payload.job_id)
+    client_ip = get_real_client_ip(request)
+    background_tasks.add_task(process_colorrestore_task, payload.job_id, payload.safe_filename, client_ip)
+    return {"message": "ColorRestore started", "job_id": payload.job_id}
+
+
 @router.get("/result/{job_id}")
 @limiter.limit(LC.POLL_RATE_LIMIT)
 async def get_result(request: Request, job_id: str):
@@ -174,12 +217,17 @@ async def get_result(request: Request, job_id: str):
         logger.error("Error checking result job=%s: %s", job_id, e)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Status error")
 
+
 @router.get("/usage")
 @limiter.limit(LC.POLL_RATE_LIMIT)
 async def get_usage(request: Request, feature: str = "upscale"):
-    """
-    Accepts ?feature=upscale or ?feature=rembg to return specific limits.
-    """
     client_ip = get_real_client_ip(request)
-    limit = LC.DAILY_USAGE_LIMIT if feature == "upscale" else LC.REMBG_DAILY_USAGE_LIMIT
+    if feature == "upscale":
+        limit = LC.DAILY_USAGE_LIMIT
+    elif feature == "rembg":
+        limit = LC.REMBG_DAILY_USAGE_LIMIT
+    elif feature == "colorrestore":
+        limit = LC.COLOR_RESTORE_DAILY_USAGE_LIMIT
+    else:
+        limit = LC.DAILY_USAGE_LIMIT
     return await get_usage_status(client_ip, limit_24h=limit, feature=feature)

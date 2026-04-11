@@ -1,94 +1,68 @@
 import asyncio
-import aiohttp
 import io
-import logging
-import urllib.parse
-import time
 from PIL import Image
-from services.storage import StorageService
-from core.config import DEFAULT_SCALE, MAX_FILE_SIZE_BYTES, OPTIMIZATION_TARGET_PIXELS
+from core.config import DEFAULT_SCALE, OPTIMIZATION_TARGET_PIXELS, MAX_CONCURENT_JOBS
 from core.model_registry import ModelRegistry
-from helper.utils import get_result_filename
-from services.ai_provider import BaseAIProvider, ReplicateProvider
-
-logger = logging.getLogger(__name__)
+from services.base_class.image_pipeline_service import ImagePipelineService
+from services.adapter.ai_provider import BaseAIProvider
 
 
-class AIUpscaler:
+class AIUpscaler(ImagePipelineService):
     """
-    Handles full AI image upscaling pipeline using an injected AI provider.
+    Service for AI upscaling with ESRGAN-specific preprocess/postprocess stages.
     """
 
     def __init__(
         self,
         provider: BaseAIProvider = None,
-        max_concurrent_remote_jobs: int = 5,
+        max_concurrent_remote_jobs: int = MAX_CONCURENT_JOBS,
         max_concurrent_cpu_jobs: int = 4,
     ):
-        self.provider = provider or ReplicateProvider()
-        self._remote_semaphore = asyncio.Semaphore(max_concurrent_remote_jobs)
+        super().__init__(
+            model_type="general",
+            provider=provider,
+            max_concurrent_remote_jobs=max_concurrent_remote_jobs,
+        )
         self._cpu_semaphore = asyncio.Semaphore(max_concurrent_cpu_jobs)
-        self.MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_BYTES
 
     async def run_upscale(self, safe_filename: str, job_id: str, model_type: str, scale: int = 4) -> bool:
-        """
-        Executes full upscaling workflow for a single job.
-        """
-        started_at = time.perf_counter()
+        return await self.run(safe_filename, job_id, model_type=model_type, scale=scale)
+
+    async def preprocess_input(self, raw_bytes: bytes, **kwargs) -> io.BytesIO:
+        job_id = kwargs.get("job_id")
+        async with self._cpu_semaphore:
+            return await asyncio.to_thread(self._optimize_image_sync, raw_bytes, job_id)
+
+    async def postprocess_output(self, result_bytes: bytes, **kwargs) -> bytes:
+        async with self._cpu_semaphore:
+            return await asyncio.to_thread(self._compress_output_sync, result_bytes)
+
+    def build_model_params(self, **kwargs) -> dict:
+        model_type = kwargs.get("model_type", "general")
+        scale = kwargs.get("scale", DEFAULT_SCALE)
+
         try:
-            t0 = time.perf_counter()
-            raw_bytes = await StorageService.get_upload_bytes(safe_filename)
-            t1 = time.perf_counter()
+            return ModelRegistry.get_params(model_type, scale=scale)
+        except ValueError:
+            return ModelRegistry.get_params("general", scale=DEFAULT_SCALE)
 
-            if len(raw_bytes) > self.MAX_FILE_SIZE_BYTES:
-                raise ValueError("Payload exceeds maximum allowed size.")
+    async def _process_with_ai(self, image_stream: io.BytesIO, **kwargs) -> str:
+        model_type = kwargs.get("model_type", "general")
 
-            cpu_q0 = time.perf_counter()
-            async with self._cpu_semaphore:
-                cpu_wait_opt = time.perf_counter() - cpu_q0
-                o0 = time.perf_counter()
-                optimized_stream = await asyncio.to_thread(self._optimize_image_sync, raw_bytes, job_id)
-                o1 = time.perf_counter()
+        try:
+            model_id = ModelRegistry.get_replicate_id(model_type)
+            input_key = ModelRegistry.get_input_key(model_type)
+        except ValueError:
+            model_id = ModelRegistry.get_replicate_id("general")
+            input_key = ModelRegistry.get_input_key("general")
 
-            rep_q0 = time.perf_counter()
-            async with self._remote_semaphore:
-                rep_wait = time.perf_counter() - rep_q0
-                r0 = time.perf_counter()
-                output_url = await self._process_with_ai(optimized_stream, job_id, model_type, scale)
-                r1 = time.perf_counter()
+        params = self.build_model_params(**kwargs)
+        params[input_key] = image_stream
 
-            d0 = time.perf_counter()
-            raw_result_bytes = await self._download_ai_result(output_url, job_id)
-            d1 = time.perf_counter()
-
-            cpu_q1 = time.perf_counter()
-            async with self._cpu_semaphore:
-                cpu_wait_cmp = time.perf_counter() - cpu_q1
-                c0 = time.perf_counter()
-                compressed_bytes = await asyncio.to_thread(self._compress_output_sync, raw_result_bytes)
-                c1 = time.perf_counter()
-
-            if len(compressed_bytes) > self.MAX_FILE_SIZE_BYTES:
-                raise ValueError("Compressed output still exceeds maximum allowed size.")
-
-            s0 = time.perf_counter()
-            result_filename = get_result_filename(job_id)
-            await StorageService.save_result(compressed_bytes, result_filename)
-            s1 = time.perf_counter()
-
-            total = time.perf_counter() - started_at
-            logger.info(
-                "Upscale done job=%s total=%.3fs read=%.3fs optimize=%.3fs remote=%.3fs download=%.3fs compress=%.3fs save=%.3fs "
-                "queue_waits(cpu_opt=%.3fs, rem=%.3fs, cpu_cmp=%.3fs)",
-                job_id, total, (t1 - t0), (o1 - o0), (r1 - r0), (d1 - d0), (c1 - c0), (s1 - s0),
-                cpu_wait_opt, rep_wait, cpu_wait_cmp,
-            )
-
-            return True
-
-        except Exception as e:
-            logger.error(f"AI Engine Error (Job #{job_id}): {e}")
-            return False
+        try:
+            return await self.provider.run_model(model_id, params=params)
+        finally:
+            image_stream.close()
 
     def _optimize_image_sync(self, raw_bytes: bytes, job_id: str) -> io.BytesIO:
         """
@@ -127,51 +101,18 @@ class AIUpscaler:
         """
         Compresses image output via CPU-bound PIL transformations.
         """
-        MAX_DIMENSION = 4096
+        max_dimension = 4096
 
         with io.BytesIO(raw_bytes) as input_stream:
             with Image.open(input_stream) as img:
                 img.load()
 
-                if max(img.size) > MAX_DIMENSION:
-                    img.thumbnail((MAX_DIMENSION, MAX_DIMENSION), Image.Resampling.LANCZOS)
+                if max(img.size) > max_dimension:
+                    img.thumbnail((max_dimension, max_dimension), Image.Resampling.LANCZOS)
 
                 output_stream = io.BytesIO()
                 img.save(output_stream, format="PNG", optimize=False)
                 return output_stream.getvalue()
 
-    async def _process_with_ai(self, image_stream: io.BytesIO, job_id: str, model_type: str, scale: int) -> str:
-        """
-        Processes the image stream through the injected AI Provider.
-        """
-        try:
-            model_str = ModelRegistry.get_replicate_id(model_type)
-            params = ModelRegistry.get_params(model_type, scale=scale)
-        except ValueError:
-            model_str = ModelRegistry.get_replicate_id("general")
-            params = ModelRegistry.get_params("general", scale=DEFAULT_SCALE)
-
-        params["image"] = image_stream
-
-        try:
-            return await self.provider.run_model(model_str, params)
-        finally:
-            image_stream.close()
-
-    async def _download_ai_result(self, url: str, job_id: str) -> bytes:
-        """
-        Downloads the processed image result.
-        """
-        parsed_url = urllib.parse.urlparse(url)
-
-        if parsed_url.scheme != "https":
-            raise ValueError("Insecure protocol")
-
-        timeout = aiohttp.ClientTimeout(total=60)
-        async with aiohttp.ClientSession(timeout=timeout) as session:
-            async with session.get(url) as resp:
-                if resp.status != 200:
-                    raise ValueError(f"Download failed: {resp.status}")
-                return await resp.read()
 
 ai_upscaler = AIUpscaler()
