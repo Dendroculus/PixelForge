@@ -7,11 +7,11 @@ const routes = [
   },
   {
     path: '/upscale',
-    component: React.lazy(() => import('./pages/Upscale/UpscaleImage')), 
+    component: React.lazy(() => import('./pages/AiFeatures/UpscaleImage')), 
   },
   {
     path: '/remove-bg',
-    component: React.lazy(() => import('./pages/RemoveBG/RemoveBackground')),
+    component: React.lazy(() => import('./pages/AiFeatures/RemoveBackground')),
   },
   // {
   //   path: '/denoise',
@@ -35,15 +35,15 @@ const routes = [
   // },
   {
     path: '/compress-image',
-    component: React.lazy(() =>  import('./pages/Compressor/CompressImage')),
+    component: React.lazy(() =>  import('./pages/Optimize/CompressImage')),
   },
   {
     path: '/convert-format',
-    component: React.lazy(() => import('./pages/Formatting/ConvertFormat')),
+    component: React.lazy(() => import('./pages/Optimize/ConvertFormat')),
   },
   {
     path: '/metadata',
-    component: React.lazy(() => import('./pages/Metadata/MetadataWorkspace')),
+    component: React.lazy(() => import('./pages/Optimize/MetadataWorkspace')),
   },
   {
     path: '/color-palette',

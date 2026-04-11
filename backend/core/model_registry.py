@@ -14,7 +14,11 @@ class ModelRegistry:
         },
         "rembg": {
             "replicate_id": "851-labs/background-remover:a029dff38972b5fda4ec5d75d7d1cd25aeff621d2cf4946a41055d7db66b80bc",
-        }
+        },
+        "colorrestore": {
+            "replicate_id": "piddnad/ddcolor:ca494ba129e44e45f661d6ece83c4c98a9a7c774309beca01429b58fce8aa695",
+            "input_key": "image",
+        },
     }
 
     @classmethod
@@ -30,14 +34,22 @@ class ModelRegistry:
 
         model_info = cls._MODELS[model_type]
 
-        # General requires specific parameters; RemBG just needs the image.
         if model_type == "general":
             return {
                 "scale": scale,
                 "face_enhance": model_info.get("face_enhance", False),
             }
-        
+
+        if model_type == "colorrestore":
+            return {}
+
         return {}
+
+    @classmethod
+    def get_input_key(cls, model_type: str) -> str:
+        if model_type not in cls._MODELS:
+            raise ValueError(f"Model type '{model_type}' is not registered.")
+        return cls._MODELS[model_type].get("input_key", "image")
 
     @classmethod
     def list_models(cls) -> List[str]:
