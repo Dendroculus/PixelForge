@@ -15,7 +15,7 @@ function getContrastYIQ(hexcolor) {
 }
 
 /**
- * Renders palette swatches with a smooth, staggered fade-in animation.
+ * Renders palette swatches with smooth morphing color interpolation.
  * @param {{
  * palette: string[],
  * paletteStyle: 'square' | 'circle',
@@ -36,12 +36,14 @@ export default function PaletteSwatches({
         {palette.map((hex, i) => (
           <motion.button
             key={`palette-block-${i}`}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4, delay: i * 0.05, ease: "easeOut" }}
+            initial={{ opacity: 0, backgroundColor: "#ffffff" }}
+            animate={{ opacity: 1, backgroundColor: hex }}
+            transition={{
+              opacity: { duration: 0.4, delay: i * 0.05, ease: "easeOut" },
+              backgroundColor: { duration: 0.15, ease: "linear" }
+            }}
             onClick={() => onCopy(hex)}
             className="group relative flex-1 transition-all duration-300 ease-in-out hover:flex-[1.5] focus:outline-none"
-            style={{ backgroundColor: hex }}
             title={`Copy ${hex.toUpperCase()}`}
           >
             <div className="absolute inset-0 flex items-center justify-center bg-black/10 opacity-0 backdrop-blur-[2px] transition-all duration-300 group-hover:opacity-100">
@@ -66,12 +68,14 @@ export default function PaletteSwatches({
       {palette.map((hex, i) => (
         <motion.button
           key={`palette-circle-${i}`}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: i * 0.04, ease: "easeOut" }}
+          initial={{ opacity: 0, backgroundColor: "#ffffff" }}
+          animate={{ opacity: 1, backgroundColor: hex }}
+          transition={{
+            opacity: { duration: 0.4, delay: i * 0.04, ease: "easeOut" },
+            backgroundColor: { duration: 0.15, ease: "linear" }
+          }}
           onClick={() => onCopy(hex)}
           className="group relative h-11 w-11 sm:h-12 sm:w-12 rounded-full border border-slate-200/70 shadow-sm transition-transform hover:scale-110 focus:outline-none"
-          style={{ backgroundColor: hex }}
           title={`Copy ${hex.toUpperCase()}`}
         >
           <span className="absolute inset-0 grid place-items-center">

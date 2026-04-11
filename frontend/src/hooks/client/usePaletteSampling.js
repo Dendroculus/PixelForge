@@ -1,23 +1,9 @@
 import { useCallback, useRef, useState } from 'react';
 
-/**
- * Clamps a numeric value to a min/max range.
- * @param {number} v - Value to clamp.
- * @param {number} min - Minimum allowed value.
- * @param {number} max - Maximum allowed value.
- * @returns {number} Clamped value.
- */
 function clamp(v, min, max) {
   return Math.max(min, Math.min(max, v));
 }
 
-/**
- * Converts RGB channels to a hex color string.
- * @param {number} r - Red channel.
- * @param {number} g - Green channel.
- * @param {number} b - Blue channel.
- * @returns {string} Hex color.
- */
 function rgbToHex(r, g, b) {
   return (
     '#' +
@@ -30,38 +16,29 @@ function rgbToHex(r, g, b) {
   );
 }
 
-/**
- * Handles palette sampling from image points using canvas.
- * @param {{
- * previewUrl: string | null | undefined,
- * setError: (value: string) => void
- * }} params
- * @returns {{
- * isProcessing: boolean,
- * setIsProcessing: React.Dispatch<React.SetStateAction<boolean>>,
- * palette: string[],
- * setPalette: React.Dispatch<React.SetStateAction<string[]>>,
- * samplePaletteFromPoints: (inputPoints: Array<{x:number,y:number}>) => Promise<void>
- * }}
- */
 export default function usePaletteSampling({ previewUrl, setError }) {
   const canvasRef = useRef(null);
   const cachedUrlRef = useRef(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [palette, setPalette] = useState([]);
 
-  const buildSamplingCanvas = useCallback(async () => {
-    if (!previewUrl) return null;
-
+  const getCachedCanvas = useCallback(() => {
     if (canvasRef.current && cachedUrlRef.current === previewUrl) {
       return {
         canvas: canvasRef.current,
         ctx: canvasRef.current.getContext('2d', { willReadFrequently: true }),
       };
     }
+    return null;
+  }, [previewUrl]);
+
+  const buildSamplingCanvas = useCallback(async () => {
+    if (!previewUrl) return null;
+
+    const cached = getCachedCanvas();
+    if (cached) return cached;
 
     const img = new Image();
-    img.crossOrigin = 'Anonymous';
 
     await new Promise((resolve, reject) => {
       img.onload = resolve;
@@ -81,7 +58,7 @@ export default function usePaletteSampling({ previewUrl, setError }) {
     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
     return { canvas, ctx };
-  }, [previewUrl]);
+  }, [previewUrl, getCachedCanvas]);
 
   const samplePaletteFromPoints = useCallback(async (inputPoints, options = {}) => {
     if (!previewUrl || !inputPoints?.length) return;
@@ -98,8 +75,12 @@ export default function usePaletteSampling({ previewUrl, setError }) {
     }
 
     try {
-      const built = await buildSamplingCanvas();
+      let built = getCachedCanvas();
+      if (!built) {
+        built = await buildSamplingCanvas();
+      }
       if (!built) return;
+
       const { canvas, ctx } = built;
 
       const sampled = inputPoints.map((p) => {
@@ -127,7 +108,7 @@ export default function usePaletteSampling({ previewUrl, setError }) {
     } finally {
       if (!silent) setIsProcessing(false);
     }
-  }, [previewUrl, buildSamplingCanvas, setError]);
+  }, [previewUrl, buildSamplingCanvas, getCachedCanvas, setError]);
 
   return {
     isProcessing,
