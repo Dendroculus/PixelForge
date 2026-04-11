@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 
 /**
- * Renders a reusable fixed-position format dropdown.
+ * Renders a reusable fixed-position format dropdown with Type-to-Search.
  * @param {{
  * value: string,
  * options: string[],
@@ -12,7 +12,8 @@ import { motion } from 'framer-motion';
  * transform?: 'uppercase' | 'lowercase' | 'none',
  * labelClassName?: string,
  * buttonClassName?: string,
- * getOptionStyle?: (opt: string) => object
+ * getOptionStyle?: (opt: string) => object,
+ * optionClassName?: string
  * }} props
  * @returns {JSX.Element}
  */
@@ -22,12 +23,16 @@ export default function FormatDropdown({
   onChange,
   label = 'Convert To',
   transform = 'uppercase',
-  labelClassName = 'mb-2 block text-sm font-bold text-slate-700',
+  labelClassName = 'mb-2 block text-xs font-bold text-slate-700',
   buttonClassName = 'flex w-full items-center justify-between rounded-xl border border-white/60 bg-white/60 px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-sm outline-none transition-all hover:bg-white/80 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100',
   getOptionStyle = () => ({}),
+  optionClassName = '',
 }) {
   const triggerRef = useRef(null);
   const menuRef = useRef(null);
+  const optionRefs = useRef({});
+  const searchBuffer = useRef('');
+  const searchTimeout = useRef(null);
 
   const [isOpen, setIsOpen] = useState(false);
   const [menuStyle, setMenuStyle] = useState(null);
@@ -48,6 +53,49 @@ export default function FormatDropdown({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Keyboard Navigation (Type-to-Search)
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+        return;
+      }
+
+      // Ignore modifiers and non-character keys (except for standard navigation)
+      if (e.ctrlKey || e.altKey || e.metaKey || e.key.length > 1) return;
+
+      e.preventDefault(); // Stop page scrolling when typing
+
+      searchBuffer.current += e.key.toLowerCase();
+      
+      if (searchTimeout.current) clearTimeout(searchTimeout.current);
+      searchTimeout.current = setTimeout(() => {
+        searchBuffer.current = '';
+      }, 600); // Reset buffer after 600ms of inactivity
+
+      const matchIndex = options.findIndex((opt) =>
+        String(opt).toLowerCase().startsWith(searchBuffer.current)
+      );
+
+      if (matchIndex !== -1) {
+        const matchOpt = options[matchIndex];
+        const el = optionRefs.current[matchOpt];
+        if (el) {
+          el.scrollIntoView({ block: 'nearest' });
+          el.focus();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    };
+  }, [isOpen, options]);
 
   useEffect(() => {
     if (!isOpen || !triggerRef.current) return;
@@ -96,23 +144,24 @@ export default function FormatDropdown({
           exit={{ opacity: 0, y: -6 }}
           transition={{ duration: 0.15, ease: 'easeOut' }}
           style={menuStyle}
-          className="overflow-y-auto max-h-60 custom-scrollbar rounded-xl border border-slate-200 bg-white shadow-xl"
+          className="overflow-y-auto max-h-48 custom-scrollbar rounded-xl border border-slate-200 bg-white shadow-xl"
         >
           <div className="flex flex-col p-1.5">
             {options.map((opt) => (
               <button
                 key={opt}
+                ref={(el) => (optionRefs.current[opt] = el)}
                 type="button"
                 onClick={() => {
                   onChange(opt);
                   setIsOpen(false);
                 }}
                 style={getOptionStyle(opt)}
-                className={`rounded-md px-3 py-2 text-left text-sm font-bold transition-colors ${
+                className={`rounded-md px-3 py-2 text-left text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:bg-indigo-50 ${
                   value === opt 
-                    ? 'bg-indigo-100 text-indigo-700' 
-                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                }`}
+                    ? 'bg-indigo-100 text-indigo-700 font-bold' 
+                    : 'text-slate-700 hover:bg-slate-100'
+                } ${optionClassName}`}
               >
                 {formatText(opt)}
               </button>

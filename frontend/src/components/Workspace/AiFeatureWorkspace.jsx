@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import WorkspaceLayout from '../../components/Layout/WorkspaceLayout';
 import UploadDropzone from '../../components/Upload/UploadDropzone';
 import ResultViewer from '../../components/Workspace/display/ResultViewer';
-import WorkspaceModals from '../modals/WorkspaceModals';
+import WorkspaceModals from '../Modals/WorkspaceModals';
 import WorkspaceLimitCard from './cards/WorkspaceLimitCard';
 import WorkspaceMarketing from './cards/WorkspaceMarketing';
 import StagedFileCard from './cards/StagedFileCard';

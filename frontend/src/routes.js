@@ -30,6 +30,10 @@ const routes = [
   //   component: React.lazy(() => import('./pages/Crop/CropWorkspace')),
   // },
   {
+    path: '/rotate-flip',
+    component: React.lazy(() => import('./pages/SmartEdit/RotateFlip')),
+  },
+  {
     path: '/watermark-adder',
     component: React.lazy(() => import('./pages/Utilities/WatermarkAdder')),
   },

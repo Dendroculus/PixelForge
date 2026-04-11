@@ -83,6 +83,8 @@ export default function ConvertFormat() {
                 options={APP_CONFIG.ALLOWED_EXTENSIONS}
                 onChange={setTargetFormat}
                 label="Convert To"
+                buttonClassName="flex w-full items-center justify-between rounded-xl border border-white/60 bg-white/60 px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm outline-none transition-all hover:bg-white/80 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                optionClassName="font-bold"
               />
 
               <div className={`flex flex-col justify-center transition-opacity duration-300 ${targetFormat === 'png' ? 'pointer-events-none opacity-30' : 'opacity-100'}`}>
