@@ -10,7 +10,7 @@ export default function ImageWatermarkControls({ watermarkImageRef, handleWaterm
           className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
         />
         <span className="text-xs font-semibold text-slate-700">
-          {imgWm.url ? 'Replace logo image' : 'Upload logo image (.png)'}
+          {imgWm.url ? 'Replace logo image' : 'Upload logo image'}
         </span>
       </div>
 
