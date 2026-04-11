@@ -28,8 +28,9 @@ export const apiService = {
       try {
         const errData = await initResponse.json();
         detail = errData?.detail || detail;
-        // eslint-disable-next-line no-empty
-      } catch {}
+      } catch (parseError) {
+          console.warn(`[API Error] Failed to parse error JSON (Status: ${initResponse.status}):`, parseError);
+      }
       throw new Error(detail);
     }
 
@@ -71,8 +72,9 @@ export const apiService = {
       try {
         const errData = await startResponse.json();
         detail = errData?.detail || detail;
-        // eslint-disable-next-line no-empty
-      } catch {}
+      } catch (parseError) {
+        console.warn(`[API Error] Failed to parse error JSON (Status: ${startResponse.status}):`, parseError);
+      }
       throw new Error(detail);
     }
 
@@ -99,8 +101,9 @@ export const apiService = {
       try {
         const errData = await initResponse.json();
         detail = errData?.detail || detail;
-        // eslint-disable-next-line no-empty
-      } catch {}
+      } catch (parseError) {
+        console.warn(`[API Error] Failed to parse error JSON (Status: ${initResponse.status}):`, parseError);
+      }
       throw new Error(detail);
     }
 
@@ -138,8 +141,9 @@ export const apiService = {
       try {
         const errData = await startResponse.json();
         detail = errData?.detail || detail;
-        // eslint-disable-next-line no-empty
-      } catch {}
+      } catch (parseError) {
+        console.warn(`[API Error] Failed to parse error JSON (Status: ${startResponse.status}):`, parseError);
+      }
       throw new Error(detail);
     }
 
@@ -166,8 +170,9 @@ export const apiService = {
       try {
         const errData = await initResponse.json();
         detail = errData?.detail || detail;
-        // eslint-disable-next-line no-empty
-      } catch {}
+      } catch (parseError) {
+        console.warn(`[API Error] Failed to parse error JSON (Status: ${initResponse.status}):`, parseError);
+      }
       throw new Error(detail);
     }
 
@@ -205,8 +210,9 @@ export const apiService = {
       try {
         const errData = await startResponse.json();
         detail = errData?.detail || detail;
-        // eslint-disable-next-line no-empty
-      } catch {}
+      } catch (parseError) {
+        console.warn(`[API Error] Failed to parse error JSON (Status: ${startResponse.status}):`, parseError);
+      }
       throw new Error(detail);
     }
 
