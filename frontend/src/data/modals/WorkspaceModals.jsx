@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
-import LegalModal from '../Common/LegalModal';
-import CountdownTimer from '../Common/CountdownTimer';
+import LegalModal from '../../components/Common/LegalModal';
+import CountdownTimer from '../../components/Common/CountdownTimer';
 import { APP_CONFIG as config } from '../../config';
 import { makeStorageKeys } from '../../utils/storageKeys';
 
