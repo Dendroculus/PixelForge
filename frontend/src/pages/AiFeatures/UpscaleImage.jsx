@@ -2,7 +2,7 @@ import { useState } from 'react';
 import AiFeatureWorkspace from '../../components/Workspace/AiFeatureWorkspace';
 import UpscaleControls from '../../components/Workspace/controls/UpscaleControls';
 import { useUpscalePipeline } from '../../hooks/pipeline/useUpscalePipeline';
-import { useSimulatedProgress } from '../../hooks/useSimulatedProgress';
+import { useSimulatedProgress } from '../../hooks/workspace/useSimulatedProgress';
 import { marketingProps } from '../../data/feature/upscaleMarketing';
 
 export default function UpscaleWorkspace() {
