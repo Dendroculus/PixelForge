@@ -10,7 +10,6 @@ export const APP_CONFIG = {
   COMPRESS_MAX_SIZE_MB: 15,
   ALLOWED_EXTENSIONS: ["jpg", "jpeg", "png", "webp"],
   RESULT_EXPIRATION_TIME: 10 * 60 * 1000, // 10 minutes
-  UPSCALE_LIMIT: 3,
   DAY_MS: 24 * 60 * 60 * 1000, // 24 hours
   API_URL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api',
   UPLOAD_DRAFT_EXPIRATION_TIME: 10 * 60 * 1000 // 10 minutes
@@ -35,4 +34,17 @@ export const IMAGES = {
   darkLogo: logoFullBlack,
   lightLogo: logoFullWhite,
   svg: logoSvg
+};
+
+export const FEATURE_LIMITS = {
+  default: 3,
+  upscale: 3,
+  rembg: 10,
+  colorrestore: 10,
+};
+
+export const RESULT_LABELS = {
+  upscale: 'Upscaled',
+  rembg: 'Background Removed',
+  colorrestore: 'Color Restored',
 };

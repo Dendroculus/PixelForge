@@ -1,17 +1,20 @@
 import { useState, useCallback, useEffect } from 'react';
-import { APP_CONFIG as config } from '../config';
+import { APP_CONFIG as config, FEATURE_LIMITS } from '../config';
 
-const apiUrl = import.meta.env.VITE_API_BASE_URL || (import.meta.env.DEV ? 'http://127.0.0.1:8000/api' : '');
+const apiUrl =
+  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta.env.DEV ? 'http://127.0.0.1:8000/api' : '');
 
 export function useUsageLimit(feature = 'upscale') {
-  const maxLimit = feature === 'rembg' ? 10 : 3; 
+  const maxLimit = FEATURE_LIMITS[feature] ?? FEATURE_LIMITS.default;
+
 
   const [usesRemaining, setUsesRemaining] = useState(maxLimit);
   const [resetTimestamp, setResetTimestamp] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const refreshUsage = useCallback(async () => {
-    if (!apiUrl) return; 
+    if (!apiUrl) return;
     try {
       const res = await fetch(`${apiUrl}/usage?feature=${feature}`);
       if (!res.ok) return;
