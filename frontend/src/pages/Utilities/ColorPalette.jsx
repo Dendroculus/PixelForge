@@ -4,34 +4,27 @@ import UploadCard from '../../components/Upload/UploadCard';
 import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
 import ToolPageWrapper from '../../components/Layout/ToolPageWrapper';
 import PreviewImageBox from '../../components/Workspace/display/PreviewImageBox';
+import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErrorAlert';
+import PaletteSwatches from '../../components/Workspace/display/PaletteSwatches';
+import PaletteStyleToggle from '../../components/Workspace/controls/PaletteStyleToggle';
 import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
-import { useWorkspaceFile } from '../../hooks/useWorkspaceFile';
+import { useWorkspaceFile } from '../../hooks/workspace/useWorkspaceFile';
+import usePaletteSampling from '../../hooks/client/usePaletteSampling';
 
 /**
- * Calculates YIQ contrast to determine text visibility over backgrounds.
- * @param {string} hexcolor - Background hex code.
- * @returns {string} Tailwind text color class.
+ * Clamps a numeric value to a min/max range.
+ * @param {number} v - Value to clamp.
+ * @param {number} min - Minimum allowed value.
+ * @param {number} max - Maximum allowed value.
+ * @returns {number} Clamped value.
  */
-function getContrastYIQ(hexcolor) {
-  const hex = hexcolor.replace('#', '');
-  const r = parseInt(hex.substr(0, 2), 16);
-  const g = parseInt(hex.substr(2, 2), 16);
-  const b = parseInt(hex.substr(4, 2), 16);
-  const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-  return yiq >= 128 ? 'text-slate-900' : 'text-white';
-}
-
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
-const rgbToHex = (r, g, b) =>
-  '#' +
-  [r, g, b]
-    .map((x) => {
-      const hex = Math.max(0, Math.min(255, x)).toString(16);
-      return hex.length === 1 ? `0${hex}` : hex;
-    })
-    .join('');
-
+/**
+ * Builds initial evenly distributed color sampling points.
+ * @param {number} count - Number of points.
+ * @returns {Array<{id:number,x:number,y:number}>} Initial points.
+ */
 function makeInitialPoints(count) {
   const cols = Math.ceil(Math.sqrt(count));
   const rows = Math.ceil(count / cols);
@@ -47,6 +40,19 @@ function makeInitialPoints(count) {
 }
 
 /**
+ * Resizes an existing points array to a target count while preserving current positions.
+ * @param {Array<{id:number,x:number,y:number}>} prev - Existing points.
+ * @param {number} nextCount - Desired points count.
+ * @returns {Array<{id:number,x:number,y:number}>} Resized points.
+ */
+function resizePoints(prev, nextCount) {
+  if (prev.length === nextCount) return prev;
+  if (prev.length > nextCount) return prev.slice(0, nextCount);
+  const extras = makeInitialPoints(nextCount).slice(prev.length);
+  return [...prev, ...extras.map((p, i) => ({ ...p, id: prev.length + i }))];
+}
+
+/**
  * React component for extracting color palettes from images using interactive pickers.
  * @returns {JSX.Element} The ColorPalette component.
  */
@@ -54,16 +60,13 @@ export default function ColorPalette() {
   const fileInputRef = useRef(null);
   const imageRef = useRef(null);
   const previewContainerRef = useRef(null);
-  const canvasRef = useRef(null);
 
   const [paletteCount, setPaletteCount] = useState(5);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [palette, setPalette] = useState([]);
   const [copiedHex, setCopiedHex] = useState(null);
-
   const [points, setPoints] = useState(makeInitialPoints(5));
   const [activePointId, setActivePointId] = useState(null);
   const [imageRect, setImageRect] = useState({ left: 0, top: 0, width: 1, height: 1 });
+  const lastDragSampleAtRef = useRef(0);
 
   const [paletteStyle, setPaletteStyle] = useState(() => {
     if (typeof window === 'undefined') return 'square';
@@ -79,20 +82,31 @@ export default function ColorPalette() {
     resetAll: resetWorkspaceFile,
   } = useWorkspaceFile(fileInputRef);
 
+  const {
+    isProcessing,
+    setIsProcessing,
+    palette,
+    setPalette,
+    samplePaletteFromPoints,
+  } = usePaletteSampling({ previewUrl, setError });
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.setItem('paletteStyle', paletteStyle);
     }
   }, [paletteStyle]);
 
-  useEffect(() => {
+  const handlePaletteCountChange = useCallback((e) => {
+    const nextCount = Number(e.target.value);
+    setPaletteCount(nextCount);
     setPoints((prev) => {
-      if (prev.length === paletteCount) return prev;
-      if (prev.length > paletteCount) return prev.slice(0, paletteCount);
-      const extras = makeInitialPoints(paletteCount).slice(prev.length);
-      return [...prev, ...extras.map((p, i) => ({ ...p, id: prev.length + i }))];
+      const next = resizePoints(prev, nextCount);
+      if (previewUrl) {
+        samplePaletteFromPoints(next);
+      }
+      return next;
     });
-  }, [paletteCount]);
+  }, [previewUrl, samplePaletteFromPoints]);
 
   const updateImageRect = useCallback(() => {
     const img = imageRef.current;
@@ -115,7 +129,17 @@ export default function ColorPalette() {
     const left = padding + (availableWidth - width) / 2;
     const top = padding + (availableHeight - height) / 2;
 
-    setImageRect({ left, top, width, height });
+    setImageRect((prev) => {
+      if (
+        Math.abs(prev.left - left) < 0.5 &&
+        Math.abs(prev.top - top) < 0.5 &&
+        Math.abs(prev.width - width) < 0.5 &&
+        Math.abs(prev.height - height) < 0.5
+      ) {
+        return prev;
+      }
+      return { left, top, width, height };
+    });
   }, []);
 
   useEffect(() => {
@@ -129,58 +153,8 @@ export default function ColorPalette() {
     });
 
     resizeObserver.observe(box);
-
     return () => resizeObserver.disconnect();
   }, [updateImageRect, previewUrl]);
-
-  const buildSamplingCanvas = useCallback(async () => {
-    if (!previewUrl) return null;
-
-    const img = new Image();
-    img.crossOrigin = 'Anonymous';
-
-    await new Promise((resolve, reject) => {
-      img.onload = resolve;
-      img.onerror = reject;
-      img.src = previewUrl;
-    });
-
-    const canvas = canvasRef.current || document.createElement('canvas');
-    canvasRef.current = canvas;
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    if (!ctx) throw new Error('Canvas context unavailable');
-
-    canvas.width = img.naturalWidth || img.width;
-    canvas.height = img.naturalHeight || img.height;
-    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-    return { canvas, ctx };
-  }, [previewUrl]);
-
-  const samplePaletteFromPoints = useCallback(async (inputPoints) => {
-    if (!previewUrl || !inputPoints?.length) return;
-    setIsProcessing(true);
-    setError('');
-
-    try {
-      const built = await buildSamplingCanvas();
-      if (!built) return;
-      const { canvas, ctx } = built;
-
-      const nextPalette = inputPoints.map((p) => {
-        const px = Math.round(clamp(p.x, 0, 1) * (canvas.width - 1));
-        const py = Math.round(clamp(p.y, 0, 1) * (canvas.height - 1));
-        const d = ctx.getImageData(px, py, 1, 1).data;
-        return rgbToHex(d[0], d[1], d[2]);
-      });
-
-      setPalette(nextPalette);
-    } catch {
-      setError('Failed to process image.');
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [previewUrl, setError, buildSamplingCanvas]);
 
   const latestPointsRef = useRef(points);
 
@@ -200,7 +174,7 @@ export default function ColorPalette() {
     setCopiedHex(null);
     setPoints(makeInitialPoints(paletteCount));
     setActivePointId(null);
-  }, [resetWorkspaceFile, paletteCount]);
+  }, [paletteCount, resetWorkspaceFile, setIsProcessing, setPalette]);
 
   const copyToClipboard = useCallback((hex) => {
     navigator.clipboard.writeText(hex);
@@ -216,13 +190,13 @@ export default function ColorPalette() {
     const localX = clientX - rect.left;
     const localY = clientY - rect.top;
 
-    const HANDLE_SIZE = 22;
-    const HANDLE_RADIUS = HANDLE_SIZE / 2;
+    const handleSize = 22;
+    const handleRadius = handleSize / 2;
 
-    const minX = imageRect.left + HANDLE_RADIUS;
-    const maxX = imageRect.left + imageRect.width - HANDLE_RADIUS;
-    const minY = imageRect.top + HANDLE_RADIUS;
-    const maxY = imageRect.top + imageRect.height - HANDLE_RADIUS;
+    const minX = imageRect.left + handleRadius;
+    const maxX = imageRect.left + imageRect.width - handleRadius;
+    const minY = imageRect.top + handleRadius;
+    const maxY = imageRect.top + imageRect.height - handleRadius;
 
     const clampedX = clamp(localX, minX, maxX);
     const clampedY = clamp(localY, minY, maxY);
@@ -245,21 +219,33 @@ export default function ColorPalette() {
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       setActivePointId(null);
-      setPoints((latest) => {
-        samplePaletteFromPoints(latest);
-        return latest;
-      });
     };
 
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp, { once: true });
-  }, [movePointFromClient, samplePaletteFromPoints]);
+  }, [movePointFromClient]);
 
   useEffect(() => {
-    if (activePointId == null) return;
-    const t = setTimeout(() => samplePaletteFromPoints(points), 16);
-    return () => clearTimeout(t);
-  }, [points, activePointId, samplePaletteFromPoints]);
+    if (activePointId == null || !previewUrl) return;
+
+    let rafId = 0;
+    rafId = requestAnimationFrame(async () => {
+      const now = performance.now();
+      if (now - lastDragSampleAtRef.current < 33) return;
+      lastDragSampleAtRef.current = now;
+
+      const activePoint = points.find((p) => p.id === activePointId);
+      if (!activePoint) return;
+
+      await samplePaletteFromPoints([activePoint], {
+        replaceIndexById: activePointId,
+        allPoints: points,
+        silent: true,
+      });
+    });
+
+    return () => cancelAnimationFrame(rafId);
+  }, [activePointId, points, previewUrl, samplePaletteFromPoints]);
 
   return (
     <ToolPageWrapper>
@@ -270,7 +256,13 @@ export default function ColorPalette() {
           <>
             {!file && (
               <div className="mb-4 min-h-32">
-                <UploadCard inputId="palette-file-input" inputRef={fileInputRef} onChange={onFileChange} helperText="Any format up to 10MB" maxSizeMB={10} />
+                <UploadCard
+                  inputId="palette-file-input"
+                  inputRef={fileInputRef}
+                  onChange={onFileChange}
+                  helperText="Any format up to 10MB"
+                  maxSizeMB={10}
+                />
               </div>
             )}
 
@@ -280,7 +272,15 @@ export default function ColorPalette() {
                 <span className="rounded-md bg-indigo-50 px-2 py-0.5 text-indigo-600">{paletteCount}</span>
               </label>
               <div className="px-1 pt-1">
-                <input type="range" min="3" max="10" step="1" value={paletteCount} onChange={(e) => setPaletteCount(Number(e.target.value))} className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-indigo-100 accent-indigo-600" />
+                <input
+                  type="range"
+                  min="3"
+                  max="10"
+                  step="1"
+                  value={paletteCount}
+                  onChange={handlePaletteCountChange}
+                  className="h-1.5 w-full cursor-pointer appearance-none rounded-lg bg-indigo-100 accent-indigo-600"
+                />
                 <div className="mt-2 flex w-full justify-between text-[10px] font-bold uppercase tracking-wider text-slate-400">
                   <span>Basic</span>
                   <span>Detailed</span>
@@ -290,112 +290,48 @@ export default function ColorPalette() {
 
             <AnimatePresence>
               {palette.length > 0 && (
-                <motion.div initial={{ opacity: 0, height: 0, scale: 0.95 }} animate={{ opacity: 1, height: 'auto', scale: 1 }} exit={{ opacity: 0, height: 0 }} className="mb-4 flex flex-col">
+                <motion.div
+                  key="palette-wrapper"
+                  initial={{ opacity: 0, height: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, height: 'auto', scale: 1 }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="mb-4 flex flex-col"
+                >
                   <div className="mb-2 flex items-center justify-between gap-3">
                     <label className="text-sm font-bold text-slate-700">Palette</label>
-
-                    <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 text-[11px] font-bold">
-                      <button
-                        type="button"
-                        onClick={() => setPaletteStyle('square')}
-                        className={`px-2.5 py-1 rounded-md transition ${
-                          paletteStyle === 'square'
-                            ? 'bg-indigo-600 text-white'
-                            : 'text-slate-600 hover:bg-slate-100'
-                        }`}
-                      >
-                        Square
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setPaletteStyle('circle')}
-                        className={`px-2.5 py-1 rounded-md transition ${
-                          paletteStyle === 'circle'
-                            ? 'bg-indigo-600 text-white'
-                            : 'text-slate-600 hover:bg-slate-100'
-                        }`}
-                      >
-                        Circle
-                      </button>
-                    </div>
+                    <PaletteStyleToggle paletteStyle={paletteStyle} setPaletteStyle={setPaletteStyle} />
                   </div>
 
-                  {paletteStyle === 'square' ? (
-                    <div className="flex h-14 w-full overflow-hidden rounded-xl border border-slate-200/60 bg-white shadow-sm">
-                      {palette.map((hex, i) => (
-                        <motion.button
-                          key={`palette-block-${hex}-${i}`}
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: 1 }}
-                          transition={{ delay: i * 0.05 }}
-                          onClick={() => copyToClipboard(hex)}
-                          className="group relative flex-1 transition-all duration-300 ease-in-out hover:flex-[1.5] focus:outline-none"
-                          style={{ backgroundColor: hex }}
-                          title={`Copy ${hex.toUpperCase()}`}
-                        >
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/10 opacity-0 backdrop-blur-[2px] transition-all duration-300 group-hover:opacity-100">
-                            {copiedHex === hex ? (
-                              <svg className={`h-5 w-5 ${getContrastYIQ(hex)}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                              </svg>
-                            ) : (
-                              <span className={`hidden whitespace-nowrap text-[10px] font-black tracking-wider sm:block ${getContrastYIQ(hex)}`}>{hex.toUpperCase()}</span>
-                            )}
-                          </div>
-                        </motion.button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="flex flex-wrap gap-3">
-                      {palette.map((hex, i) => (
-                        <motion.button
-                          key={`palette-circle-${hex}-${i}`}
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: i * 0.04 }}
-                          onClick={() => copyToClipboard(hex)}
-                          className="group relative h-11 w-11 sm:h-12 sm:w-12 rounded-full border border-slate-200/70 shadow-sm transition-transform hover:scale-110 focus:outline-none"
-                          style={{ backgroundColor: hex }}
-                          title={`Copy ${hex.toUpperCase()}`}
-                        >
-                          <span className="absolute inset-0 grid place-items-center">
-                            {copiedHex === hex ? (
-                              <svg className={`h-4 w-4 ${getContrastYIQ(hex)}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                              </svg>
-                            ) : (
-                              <span className={`hidden text-[9px] font-black tracking-wider group-hover:block ${getContrastYIQ(hex)}`}>
-                                {hex.replace('#', '')}
-                              </span>
-                            )}
-                          </span>
-                        </motion.button>
-                      ))}
-                    </div>
-                  )}
+                  <PaletteSwatches
+                    palette={palette}
+                    paletteStyle={paletteStyle}
+                    copiedHex={copiedHex}
+                    onCopy={copyToClipboard}
+                    isDragging={activePointId != null}
+                  />
                 </motion.div>
               )}
             </AnimatePresence>
 
-            <AnimatePresence>
-              {error && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="mb-2 overflow-hidden">
-                  <div className="rounded-xl border border-rose-200 bg-rose-50/80 px-4 py-3 text-sm font-medium text-rose-700 shadow-sm backdrop-blur-sm">
-                    {error}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            <WorkspaceErrorAlert error={error} />
           </>
         }
         leftFooter={
           <div className="flex flex-col gap-3">
             {file && (
-              <button onClick={handleReset} disabled={isProcessing} className="inline-flex w-full items-center justify-center rounded-xl border border-slate-200/60 bg-white/50 px-5 py-3.5 text-sm font-bold text-slate-600 shadow-sm transition-all hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50">
+              <button
+                onClick={handleReset}
+                disabled={isProcessing}
+                className="inline-flex w-full items-center justify-center rounded-xl border border-slate-200/60 bg-white/50 px-5 py-3.5 text-sm font-bold text-slate-600 shadow-sm transition-all hover:bg-white hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-50"
+              >
                 Upload Another Image
               </button>
             )}
-            <button onClick={() => samplePaletteFromPoints(points)} disabled={!file || isProcessing} className="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white transition-all hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none">
+            <button
+              onClick={() => samplePaletteFromPoints(points)}
+              disabled={!file || isProcessing}
+              className="inline-flex w-full items-center justify-center rounded-xl bg-indigo-600 px-5 py-3.5 text-sm font-bold text-white transition-all hover:bg-indigo-500 hover:shadow-lg hover:shadow-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-none"
+            >
               {isProcessing ? 'Analyzing Pixels...' : 'Extract Palette'}
             </button>
           </div>

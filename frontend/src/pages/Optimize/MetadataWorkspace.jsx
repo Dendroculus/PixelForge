@@ -153,7 +153,7 @@ export default function MetadataWorkspace() {
                     onClick={handleCancel}
                     className="flex-1 py-3 text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-colors shadow-sm"
                   >
-                    Start Over
+                    Scan Another Image
                   </button>
                   <a
                     href={strippedUrl}

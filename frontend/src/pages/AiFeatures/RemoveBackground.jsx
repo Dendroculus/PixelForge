@@ -2,7 +2,7 @@ import { useState } from 'react';
 import AiFeatureWorkspace from '../../components/Workspace/AiFeatureWorkspace';
 import RemoveBgControls from '../../components/Workspace/controls/RemoveBgControls';
 import { useRemBGPipeline } from '../../hooks/pipeline/useRemBGPipeline';
-import { useSimulatedProgress } from '../../hooks/useSimulatedProgress';
+import { useSimulatedProgress } from '../../hooks/workspace/useSimulatedProgress';
 import { marketingProps } from '../../data/feature/remBgMarketing';
 
 export default function RemoveBG() {

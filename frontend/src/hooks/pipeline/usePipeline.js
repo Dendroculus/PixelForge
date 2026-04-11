@@ -1,8 +1,8 @@
 import { useState, useRef, useCallback } from 'react';
 import { saveFileToIDB } from '../../utils/idb';
 import { clearAppSession } from '../../utils/session';
-import { useSessionPersistence } from '../useSessionPersistence';
-import { useUsageLimit } from '../useUsageLimit';
+import { useSessionPersistence } from '../workspace/useSessionPersistence';
+import { useUsageLimit } from '../auth/useUsageLimit';
 import { makeStorageKeys, migrateStorageKeys } from '../../utils/storageKeys';
 
 export function usePipeline(setProgress, usePipelineActions, feature = 'upscale') {
