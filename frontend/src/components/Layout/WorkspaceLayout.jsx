@@ -12,7 +12,7 @@ export default function WorkspaceLayout({ leftPanel, rightPanel, minHeight = 'mi
         <div className="p-8 md:p-10 flex flex-col gap-6 bg-transparent">
           {leftPanel}
         </div>
-        <div className="p-8 md:p-10 flex flex-col bg-white/20">
+        <div className="p-8 md:p-9 flex flex-col bg-white/20">
           {rightPanel}
         </div>
       </div>
