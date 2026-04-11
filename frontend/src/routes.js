@@ -13,10 +13,10 @@ const routes = [
     path: '/remove-bg',
     component: React.lazy(() => import('./pages/AiFeatures/RemoveBackground')),
   },
-  // {
-  //   path: '/denoise',
-  //   component: React.lazy(() => import('./pages/Denoise/DenoiseWorkspace')),
-  // },
+  {
+    path: '/color-restoration',
+    component: React.lazy(() => import('./pages/AiFeatures/ColorRestoration')),
+  },
   // {
   //   path: '/image-editor',
   //   component: React.lazy(() => import('./pages/ImageEditor/ImageEditorWorkspace')),

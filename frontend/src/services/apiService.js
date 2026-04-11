@@ -2,7 +2,7 @@ const apiUrl =
   import.meta.env.VITE_API_BASE_URL ||
   (import.meta.env.DEV ? 'http://127.0.0.1:8000/api' : '');
 
-const DEBUG_API = import.meta.env.DEV && false; 
+const DEBUG_API = import.meta.env.DEV && false;
 const debugLog = (...args) => {
   if (DEBUG_API) console.log(...args);
 };
@@ -28,9 +28,8 @@ export const apiService = {
       try {
         const errData = await initResponse.json();
         detail = errData?.detail || detail;
-      } catch {
-        // ignore non-json errors
-      }
+        // eslint-disable-next-line no-empty
+      } catch {}
       throw new Error(detail);
     }
 
@@ -72,9 +71,8 @@ export const apiService = {
       try {
         const errData = await startResponse.json();
         detail = errData?.detail || detail;
-      } catch {
-        // ignore non-json errors
-      }
+        // eslint-disable-next-line no-empty
+      } catch {}
       throw new Error(detail);
     }
 
@@ -101,9 +99,8 @@ export const apiService = {
       try {
         const errData = await initResponse.json();
         detail = errData?.detail || detail;
-      } catch {
-        // ignore non-json errors
-      }
+        // eslint-disable-next-line no-empty
+      } catch {}
       throw new Error(detail);
     }
 
@@ -141,9 +138,75 @@ export const apiService = {
       try {
         const errData = await startResponse.json();
         detail = errData?.detail || detail;
-      } catch {
-        // ignore non-json errors
-      }
+        // eslint-disable-next-line no-empty
+      } catch {}
+      throw new Error(detail);
+    }
+
+    return { job_id };
+  },
+
+  async colorRestoreImage(file, turnstileToken) {
+    debugLog('[colorRestoreImage] init ->', `${apiUrl}/colorrestore/init`);
+
+    const initResponse = await fetch(`${apiUrl}/colorrestore/init`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        cf_turnstile_response: turnstileToken,
+        filename: file.name,
+      }),
+    });
+
+    debugLog('[colorRestoreImage] init status ->', initResponse.status);
+
+    if (initResponse.status === 429) throw new Error('LIMIT_REACHED');
+    if (!initResponse.ok) {
+      let detail = 'Initialization failed';
+      try {
+        const errData = await initResponse.json();
+        detail = errData?.detail || detail;
+        // eslint-disable-next-line no-empty
+      } catch {}
+      throw new Error(detail);
+    }
+
+    const { job_id, safe_filename, upload_url } = await initResponse.json();
+    debugLog('[colorRestoreImage] upload_url ->', upload_url);
+
+    const azureResponse = await fetch(upload_url, {
+      method: 'PUT',
+      headers: {
+        'x-ms-blob-type': 'BlockBlob',
+        'Content-Type': file.type || 'application/octet-stream',
+      },
+      body: file,
+    });
+
+    debugLog('[colorRestoreImage] azure PUT status ->', azureResponse.status);
+
+    if (!azureResponse.ok) {
+      const text = await azureResponse.text().catch(() => '');
+      throw new Error(`Cloud upload failed (${azureResponse.status}) ${text}`);
+    }
+
+    debugLog('[colorRestoreImage] start ->', `${apiUrl}/colorrestore/start`);
+
+    const startResponse = await fetch(`${apiUrl}/colorrestore/start`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ job_id, safe_filename }),
+    });
+
+    debugLog('[colorRestoreImage] start status ->', startResponse.status);
+
+    if (!startResponse.ok) {
+      let detail = 'Failed to start processing';
+      try {
+        const errData = await startResponse.json();
+        detail = errData?.detail || detail;
+        // eslint-disable-next-line no-empty
+      } catch {}
       throw new Error(detail);
     }
 
@@ -164,17 +227,9 @@ export const apiService = {
 
       const data = await res.json();
 
-      if (data.status === 'ready') {
-        return { success: true, data };
-      }
-
-      if (data.status === 'processing') {
-        return { success: false, error: false };
-      }
-
-      if (data.status === 'failed') {
-        return { success: false, error: true };
-      }
+      if (data.status === 'ready') return { success: true, data };
+      if (data.status === 'processing') return { success: false, error: false };
+      if (data.status === 'failed') return { success: false, error: true };
 
       return { success: false, error: true };
     } catch (err) {

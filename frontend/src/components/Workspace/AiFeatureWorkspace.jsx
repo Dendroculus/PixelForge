@@ -8,7 +8,7 @@ import WorkspaceLimitCard from '../../components/Workspace/WorkspaceLimitCard';
 import WorkspaceMarketing from '../../components/Workspace/WorkspaceMarketing';
 import StagedFileCard from '../../components/Workspace/StagedFileCard';
 import ResultActions from '../../components/Workspace/ResultActions';
-import { APP_CONFIG as config } from '../../config';
+import { APP_CONFIG as config, RESULT_LABELS } from '../../config';
 
 /**
  * Reusable AI feature workspace shell for upload, processing, preview, and result actions.
@@ -116,6 +116,7 @@ export default function AiFeatureWorkspace({
                         originalImage={previewUrl}
                         upscaledImage={resultUrl}
                         onImageLoad={() => setIsResultLoaded(true)}
+                        resultLabel={RESULT_LABELS[featureName] ?? 'Processed'}
                       />
                     </div>
                   ) : (
