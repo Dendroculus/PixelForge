@@ -5,7 +5,7 @@ import { APP_CONFIG } from '../../config';
 import UploadCard from '../../components/Upload/UploadCard';
 import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
 import ToolPageWrapper from '../../components/Layout/ToolPageWrapper';
-import PreviewImageBox from '../../components/Workspace/PreviewImageBox';
+import PreviewImageBox from '../../components/Workspace/display/PreviewImageBox';
 import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
 import { useWorkspaceFile } from '../../hooks/useWorkspaceFile';
 import { bytesToMB, generateSafeFilename } from '../../utils/fileUtils';
