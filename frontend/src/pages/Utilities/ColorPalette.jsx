@@ -6,25 +6,12 @@ import ToolPageWrapper from '../../components/Layout/ToolPageWrapper';
 import PreviewImageBox from '../../components/Workspace/display/PreviewImageBox';
 import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErrorAlert';
 import PaletteSwatches from '../../components/Workspace/display/PaletteSwatches';
-import PaletteStyleToggle from '../../components/Workspace/controls/PaletteStyleToggle';
 import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
 import { useWorkspaceFile } from '../../hooks/workspace/useWorkspaceFile';
 import usePaletteSampling from '../../hooks/client/usePaletteSampling';
 
-/**
- * Clamps a numeric value to a min/max range.
- * @param {number} v - Value to clamp.
- * @param {number} min - Minimum allowed value.
- * @param {number} max - Maximum allowed value.
- * @returns {number} Clamped value.
- */
 const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
 
-/**
- * Builds initial evenly distributed color sampling points.
- * @param {number} count - Number of points.
- * @returns {Array<{id:number,x:number,y:number}>} Initial points.
- */
 function makeInitialPoints(count) {
   const cols = Math.ceil(Math.sqrt(count));
   const rows = Math.ceil(count / cols);
@@ -39,12 +26,6 @@ function makeInitialPoints(count) {
   return pts;
 }
 
-/**
- * Resizes an existing points array to a target count while preserving current positions.
- * @param {Array<{id:number,x:number,y:number}>} prev - Existing points.
- * @param {number} nextCount - Desired points count.
- * @returns {Array<{id:number,x:number,y:number}>} Resized points.
- */
 function resizePoints(prev, nextCount) {
   if (prev.length === nextCount) return prev;
   if (prev.length > nextCount) return prev.slice(0, nextCount);
@@ -52,10 +33,6 @@ function resizePoints(prev, nextCount) {
   return [...prev, ...extras.map((p, i) => ({ ...p, id: prev.length + i }))];
 }
 
-/**
- * React component for extracting color palettes from images using interactive pickers.
- * @returns {JSX.Element} The ColorPalette component.
- */
 export default function ColorPalette() {
   const fileInputRef = useRef(null);
   const imageRef = useRef(null);
@@ -211,11 +188,18 @@ export default function ColorPalette() {
     e.preventDefault();
     setActivePointId(id);
 
+    let rafId = null;
+
     const onMove = (ev) => {
-      movePointFromClient(id, ev.clientX, ev.clientY);
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        movePointFromClient(id, ev.clientX, ev.clientY);
+        rafId = null;
+      });
     };
 
     const onUp = () => {
+      if (rafId) cancelAnimationFrame(rafId);
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       setActivePointId(null);
@@ -231,7 +215,7 @@ export default function ColorPalette() {
     let rafId = 0;
     rafId = requestAnimationFrame(async () => {
       const now = performance.now();
-      if (now - lastDragSampleAtRef.current < 33) return;
+      if (now - lastDragSampleAtRef.current < 16) return;
       lastDragSampleAtRef.current = now;
 
       const activePoint = points.find((p) => p.id === activePointId);
@@ -299,7 +283,26 @@ export default function ColorPalette() {
                 >
                   <div className="mb-2 flex items-center justify-between gap-3">
                     <label className="text-sm font-bold text-slate-700">Palette</label>
-                    <PaletteStyleToggle paletteStyle={paletteStyle} setPaletteStyle={setPaletteStyle} />
+                    <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 text-[11px] font-bold">
+                      <button
+                        type="button"
+                        onClick={() => setPaletteStyle('square')}
+                        className={`px-2.5 py-1 rounded-md transition ${
+                          paletteStyle === 'square' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        Square
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPaletteStyle('circle')}
+                        className={`px-2.5 py-1 rounded-md transition ${
+                          paletteStyle === 'circle' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+                        }`}
+                      >
+                        Circle
+                      </button>
+                    </div>
                   </div>
 
                   <PaletteSwatches
