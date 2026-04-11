@@ -17,10 +17,10 @@ const routes = [
     path: '/color-restoration',
     component: React.lazy(() => import('./pages/AiFeatures/ColorRestoration')),
   },
-  // {
-  //   path: '/image-editor',
-  //   component: React.lazy(() => import('./pages/ImageEditor/ImageEditorWorkspace')),
-  // },
+  {
+    path: '/image-editor',
+    component: React.lazy(() => import('./pages/SmartEdit/ImageEditor')),
+  },
   {
     path: '/resize-image',
     component: React.lazy(() => import('./pages/SmartEdit/ResizeImage')),

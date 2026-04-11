@@ -14,7 +14,7 @@ export const NavLinks = {
   edit: {
     title: "Smart Edit",
     items: [
-      { id: 'editor', to: "/coming-soon", label: "Image Editor", isAi: false, icon: "M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4", desc: "Adjust lighting, contrast, blur, and sharpen." }, // Combined Tool
+      { id: 'editor', to: "/image-editor", label: "Image Editor", isAi: false, icon: "M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4", desc: "Adjust lighting, contrast, blur, and sharpen." }, // Combined Tool
       { id: 'resize', to: "/resize-image", label: "Resize Image", isAi: false, icon: "M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4", desc: "Scale dimensions by pixels or percentage." },
       { id: 'crop', to: "/coming-soon", label: "Crop Image", isAi: false, icon: "M14 10l-2 1m0 0l-2-1m2 1v2.5M20 7l-2 1m2-1l-2-1m2 1v2.5M14 4l-2-1-2 1M4 7l2-1M4 7l2 1M4 7v2.5M12 21l-2-1m2 1l2-1m-2 1v-2.5M6 18l-2-1v-2.5M18 18l2-1v-2.5", desc: "Trim edges or cut out specific ratios." },
       { id: 'rotate', to: "/rotate-flip", label: "Rotate & Flip", isAi: false, icon: "M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15", desc: "Change orientation and mirror images." },
