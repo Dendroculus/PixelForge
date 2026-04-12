@@ -7,6 +7,7 @@ import Footer from './components/Layout/Footer';
 import NotFound from './pages/Special/NotFound';
 import LegalModal from './components/Common/LegalModal';
 import { legalModalData } from './data/modals/legalModalData';
+import FaqChatbotWidget from './pages/Special/FaqChatBotWidget';
 
 function GlobalHeader() {
   const location = useLocation();
@@ -109,6 +110,7 @@ export default function App() {
           <Footer openModal={openModal} />
         </div>
 
+        <FaqChatbotWidget />
         <LegalModal isOpen={modalState.isOpen} onClose={closeModal} title={activeModalData.title}>
           {activeModalData.content}
         </LegalModal>
