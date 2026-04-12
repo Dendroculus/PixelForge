@@ -48,96 +48,6 @@ function buildDefaultCrop(width, height, aspect) {
   return centerAspectCrop(width, height, aspect);
 }
 
-/**
- * Applies a subtle alpha feather to soften crop edges and reduce hard cut lines.
- * @param {CanvasRenderingContext2D} ctx
- * @param {number} width
- * @param {number} height
- * @param {number} featherPx
- */
-function applyEdgeFeather(ctx, width, height, featherPx) {
-  const f = Math.max(0, Math.floor(featherPx));
-  if (f <= 0 || width <= 2 || height <= 2) return;
-
-  const maxFeather = Math.floor(Math.min(width, height) / 6);
-  const feather = Math.min(f, Math.max(1, maxFeather));
-  if (feather <= 0) return;
-
-  ctx.save();
-  ctx.globalCompositeOperation = 'destination-in';
-
-  const cx = feather;
-  const cy = feather;
-  const cw = Math.max(0, width - feather * 2);
-  const ch = Math.max(0, height - feather * 2);
-
-  if (cw > 0 && ch > 0) {
-    ctx.fillStyle = 'rgba(0,0,0,1)';
-    ctx.fillRect(cx, cy, cw, ch);
-  }
-
-  if (cw > 0) {
-    const gTop = ctx.createLinearGradient(0, 0, 0, feather);
-    gTop.addColorStop(0, 'rgba(0,0,0,0)');
-    gTop.addColorStop(1, 'rgba(0,0,0,1)');
-    ctx.fillStyle = gTop;
-    ctx.fillRect(cx, 0, cw, feather);
-
-    const gBottom = ctx.createLinearGradient(0, height - feather, 0, height);
-    gBottom.addColorStop(0, 'rgba(0,0,0,1)');
-    gBottom.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = gBottom;
-    ctx.fillRect(cx, height - feather, cw, feather);
-  }
-
-  if (ch > 0) {
-    const gLeft = ctx.createLinearGradient(0, 0, feather, 0);
-    gLeft.addColorStop(0, 'rgba(0,0,0,0)');
-    gLeft.addColorStop(1, 'rgba(0,0,0,1)');
-    ctx.fillStyle = gLeft;
-    ctx.fillRect(0, cy, feather, ch);
-
-    const gRight = ctx.createLinearGradient(width - feather, 0, width, 0);
-    gRight.addColorStop(0, 'rgba(0,0,0,1)');
-    gRight.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = gRight;
-    ctx.fillRect(width - feather, cy, feather, ch);
-  }
-
-  const gTL = ctx.createRadialGradient(feather, feather, 0, feather, feather, feather);
-  gTL.addColorStop(0, 'rgba(0,0,0,1)');
-  gTL.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = gTL;
-  ctx.fillRect(0, 0, feather, feather);
-
-  const gTR = ctx.createRadialGradient(width - feather, feather, 0, width - feather, feather, feather);
-  gTR.addColorStop(0, 'rgba(0,0,0,1)');
-  gTR.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = gTR;
-  ctx.fillRect(width - feather, 0, feather, feather);
-
-  const gBL = ctx.createRadialGradient(feather, height - feather, 0, feather, height - feather, feather);
-  gBL.addColorStop(0, 'rgba(0,0,0,1)');
-  gBL.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = gBL;
-  ctx.fillRect(0, height - feather, feather, feather);
-
-  const gBR = ctx.createRadialGradient(
-    width - feather,
-    height - feather,
-    0,
-    width - feather,
-    height - feather,
-    feather
-  );
-  gBR.addColorStop(0, 'rgba(0,0,0,1)');
-  gBR.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = gBR;
-  ctx.fillRect(width - feather, height - feather, feather, feather);
-
-  ctx.restore();
-}
-
 const ASPECT_OPTIONS = [
   { label: 'Free', value: null },
   { label: 'Square (1:1)', value: 1 },
@@ -175,27 +85,53 @@ export default function CropImage() {
    * Handles image load and initializes crop box.
    * @param {React.SyntheticEvent<HTMLImageElement>} e
    */
-  function onImageLoad(e) {
-    const width = e.currentTarget.naturalWidth || e.currentTarget.width || 0;
-    const height = e.currentTarget.naturalHeight || e.currentTarget.height || 0;
-    setImageSize({ width, height });
-    setCrop(buildDefaultCrop(width, height, aspect));
+function onImageLoad(e) {
+    const img = e.currentTarget;
+    const naturalWidth = img.naturalWidth || 0;
+    const naturalHeight = img.naturalHeight || 0;
+    setImageSize({ width: naturalWidth, height: naturalHeight });
+
+    const displayWidth = img.width || 0;
+    const displayHeight = img.height || 0;
+
+    const defaultCrop = buildDefaultCrop(displayWidth, displayHeight, aspect);
+    setCrop(defaultCrop);
+
+    // Set the initial completed crop right away
+    setCompletedCrop({
+      unit: 'px',
+      x: (defaultCrop.x * displayWidth) / 100,
+      y: (defaultCrop.y * displayHeight) / 100,
+      width: (defaultCrop.width * displayWidth) / 100,
+      height: (defaultCrop.height * displayHeight) / 100,
+    });
   }
 
-  const applyAspect = useCallback(
+const applyAspect = useCallback(
     (nextAspect) => {
-      setAspect(nextAspect);
-      cleanupResult();
+    setAspect(nextAspect);
+    cleanupResult();
 
-      if (!imgRef.current) return;
+    if (!imgRef.current) return;
 
-      const width = imgRef.current.naturalWidth || imgRef.current.width || 0;
-      const height = imgRef.current.naturalHeight || imgRef.current.height || 0;
-      setCrop(buildDefaultCrop(width, height, nextAspect));
-      setCompletedCrop(null);
+    // Use the displayed dimensions of the image
+    const displayWidth = imgRef.current.width || 0;
+    const displayHeight = imgRef.current.height || 0;
+    
+    const nextCrop = buildDefaultCrop(displayWidth, displayHeight, nextAspect);
+    setCrop(nextCrop);
+    
+    // Calculate the actual pixel coordinates to keep the Apply button active
+    setCompletedCrop({
+        unit: 'px',
+        x: (nextCrop.x * displayWidth) / 100,
+        y: (nextCrop.y * displayHeight) / 100,
+        width: (nextCrop.width * displayWidth) / 100,
+        height: (nextCrop.height * displayHeight) / 100,
+    });
     },
     [cleanupResult]
-  );
+);
 
   const applyCrop = useCallback(async () => {
     if (!completedCrop || !imgRef.current || !file) return;
@@ -244,8 +180,6 @@ export default function CropImage() {
         outputWidth,
         outputHeight
       );
-
-      applyEdgeFeather(ctx, outputWidth, outputHeight, 2);
 
       const blob = await new Promise((resolve, reject) => {
         canvas.toBlob(
@@ -351,13 +285,6 @@ export default function CropImage() {
                     );
                   })}
                 </div>
-
-                {cropSizeLabel && (
-                  <div className="mt-4 pt-4 border-t border-slate-100">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Selected Crop</span>
-                    <div className="mt-1 text-xs font-semibold text-slate-700">{cropSizeLabel}</div>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -373,54 +300,63 @@ export default function CropImage() {
             primaryDisabled={!canApply}
           />
         }
-        rightHeader={<h3 className="text-sm font-medium text-slate-700">Crop Workspace</h3>}
-        rightBody={
-        <div className="absolute inset-2 flex flex-col bg-white rounded-xl">
-            <PreviewImageBox
-            previewUrl={null}
-            resultUrl={resultUrl}
-            resultAlt="Cropped result preview"
-            containerClassName="relative flex-1 min-h-0 w-full rounded-xl border border-slate-200 bg-white overflow-hidden"
-            >
-            {previewUrl && !resultUrl && (
-                <div className="absolute inset-0 p-2 sm:p-3 bg-white">
-                <div className="h-full w-full rounded-md border border-slate-200 bg-white overflow-hidden flex items-center justify-center">
-                    <ReactCrop
-                    crop={crop}
-                    onChange={(nextCrop) => {
-                        setCrop(nextCrop);
-                        cleanupResult();
-                    }}
-                    onComplete={(nextCompletedCrop) => setCompletedCrop(nextCompletedCrop)}
-                    aspect={aspect || undefined}
-                    className="h-full w-full flex items-center justify-center"
-                    >
-                    <img
-                        ref={imgRef}
-                        alt="Crop preview"
-                        src={previewUrl}
-                        onLoad={onImageLoad}
-                        className="block h-full w-full object-contain"
-                    />
-                    </ReactCrop>
-                </div>
-                </div>
+        rightHeader={
+          <div className="flex items-center justify-between w-full">
+            <h3 className="text-sm font-medium text-slate-700">Crop Workspace</h3>
+            {cropSizeLabel && (
+              <span className="px-2.5 py-1 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black tracking-wider uppercase border border-indigo-200 shadow-sm">
+                {cropSizeLabel}
+              </span>
             )}
-            </PreviewImageBox>
-
-            <AnimatePresence>
-            {resultUrl && (
-                <WorkspaceResultDownload
-                resultUrl={resultUrl}
-                resultBlob={resultBlob}
-                originalFile={file}
-                downloadName={downloadName}
-                downloadLabel="Download Cropped Image"
-                />
-            )}
-            </AnimatePresence>
-        </div>
+          </div>
         }
+       rightBody={
+    <div className="absolute inset-2 flex flex-col bg-white rounded-xl">
+        <PreviewImageBox
+        previewUrl={null}
+        resultUrl={resultUrl}
+        resultAlt="Cropped result preview"
+        containerClassName="relative flex-1 min-h-0 w-full rounded-xl border border-slate-200 bg-white overflow-hidden"
+        >
+        {previewUrl && !resultUrl && (
+            <div className="absolute inset-0 p-2 sm:p-3 bg-white">
+            <div className="h-full w-full rounded-md border border-slate-200 bg-white overflow-hidden">
+                <ReactCrop
+                crop={crop}
+                onChange={(nextCrop) => {
+                    setCrop(nextCrop);
+                    cleanupResult();
+                }}
+                onComplete={(nextCompletedCrop) => setCompletedCrop(nextCompletedCrop)}
+                aspect={aspect || undefined}
+                className="h-full w-full"
+                >
+                <img
+                    ref={imgRef}
+                    alt="Crop preview"
+                    src={previewUrl}
+                    onLoad={onImageLoad}
+                    className="block h-full w-full object-contain"
+                />
+                </ReactCrop>
+            </div>
+            </div>
+        )}
+        </PreviewImageBox>
+
+    <AnimatePresence>
+      {resultUrl && (
+        <WorkspaceResultDownload
+          resultUrl={resultUrl}
+          resultBlob={resultBlob}
+          originalFile={file}
+          downloadName={downloadName}
+          downloadLabel="Download Cropped Image"
+        />
+      )}
+    </AnimatePresence>
+  </div>
+}
       />
     </ToolPageWrapper>
   );
