@@ -80,7 +80,7 @@ It combines <b>AI-powered processing via Replicate</b> (upscale, background remo
 
 ## 🏗️ Architecture & Stack
 
-<img src="./docs/TECH_STACKS.png" width="35%" alt="Tech Stacks">
+<img src="./docs/TECH_STACKS.png" width="45%" alt="Tech Stacks">
 
 <div style="max-width: 760px; line-height: 1.65;">
 
