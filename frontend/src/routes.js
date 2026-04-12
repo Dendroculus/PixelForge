@@ -25,10 +25,10 @@ const routes = [
     path: '/resize-image',
     component: React.lazy(() => import('./pages/SmartEdit/ResizeImage')),
   },
-  // {
-  //   path: '/crop-image',
-  //   component: React.lazy(() => import('./pages/Crop/CropWorkspace')),
-  // },
+  {
+    path: '/crop-image',
+    component: React.lazy(() => import('./pages/SmartEdit/CropImage')),
+  },
   {
     path: '/rotate-flip',
     component: React.lazy(() => import('./pages/SmartEdit/RotateFlip')),
