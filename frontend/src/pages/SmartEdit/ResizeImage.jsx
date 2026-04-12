@@ -24,8 +24,17 @@ const RESIZE_PRESETS = [
   { label: 'Standard SD', width: 640, height: 480 },
 ];
 
+/**
+ * Loads an image element from URL.
+ * @param {string} url
+ * @returns {Promise<HTMLImageElement>}
+ */
 function loadImage(url) {
   return new Promise((resolve, reject) => {
+    if (!url) {
+      reject(new Error('Missing image URL'));
+      return;
+    }
     const img = new Image();
     img.onload = () => resolve(img);
     img.onerror = () => reject(new Error('Failed to load image'));
@@ -33,16 +42,27 @@ function loadImage(url) {
   });
 }
 
+/**
+ * Converts a value into a safe integer dimension.
+ * @param {string|number} value
+ * @returns {number|string}
+ */
+function toSafeDimension(value) {
+  const parsed = Number.parseInt(String(value), 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return '';
+  return Math.min(parsed, MAX_DIMENSION);
+}
+
 export default function ResizeImage() {
   const fileInputRef = useRef(null);
 
   const [origWidth, setOrigWidth] = useState(0);
   const [origHeight, setOrigHeight] = useState(0);
-  
+
   const [targetWidth, setTargetWidth] = useState('');
   const [targetHeight, setTargetHeight] = useState('');
   const [lockAspect, setLockAspect] = useState(true);
-  
+
   const [isProcessing, setIsProcessing] = useState(false);
 
   const {
@@ -59,56 +79,70 @@ export default function ResizeImage() {
     cleanupResult,
   } = useWorkspaceFile(fileInputRef);
 
-  // When a new image is uploaded, extract its native dimensions
   useEffect(() => {
+    let active = true;
+
     if (!previewUrl) {
       setOrigWidth(0);
       setOrigHeight(0);
       setTargetWidth('');
       setTargetHeight('');
-      return;
+      return undefined;
     }
 
-    loadImage(previewUrl).then((img) => {
-      // Safely cap initial dimensions if the uploaded image is somehow massive
-      let w = img.naturalWidth;
-      let h = img.naturalHeight;
-      const ratio = w / h;
+    loadImage(previewUrl)
+      .then((img) => {
+        if (!active) return;
 
-      if (w > MAX_DIMENSION || h > MAX_DIMENSION) {
-        if (w > h) {
-          w = MAX_DIMENSION;
-          h = Math.round(MAX_DIMENSION / ratio);
-        } else {
-          h = MAX_DIMENSION;
-          w = Math.round(MAX_DIMENSION * ratio);
+        let w = img.naturalWidth || 0;
+        let h = img.naturalHeight || 0;
+        const ratio = h > 0 ? w / h : 1;
+
+        if (w > MAX_DIMENSION || h > MAX_DIMENSION) {
+          if (w >= h) {
+            w = MAX_DIMENSION;
+            h = Math.max(1, Math.round(MAX_DIMENSION / ratio));
+          } else {
+            h = MAX_DIMENSION;
+            w = Math.max(1, Math.round(MAX_DIMENSION * ratio));
+          }
         }
-      }
 
-      setOrigWidth(img.naturalWidth);
-      setOrigHeight(img.naturalHeight);
-      setTargetWidth(w);
-      setTargetHeight(h);
-    }).catch(() => {
-      setError("Could not read image dimensions.");
-    });
+        setOrigWidth(img.naturalWidth || 0);
+        setOrigHeight(img.naturalHeight || 0);
+        setTargetWidth(w || '');
+        setTargetHeight(h || '');
+      })
+      .catch(() => {
+        if (!active) return;
+        setError('Could not read image dimensions.');
+      });
+
+    return () => {
+      active = false;
+    };
   }, [previewUrl, setError]);
 
   const aspectRatio = useMemo(() => {
-    if (origWidth === 0 || origHeight === 0) return 1;
+    if (origWidth <= 0 || origHeight <= 0) return 1;
     return origWidth / origHeight;
   }, [origWidth, origHeight]);
 
+  const previewRatio = useMemo(() => {
+    const w = Number(targetWidth);
+    const h = Number(targetHeight);
+    if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return 1;
+    return w / h;
+  }, [targetWidth, targetHeight]);
+
   const handleWidthChange = (e) => {
-    let val = parseInt(e.target.value, 10);
-    if (isNaN(val)) {
+    let val = toSafeDimension(e.target.value);
+    if (val === '') {
       setTargetWidth('');
       if (lockAspect) setTargetHeight('');
       cleanupResult();
       return;
     }
-
-    if (val > MAX_DIMENSION) val = MAX_DIMENSION;
 
     if (lockAspect && val > 0) {
       let newHeight = Math.round(val / aspectRatio);
@@ -116,22 +150,22 @@ export default function ResizeImage() {
         newHeight = MAX_DIMENSION;
         val = Math.round(newHeight * aspectRatio);
       }
+      if (newHeight < 1) newHeight = 1;
       setTargetHeight(newHeight);
     }
+
     setTargetWidth(val);
     cleanupResult();
   };
 
   const handleHeightChange = (e) => {
-    let val = parseInt(e.target.value, 10);
-    if (isNaN(val)) {
+    let val = toSafeDimension(e.target.value);
+    if (val === '') {
       setTargetHeight('');
       if (lockAspect) setTargetWidth('');
       cleanupResult();
       return;
     }
-
-    if (val > MAX_DIMENSION) val = MAX_DIMENSION;
 
     if (lockAspect && val > 0) {
       let newWidth = Math.round(val * aspectRatio);
@@ -139,39 +173,56 @@ export default function ResizeImage() {
         newWidth = MAX_DIMENSION;
         val = Math.round(newWidth / aspectRatio);
       }
+      if (newWidth < 1) newWidth = 1;
       setTargetWidth(newWidth);
     }
+
     setTargetHeight(val);
     cleanupResult();
   };
 
   const toggleLock = () => {
-    setLockAspect((prev) => !prev);
-    if (!lockAspect && targetWidth > 0) {
-      let newHeight = Math.round(targetWidth / aspectRatio);
-      let safeWidth = targetWidth;
+    setLockAspect((prev) => {
+      const next = !prev;
 
-      // Safely apply aspect ratio lock without exceeding max
-      if (newHeight > MAX_DIMENSION) {
-        newHeight = MAX_DIMENSION;
-        safeWidth = Math.round(newHeight * aspectRatio);
-        setTargetWidth(safeWidth);
+      if (next) {
+        const w = Number(targetWidth);
+        if (Number.isFinite(w) && w > 0) {
+          let newHeight = Math.round(w / aspectRatio);
+          let safeWidth = w;
+
+          if (newHeight > MAX_DIMENSION) {
+            newHeight = MAX_DIMENSION;
+            safeWidth = Math.round(newHeight * aspectRatio);
+          }
+
+          if (newHeight < 1) newHeight = 1;
+          if (safeWidth < 1) safeWidth = 1;
+
+          setTargetWidth(safeWidth);
+          setTargetHeight(newHeight);
+          cleanupResult();
+        }
       }
-      
-      setTargetHeight(newHeight);
-      cleanupResult();
-    }
+
+      return next;
+    });
   };
 
   const applyPreset = (w, h) => {
-    setTargetWidth(w);
-    setTargetHeight(h);
-    setLockAspect(false); 
+    const safeW = toSafeDimension(w);
+    const safeH = toSafeDimension(h);
+    setTargetWidth(safeW);
+    setTargetHeight(safeH);
+    setLockAspect(false);
     cleanupResult();
   };
 
   const applyResize = useCallback(async () => {
-    if (!file || !previewUrl || !targetWidth || !targetHeight) return;
+    const w = Number(targetWidth);
+    const h = Number(targetHeight);
+
+    if (!file || !previewUrl || !Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return;
 
     setIsProcessing(true);
     setError('');
@@ -184,47 +235,51 @@ export default function ResizeImage() {
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('Canvas context unavailable');
 
-      // Final safety net just in case
-      const finalW = Math.min(targetWidth, MAX_DIMENSION);
-      const finalH = Math.min(targetHeight, MAX_DIMENSION);
+      const finalW = Math.min(Math.max(1, Math.round(w)), MAX_DIMENSION);
+      const finalH = Math.min(Math.max(1, Math.round(h)), MAX_DIMENSION);
 
       canvas.width = finalW;
       canvas.height = finalH;
-
       ctx.drawImage(img, 0, 0, finalW, finalH);
 
-      canvas.toBlob(
-        (blob) => {
-          if (!blob) throw new Error('Canvas export failed');
-          setResultBlob(blob);
-          setResultUrl(URL.createObjectURL(blob));
-          setIsProcessing(false);
-        },
-        file.type || 'image/jpeg',
-        0.95
-      );
+      const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob(
+          (nextBlob) => {
+            if (!nextBlob) {
+              reject(new Error('Canvas export failed'));
+              return;
+            }
+            resolve(nextBlob);
+          },
+          file.type || 'image/jpeg',
+          0.95
+        );
+      });
+
+      setResultBlob(blob);
+      setResultUrl(URL.createObjectURL(blob));
     } catch (e) {
       console.error(e);
       setError('Failed to resize image. Please try again.');
+    } finally {
       setIsProcessing(false);
     }
   }, [file, previewUrl, targetWidth, targetHeight, cleanupResult, setResultBlob, setResultUrl, setError]);
 
   const handleReset = useCallback(() => {
     resetAll();
-    
-    // Reset back to original, but bounded by max dimension
+
     let w = origWidth;
     let h = origHeight;
-    const ratio = w / h;
+    const ratio = h > 0 ? w / h : 1;
 
     if (w > MAX_DIMENSION || h > MAX_DIMENSION) {
-      if (w > h) {
+      if (w >= h) {
         w = MAX_DIMENSION;
-        h = Math.round(MAX_DIMENSION / ratio);
+        h = Math.max(1, Math.round(MAX_DIMENSION / ratio));
       } else {
         h = MAX_DIMENSION;
-        w = Math.round(MAX_DIMENSION * ratio);
+        w = Math.max(1, Math.round(MAX_DIMENSION * ratio));
       }
     }
 
@@ -234,11 +289,18 @@ export default function ResizeImage() {
     setIsProcessing(false);
   }, [resetAll, origWidth, origHeight]);
 
-  const canProcess = useMemo(() => 
-    Boolean(file) && !isProcessing && !resultUrl && targetWidth > 0 && targetHeight > 0, 
-  [file, isProcessing, resultUrl, targetWidth, targetHeight]);
+  const canProcess = useMemo(() => {
+    const w = Number(targetWidth);
+    const h = Number(targetHeight);
+    return Boolean(file) && !isProcessing && !resultUrl && w > 0 && h > 0;
+  }, [file, isProcessing, resultUrl, targetWidth, targetHeight]);
 
-  const downloadName = useMemo(() => generateSafeFilename(file?.name, `${targetWidth}x${targetHeight}`, 'jpg'), [file?.name, targetWidth, targetHeight]);
+  const downloadName = useMemo(
+    () => generateSafeFilename(file?.name, `${targetWidth}x${targetHeight}`, 'jpg'),
+    [file?.name, targetWidth, targetHeight]
+  );
+
+  const showLiveStage = Boolean(previewUrl) && !resultUrl && Number(targetWidth) > 0 && Number(targetHeight) > 0;
 
   return (
     <ToolPageWrapper>
@@ -259,7 +321,6 @@ export default function ResizeImage() {
             )}
 
             <div className={`space-y-6 transition-opacity duration-300 ${!file || resultUrl ? 'pointer-events-none opacity-40' : 'opacity-100'}`}>
-              
               <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">Custom Dimensions</label>
@@ -271,7 +332,6 @@ export default function ResizeImage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {/* Width Input */}
                   <div className="flex-1 relative">
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1 absolute -top-2 left-2 bg-white px-1">Width</label>
                     <input
@@ -286,13 +346,12 @@ export default function ResizeImage() {
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">px</span>
                   </div>
 
-                  {/* Lock Aspect Ratio Button */}
                   <button
                     onClick={toggleLock}
-                    title={lockAspect ? "Unlock Aspect Ratio" : "Lock Aspect Ratio"}
+                    title={lockAspect ? 'Unlock Aspect Ratio' : 'Lock Aspect Ratio'}
                     className={`shrink-0 flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
-                      lockAspect 
-                        ? 'bg-indigo-100 text-indigo-600 shadow-inner' 
+                      lockAspect
+                        ? 'bg-indigo-100 text-indigo-600 shadow-inner'
                         : 'bg-slate-50 border border-slate-200 text-slate-400 hover:text-indigo-500 hover:bg-slate-100'
                     }`}
                   >
@@ -307,7 +366,6 @@ export default function ResizeImage() {
                     )}
                   </button>
 
-                  {/* Height Input */}
                   <div className="flex-1 relative">
                     <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1 absolute -top-2 left-2 bg-white px-1">Height</label>
                     <input
@@ -323,19 +381,18 @@ export default function ResizeImage() {
                   </div>
                 </div>
 
-                {/* Quick Presets Section */}
                 <div className="mt-5 pt-4 border-t border-slate-100">
                   <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-3">Quick Presets</label>
                   <div className="grid grid-cols-2 gap-2">
-                    {RESIZE_PRESETS.map(preset => {
-                      const isSelected = targetWidth === preset.width && targetHeight === preset.height;
+                    {RESIZE_PRESETS.map((preset) => {
+                      const isSelected = Number(targetWidth) === preset.width && Number(targetHeight) === preset.height;
                       return (
                         <button
                           key={preset.label}
                           onClick={() => applyPreset(preset.width, preset.height)}
                           className={`flex flex-col items-start px-3 py-2 rounded-lg border transition-all ${
-                            isSelected 
-                              ? 'bg-indigo-50 border-indigo-300 shadow-sm' 
+                            isSelected
+                              ? 'bg-indigo-50 border-indigo-300 shadow-sm'
                               : 'bg-slate-50 border-slate-200 hover:bg-white hover:border-indigo-200 hover:shadow-sm'
                           }`}
                         >
@@ -350,9 +407,7 @@ export default function ResizeImage() {
                     })}
                   </div>
                 </div>
-                
               </div>
-
             </div>
 
             <WorkspaceErrorAlert error={error} />
@@ -369,28 +424,30 @@ export default function ResizeImage() {
         }
         rightHeader={<h3 className="text-sm font-medium text-slate-700">Preview Workspace</h3>}
         rightBody={
-          <div className="absolute inset-2 flex flex-col">
+          <div className="absolute inset-2 flex flex-col bg-white rounded-xl">
             <PreviewImageBox
-              previewUrl={previewUrl}
+              previewUrl={showLiveStage ? null : previewUrl}
               resultUrl={resultUrl}
               resultAlt="Resized output preview"
             >
-              {/* LIVE CSS PREVIEW OF SQUISH/STRETCH */}
-              {previewUrl && !resultUrl && (
-                 <div className="absolute inset-0 flex items-center justify-center p-2">
-                   <img
-                     src={previewUrl}
-                     alt="Live CSS Preview"
-                     className="transition-all duration-300 pointer-events-none"
-                     style={{
-                       width: '100%',
-                       height: '100%',
-                       objectFit: lockAspect ? 'contain' : 'fill',
-                       maxWidth: lockAspect ? '100%' : `${(targetWidth / origWidth) * 100}%`,
-                       maxHeight: lockAspect ? '100%' : `${(targetHeight / origHeight) * 100}%`
-                     }}
-                   />
-                 </div>
+              {showLiveStage && (
+                <div className="absolute inset-0 flex items-center justify-center p-3 pointer-events-none bg-white">
+                  <div
+                    className="relative max-w-full max-h-full border border-slate-200 bg-white rounded-md overflow-hidden"
+                    style={{
+                      aspectRatio: `${previewRatio}`,
+                      width: 'min(100%, calc(100% - 8px))',
+                      height: 'auto',
+                    }}
+                  >
+                    <img
+                      src={previewUrl}
+                      alt="Live resize preview"
+                      className="absolute inset-0 w-full h-full transition-all duration-300"
+                      style={{ objectFit: lockAspect ? 'contain' : 'fill' }}
+                    />
+                  </div>
+                </div>
               )}
             </PreviewImageBox>
 
