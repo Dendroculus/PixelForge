@@ -12,7 +12,7 @@ import FormatDropdown from '../../components/Workspace/controls/FormatDropdown';
 import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
 import { useWorkspaceFile } from '../../hooks/workspace/useWorkspaceFile';
 import useImageConversion from '../../hooks/client/useImageConversion';
-import { bytesToMB, generateSafeFilename } from '../../utils/fileUtils';
+import { bytesToMB, generateSafeFilename } from '../../utils/file/fileUtils';
 
 /**
  * React component for converting image formats on the client side.
