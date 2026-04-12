@@ -3,8 +3,8 @@ import EmptyWorkspaceState from '../../Common/EmptyWorkspaceState';
 
 /**
  * Reusable component for displaying image previews and results within tool workspaces.
- * @param {Object} props - Component properties.
- * @returns {JSX.Element} The PreviewImageBox component.
+ * @param {Object} props
+ * @returns {JSX.Element}
  */
 export default function PreviewImageBox({
   previewUrl,
