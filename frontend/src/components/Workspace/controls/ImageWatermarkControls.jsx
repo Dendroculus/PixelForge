@@ -1,18 +1,23 @@
-export default function ImageWatermarkControls({ watermarkImageRef, handleWatermarkImageUpload, imgWm, setImgWm }) {
+import UploadCard from '../../Upload/UploadCard';
+import { APP_CONFIG } from '../../../config';
+
+export default function ImageWatermarkControls({
+  watermarkImageRef,
+  handleWatermarkImageUpload,
+  imgWm,
+  setImgWm,
+}) {
   return (
     <div className="space-y-4 pb-2">
-      <div className="relative overflow-hidden rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-center transition-colors hover:border-indigo-400 hover:bg-indigo-50 cursor-pointer shadow-sm">
-        <input
-          type="file"
-          ref={watermarkImageRef}
-          onChange={handleWatermarkImageUpload}
-          accept="image/png, image/jpeg, image/webp"
-          className="absolute inset-0 z-10 h-full w-full cursor-pointer opacity-0"
-        />
-        <span className="text-xs font-semibold text-slate-700">
-          {imgWm.url ? 'Replace logo image' : 'Upload logo image'}
-        </span>
-      </div>
+      <UploadCard
+        inputId="wm-logo-input"
+        inputRef={watermarkImageRef}
+        onChange={handleWatermarkImageUpload}
+        helperText={imgWm.url ? 'Replace logo image' : 'Upload logo image (.png, .jpg, .webp)'}
+        accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+        maxSizeMB={APP_CONFIG.MAX_FILE_SIZE_MB}
+        heightClass="h-28"
+      />
 
       <div className="grid grid-cols-2 gap-4">
         <div>
