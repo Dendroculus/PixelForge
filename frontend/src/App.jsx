@@ -7,7 +7,7 @@ import Footer from './components/Layout/Footer';
 import NotFound from './pages/Special/NotFound';
 import LegalModal from './components/Common/LegalModal';
 import { legalModalData } from './data/modals/legalModalData';
-import FaqChatbotWidget from './pages/Special/FaqChatBotWidget';
+import FaqChatbotWidget from './pages/Special/FaqChatbotWidget';
 
 function GlobalHeader() {
   const location = useLocation();
