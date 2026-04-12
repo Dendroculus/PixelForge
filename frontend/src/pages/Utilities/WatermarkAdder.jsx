@@ -73,6 +73,7 @@ export default function WatermarkAdder() {
   const [imageRect, setImageRect] = useState({ left: 0, top: 0, width: 1, height: 1, scale: 1 });
   const [overlayPos, setOverlayPos] = useState({ x: 0, y: 0 });
   const [overlaySize, setOverlaySize] = useState({ width: 1, height: 1 });
+  const [isOverlaySelected, setIsOverlaySelected] = useState(false);
   const hasInitializedPos = useRef(false);
 
   const [textWm, setTextWm] = useState(DEFAULT_TEXT_WM);
@@ -106,6 +107,7 @@ export default function WatermarkAdder() {
 
   useEffect(() => {
     hasInitializedPos.current = false;
+    setIsOverlaySelected(false);
   }, [previewUrl]);
 
   const updateImageRect = useCallback(() => {
@@ -180,6 +182,7 @@ export default function WatermarkAdder() {
           naturalHeight: loaded.naturalHeight || 1,
         }));
         setActiveTab('image');
+        setIsOverlaySelected(false);
         cleanupResult();
       } catch {
         URL.revokeObjectURL(nextUrl);
@@ -197,11 +200,28 @@ export default function WatermarkAdder() {
       naturalWidth: 1,
       naturalHeight: 1,
     }));
+    setIsOverlaySelected(false);
     cleanupResult();
   }, [imgWm.url, cleanupResult]);
 
+  const handleClearTextWatermark = useCallback(() => {
+    setTextWm((prev) => ({ ...prev, text: '' }));
+    setIsOverlaySelected(false);
+    cleanupResult();
+  }, [cleanupResult]);
+
+  const handleDeleteSelected = useCallback(() => {
+    if (activeTab === 'image') handleRemoveWatermarkImage();
+    else handleClearTextWatermark();
+  }, [activeTab, handleRemoveWatermarkImage, handleClearTextWatermark]);
+
   const applyWatermark = useCallback(async () => {
     if (!file || !previewUrl) return;
+
+    if (activeTab === 'text' && !textWm.text.trim()) {
+      setError('Please enter watermark text.');
+      return;
+    }
 
     setIsProcessing(true);
     setError('');
@@ -300,11 +320,13 @@ export default function WatermarkAdder() {
     setImgWm(DEFAULT_IMAGE_WM);
     setOverlayPos({ x: 0, y: 0 });
     setOverlaySize({ width: 1, height: 1 });
+    setIsOverlaySelected(false);
     hasInitializedPos.current = false;
   }, [imgWm.url, resetAll]);
 
   const canProcess = useMemo(() => Boolean(file) && !isProcessing && !resultUrl, [file, isProcessing, resultUrl]);
   const downloadName = useMemo(() => generateSafeFilename(file?.name, 'watermarked', 'jpg'), [file?.name]);
+
 
   return (
     <ToolPageWrapper>
@@ -379,14 +401,17 @@ export default function WatermarkAdder() {
                     onLoad={updateImageRect}
                   />
 
-                  <WatermarkPreviewOverlay
-                    overlayRef={overlayRef}
-                    overlayPos={overlayPos}
-                    activeTab={activeTab}
-                    textWm={textWm}
-                    imgWm={imgWm}
-                    dragBounds={dragBounds}
-                  />
+                <WatermarkPreviewOverlay
+                  overlayRef={overlayRef}
+                  overlayPos={overlayPos}
+                  activeTab={activeTab}
+                  textWm={textWm}
+                  imgWm={imgWm}
+                  dragBounds={dragBounds}
+                  isSelected={isOverlaySelected}
+                  onSelect={() => setIsOverlaySelected(true)}
+                  onDelete={handleDeleteSelected}
+                />
                 </>
               )}
             </PreviewImageBox>
