@@ -134,11 +134,12 @@ export default function WatermarkAdder() {
       if (imgWm.url) URL.revokeObjectURL(imgWm.url);
       const nextUrl = URL.createObjectURL(wmFile);
 
+      setError('');
       setImgWm((prev) => ({ ...prev, url: nextUrl }));
       setActiveTab('image');
       cleanupResult();
     },
-    [imgWm.url, cleanupResult]
+    [imgWm.url, cleanupResult, setError]
   );
 
   const applyWatermark = useCallback(async () => {
@@ -277,6 +278,7 @@ export default function WatermarkAdder() {
                   handleWatermarkImageUpload={handleWatermarkImageUpload}
                   imgWm={imgWm}
                   setImgWm={setImgWm}
+                  setError={setError}
                 />
               )}
             </div>
