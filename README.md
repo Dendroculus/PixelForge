@@ -1,263 +1,225 @@
 <div align="center">
 
-# AI Image Upscaler Website (Pixel Forge)
+  EN | [中文](./READMEcn.md)
+</div>
 
-A modern **React + FastAPI** web app that upscales images with **Real-ESRGAN** via **Replicate Cloud GPUs**, using **Azure Blob Storage** for private uploads + public results.
+<p align="center">
+  <img src="https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white" alt="React">
+  <img src="https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white" alt="Vite">
+  <img src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white" alt="FastAPI">
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/Azure-0078D4?logo=microsoft-azure&logoColor=white" alt="Microsoft Azure">
+  <img src="https://img.shields.io/badge/Cloudflare-Turnstile-F38020?logo=cloudflare&logoColor=white" alt="Cloudflare Turnstile">
+</p>
 
-![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&logoColor=white)
-![Tailwind](https://img.shields.io/badge/TailwindCSS-4-06B6D4?logo=tailwindcss&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-7-646CFF?logo=vite&logoColor=white)
-![FastAPI](https://img.shields.io/badge/FastAPI-API-009688?logo=fastapi&logoColor=white)
-![Python](https://img.shields.io/badge/Python-3.9.4-3776AB?logo=python&logoColor=white)
-![Azure](https://img.shields.io/badge/Azure-Blob_Storage-0078D4?logo=microsoftazure&logoColor=white)
-![Replicate](https://img.shields.io/badge/Replicate-Cloud_GPU-000000?logo=replicate&logoColor=white)
-![License](https://img.shields.io/badge/License-MIT-green)
+<p align="center" style="margin-top: -12px;">
+  <img src="https://img.shields.io/badge/License-MIT-22C55E?logo=opensourceinitiative&logoColor=white" alt="MIT">
+  <img src="https://img.shields.io/badge/Replicate-111111?logo=replicate&logoColor=white" alt="Replicate">
+</p>
+
+<div align="center">
+
+# ✨ PixelForge
+### The open-source image studio that blends AI cloud power with pro-grade browser editing
+</div>
+
+## 🚀 Why PixelForge
+
+<div style="max-width: 720px; line-height: 1.6;">
+PixelForge is a modern full-stack image platform built for creators who want fast results without bloated workflows.
+It combines <b>AI-powered processing via Replicate</b> (upscale, background removal, color restore) with fast <b>client-side editing tools</b> (compress, convert, resize, transform, metadata cleaning, palette extraction, watermarking).
+</div>
+
+<br>
+
+- ⚡ AI where it matters, instant client-side tools where it’s faster  
+- 🔐 Security-first pipeline (Turnstile, signed URLs, validation, anti-spoof proxy strategy)  
+- 🧠 Reliable architecture (async jobs, usage limits, janitor cleanup, session recovery)  
+- 🎨 Beautiful UX with before/after comparisons and staged progress feedback  
+- 🛠️ Open-source and extensible provider architecture  
+
+
+
+## 🎯 Features
+
+### A) Core Image Tools
+
+1. 🔍 **Upscale Image (AI)** — Real-ESRGAN enhancement  
+2. 🧍 **Remove Background (AI)** — clean subject extraction  
+3. 🎨 **Restore Color (AI)** — revive grayscale & faded photos  
+4. 🎛️ **Image Editor** — brightness, contrast, saturation, blur, vignette  
+5. 📐 **Resize Image** — custom size, aspect lock, presets  
+6. 🔄 **Rotate & Flip** — quick transform controls  
+7. 🗜️ **Compress Image** — reduce size with quality control  
+8. 🔁 **Convert Format** — PNG / JPG / WEBP  
+9. 🧹 **Remove Metadata** — clean EXIF data  
+10. 🎯 **Color Palette Extractor** — draggable sampling points  
+11. 🏷️ **Add Watermark** — text/image with live preview  
+12. ✂️ **Crop Image** *(Coming Soon)*  
+13. 🖼️ **Thumbnail Maker** *(Coming Soon)*  
+
+### B) Platform / Security / Workflow
+
+14. 🛡️ **Turnstile Verification** — bot protection layer  
+15. 📊 **Usage Limits** — per-feature daily caps  
+16. 🚦 **Rate Limiting** — controlled API flow  
+17. ⚙️ **Async Job Queue** — safe background processing  
+18. 🔄 **Status Polling** — processing / ready / failed  
+19. 💾 **Session Persistence** — IndexedDB + localStorage  
+20. 🔁 **Session Restore** — recover after refresh  
+21. ⏳ **Expiration Handling** — results & drafts lifecycle  
+22. 🧽 **Azure Cleanup** — expired result janitor  
+23. 🧹 **DB Cleanup** — usage data maintenance  
+24. 🔑 **Signed URLs** — secure upload & access  
+25. 🔍 **File Validation** — type, size, spoof detection  
+26. 🏷️ **Filename Sanitization** — safe file handling  
+27. 🧩 **Workspace System** — reusable UI shell  
+28. 📢 **Modal System** — legal & alert handling  
+29. 🆚 **Comparison Slider** — before/after preview  
+30. 🎬 **Progress UX** — staged loading feedback  
+
+## 🏗️ Architecture & Stack
+
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 8px;">
+  <img src="https://skillicons.dev/icons?i=react,vite,tailwind,fastapi,postgres,python,azure,cloudflare&theme=dark" height="48" />
+
+  <div style="
+    width: 48px;
+    height: 48px;
+    background: #242424;
+    border-radius: 10px;
+    border: 1px solid #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: -14px;
+  ">
+    <img 
+      src="https://images.seeklogo.com/logo-png/61/1/replicate-icon-logo-png_seeklogo-611690.png"
+      style="width: 28px; height: 28px;"
+      alt="Replicate"
+    />
+  </div>
+</div>
+<br>
+
+<div style="max-width: 760px; line-height: 1.65;">
+
+PixelForge uses a split architecture:
+
+- **Frontend (React + Vite + Tailwind)**  
+  Handles tool UI, previews, client-side transforms, session persistence (IndexedDB/localStorage), and interaction flow.
+
+- **Backend (FastAPI + asyncpg + aiohttp)**  
+  Handles secure AI orchestration, Turnstile verification, usage/rate limits, signed upload/result URLs, and polling endpoints.
+
+- **AI Inference (Replicate Python SDK)**  
+  Model calls go through a provider abstraction (`BaseAIProvider` / `ReplicateProvider`) so the AI layer is modular and extensible.
+
+- **Storage + Data (Azure Blob + PostgreSQL)**  
+  Azure Blob manages upload/result lifecycle; PostgreSQL stores usage buckets and retention-driven state.
 
 </div>
 
 
 
-## 📸 Overview
+## ⚙️ Environment Variables
 
-This repo is split into two projects:
+### Backend (root/backend env)
 
-- **Frontend** (`frontend/`): React (Vite) UI for uploading an image + polling job status
-- **Backend** (`backend/`): FastAPI server that:
-  - validates uploads
-  - stores raw images in **private Azure** container (`uploads`)
-  - runs **Real-ESRGAN** on **Replicate**
-  - stores final outputs in **public Azure** container (`results`)
-  - exposes a polling endpoint the frontend can call until the result is ready
-
-## 🎥 Demo
-
-<details>
-  <summary><b>🎥 Click to watch the preview </b></summary>
-
-  <br>
-  <video src="https://github.com/user-attachments/assets/ca19ab4f-23a4-4f9f-b1d4-6c418e16f2ab">
-    
-</details>  
-
-## ✨ Features
-
-- ⚡ **Seamless UI** (React + Vite) for uploading and previewing results
-- 🔁 **Async polling workflow**
-  - `POST /api/upscale` returns a `job_id`
-  - frontend polls `GET /api/result/{job_id}` until it returns `{ status: "ready", url }`
-- ☁️ **Azure Blob Storage integration**
-  - private container for raw uploads (`uploads`)
-  - public container for processed results (`results`)
-- 🚀 **Replicate Cloud GPU processing**
-  - no local CUDA / no heavy model installs required
-- 🔒 **Basic file safety checks**
-  - MIME allow-list (JPG/PNG/WEBP)
-  - randomized safe filenames (UUID)
-  - file size limit (see `backend/core/config.py`)
-
-
-
-## 🧰 Tech Stack
-
-### 🎨 Frontend (`frontend/`)
-- React
-- Vite
-- Tailwind (via `@tailwindcss/vite`)
-
-### 🧠 Backend (`backend/`)
-- FastAPI
-- Uvicorn
-- `replicate` (Real-ESRGAN via Replicate)
-- `azure-storage-blob` (async client)
-- `python-dotenv`
-- `aiohttp`
-
-
-
-## 🏗️ Project Structure
-
-```text
-.
-├── backend/
-│   ├── main.py
-│   ├── api/
-│   ├── core/
-│   └── services/
-├── frontend/
-│   ├── vite.config.js
-│   ├── package.json
-│   └── src/
-└── requirements.txt
+```env
+AZURE_CONNECTION_STRING=
+REPLICATE_API_TOKEN=
+ALLOWED_ORIGINS=
+CLOUDFLARE_TURNSTILE_SITE_KEY=
+CLOUDFLARE_TURNSTILE_SECRET_KEY=
+DATABASE_URL=
+CLOUDFLARE_SUBNETS=
+ENVIRONMENT=
+ALLOW_TURNSTILE_TEST_BYPASS=
+TRUST_PROXY_HEADERS=
+REQUIRE_CLOUDFLARE_PROXY=
+STRICT_ENV_VALIDATION=
 ```
 
+### Frontend
 
-
-## ☁️ vs 🏠 Crucial: Local Network vs Cloud Deployment
-
-This project is designed so you can choose **where the backend runs**:
-
-###  Option A — Run everything on your local network (no backend cloud deploy)
-This is the simplest path if you **do not** want to deploy to Vercel/Render/etc.
-
-- Run **FastAPI locally** (on your LAN machine)
-- Run **React dev server locally** (or build + host it locally)
-- The frontend calls the backend at:
-
-```js
-http://localhost:8000/api/...
+```env
+VITE_API_BASE_URL=http://127.0.0.1:8000/api
+VITE_TURNSTILE_SITE_KEY=0x4AAAAAACxEYGPTmGZUjctK
 ```
 
-> **Important:** As currently implemented, the frontend API base URL is hardcoded to `http://localhost:8000` in `frontend/src/services/apiService.js`.
->
-> If you want to use this from another device on your LAN (phone/tablet), you’ll need to change that URL to your machine’s LAN IP (example: `http://192.168.1.50:8000`) and also update CORS in the backend to allow the frontend origin.
-
-###  Option B — Deploy the backend to the cloud
-If you deploy the backend (Render/Fly.io/Azure/etc.), you’ll also need to update:
-
-- **CORS** in `backend/main.py` (`allow_origins=[ ... ]`)
-- The frontend API calls (currently hardcoded to localhost)
-
-> Tip: a common production pattern is to replace the hardcoded URL with a Vite env var (e.g. `VITE_API_BASE_URL`). This repo currently does **not** use a `VITE_*` env var for the API URL.
+> For local testing, keep API base URL at local backend.  
+> For deployment, switch to your hosted API endpoint (example: `https://your-domain/app/api`).
 
 
 
-## 🔑 Environment Variables
+## 🚀 Local Development
 
-The backend loads environment variables via `python-dotenv` (`load_dotenv()` is called in `backend/services/storage.py`).
-
-Create a `.env` file (recommended at repo root when running locally), based on this example:
+## 1) Clone
 
 ```bash
-# .env.example
-
-AZURE_CONNECTION_STRING="DefaultEndpointsProtocol=https;AccountName=...;AccountKey=...;EndpointSuffix=core.windows.net"
-REPLICATE_API_TOKEN="r8_..."
+git clone https://github.com/Dendroculus/PixelForge.git
+cd PixelForge
 ```
 
-### Azure containers required
-Your storage account should have:
-- `uploads` (private)
-- `results` (public / blob access)
-
-
-
-## 🚀 Installation & Running Locally
-
-###  1) Clone the repository
+## 2) Run backend
 
 ```bash
-git clone https://github.com/Dendroculus/image-upscaler-website.git
-cd image-upscaler-website
-```
-
-
-
-## 🧠 Backend (FastAPI)
-
-###  2) Create + activate a virtual environment
-
-#### macOS / Linux
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-#### Windows (PowerShell)
-```powershell
+cd backend
 python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-```
-
-###  3) Install Python dependencies
-
-```bash
+source .venv/bin/activate      # macOS/Linux
+# .venv\Scripts\activate       # Windows
 pip install -r requirements.txt
+uvicorn main:app --reload
 ```
 
-###  4) Add your `.env`
-Create a `.env` file (at repo root) and add:
-
-- `AZURE_CONNECTION_STRING`
-- `REPLICATE_API_TOKEN`
-
-###  5) Run the API server
-
-Your FastAPI app instance is `app` in `backend/main.py`, so run:
-
-```bash
-uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-- API base: `http://localhost:8000`
-- Endpoints:
-  - `POST http://localhost:8000/api/upscale`
-  - `GET  http://localhost:8000/api/result/{job_id}`
-
-
-
-## 🎨 Frontend (React + Vite)
-
-###  6) Install dependencies
+## 3) Run frontend
 
 ```bash
 cd frontend
 npm install
-```
-
-###  7) Start the dev server
-
-```bash
 npm run dev
 ```
 
-Vite will print the local URL (typically):
-- `http://localhost:5173`
+
+
+## 🔒 Security Notes
+
+- Turnstile check before AI init routes
+- Proxy/IP trust strategy to reduce header spoofing risk
+- Signed SAS URLs for controlled blob access
+- Strict file validation + capped dimensions/size
+- Automated cleanup for privacy and storage hygiene
 
 
 
-## 🔁 How the Upscale Flow Works
+## 🛠 Built With
 
-1. Frontend uploads an image + model type
-2. Backend:
-   - validates and sanitizes upload
-   - uploads raw file to Azure private container (`uploads`)
-   - starts a FastAPI `BackgroundTasks` job
-3. Background task:
-   - downloads raw bytes from Azure
-   - sends to Replicate Real-ESRGAN
-   - downloads the resulting image
-   - uploads final PNG to Azure public container (`results`)
-4. Frontend polls until the backend detects the Azure result exists and returns the public URL
+- **React + Vite** (frontend)
+- **FastAPI** (backend)
+- **Replicate** (AI model inference)
+- **Azure Blob Storage** (upload/result lifecycle)
+- **PostgreSQL** (usage limits & retention windows)
+- **Cloudflare Turnstile** (bot protection)
 
 
 
-## 🧪 Notes / Troubleshooting
+## 🤝 Contributing
 
-### 🧩 CORS errors
-CORS is configured in `backend/main.py` to allow:
-- `http://localhost:5173`
-
-If your frontend runs on another origin (LAN IP, different port, deployed URL), update `allow_origins`.
-
-### 📦 Azure “Cloud storage is not configured.”
-If you see:
-- `Cloud storage is not configured.`
-
-Then `AZURE_CONNECTION_STRING` isn’t being loaded (or isn’t set).
-
-### 🧵 Replicate auth
-The Replicate Python client reads `REPLICATE_API_TOKEN` from the environment. Make sure it’s set in your `.env` or shell session.
+PRs and improvements are welcome.  
+If you’re planning a bigger change, open an issue first to align on scope.
 
 
 
-## 🛡️ License
+## 📜 License
 
-MIT (see `LICENSE` if present in the repo).
+Licensed under the MIT License. See [LICENSE](./LICENSE) for details.
 
 
 
-## 🙏 Credits
+## 🙏 Acknowledgements
 
-- **Real-ESRGAN** (upscaling model)
-- **Replicate** (GPU inference hosting)
-- **FastAPI** + **React/Vite** for the web stack
+- Real-ESRGAN ecosystem
+- Replicate platform
+- FastAPI, React, and open-source contributors
