@@ -42,36 +42,41 @@ const FONT_FAMILIES = [
 
 const WATERMARK_COLORS = ['#ffffff', '#000000', '#ef4444', '#3b82f6', '#10b981', '#f59e0b'];
 
+const DEFAULT_TEXT_WM = {
+  text: 'Your Text Here',
+  fontFamily: 'Inter',
+  color: '#ffffff',
+  fontSize: 40,
+  opacity: 0.8,
+  isBold: true,
+  isItalic: false,
+  isUnderline: false,
+};
+
+const DEFAULT_IMAGE_WM = {
+  url: null,
+  opacity: 0.8,
+  scale: 0.3,
+  naturalWidth: 1,
+  naturalHeight: 1,
+};
+
 export default function WatermarkAdder() {
   const fileInputRef = useRef(null);
   const watermarkImageRef = useRef(null);
   const imageRef = useRef(null);
   const previewContainerRef = useRef(null);
-  const dragConstraintsRef = useRef(null);
   const overlayRef = useRef(null);
 
   const [activeTab, setActiveTab] = useState('text');
   const [isProcessing, setIsProcessing] = useState(false);
   const [imageRect, setImageRect] = useState({ left: 0, top: 0, width: 1, height: 1, scale: 1 });
   const [overlayPos, setOverlayPos] = useState({ x: 0, y: 0 });
+  const [overlaySize, setOverlaySize] = useState({ width: 1, height: 1 });
   const hasInitializedPos = useRef(false);
 
-  const [textWm, setTextWm] = useState({
-    text: 'Your Text Here',
-    fontFamily: 'Inter',
-    color: '#ffffff',
-    fontSize: 40,
-    opacity: 0.8,
-    isBold: true,
-    isItalic: false,
-    isUnderline: false,
-  });
-
-  const [imgWm, setImgWm] = useState({
-    url: null,
-    opacity: 0.8,
-    scale: 0.3,
-  });
+  const [textWm, setTextWm] = useState(DEFAULT_TEXT_WM);
+  const [imgWm, setImgWm] = useState(DEFAULT_IMAGE_WM);
 
   const {
     file,
@@ -126,21 +131,74 @@ export default function WatermarkAdder() {
     return () => observer.disconnect();
   }, [updateImageRect, previewUrl]);
 
+  useEffect(() => {
+    const node = overlayRef.current;
+    if (!node) return;
+
+    const update = () => {
+      const r = node.getBoundingClientRect();
+      setOverlaySize({
+        width: Math.max(1, r.width),
+        height: Math.max(1, r.height),
+      });
+    };
+
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(node);
+    return () => ro.disconnect();
+  }, [activeTab, textWm, imgWm.url, imgWm.scale, imgWm.naturalWidth, imgWm.naturalHeight, previewUrl]);
+
+  const dragBounds = useMemo(() => {
+    const maxX = Math.max(imageRect.left, imageRect.left + imageRect.width - overlaySize.width);
+    const maxY = Math.max(imageRect.top, imageRect.top + imageRect.height - overlaySize.height);
+
+    return {
+      left: imageRect.left,
+      top: imageRect.top,
+      right: maxX,
+      bottom: maxY,
+    };
+  }, [imageRect, overlaySize]);
+
   const handleWatermarkImageUpload = useCallback(
-    (e) => {
+    async (e) => {
       const wmFile = e.target.files?.[0];
       if (!wmFile) return;
 
       if (imgWm.url) URL.revokeObjectURL(imgWm.url);
       const nextUrl = URL.createObjectURL(wmFile);
 
-      setError('');
-      setImgWm((prev) => ({ ...prev, url: nextUrl }));
-      setActiveTab('image');
-      cleanupResult();
+      try {
+        const loaded = await loadImage(nextUrl);
+
+        setError('');
+        setImgWm((prev) => ({
+          ...prev,
+          url: nextUrl,
+          naturalWidth: loaded.naturalWidth || 1,
+          naturalHeight: loaded.naturalHeight || 1,
+        }));
+        setActiveTab('image');
+        cleanupResult();
+      } catch {
+        URL.revokeObjectURL(nextUrl);
+        setError('Failed to load watermark image.');
+      }
     },
     [imgWm.url, cleanupResult, setError]
   );
+
+  const handleRemoveWatermarkImage = useCallback(() => {
+    if (imgWm.url) URL.revokeObjectURL(imgWm.url);
+    setImgWm((prev) => ({
+      ...prev,
+      url: null,
+      naturalWidth: 1,
+      naturalHeight: 1,
+    }));
+    cleanupResult();
+  }, [imgWm.url, cleanupResult]);
 
   const applyWatermark = useCallback(async () => {
     if (!file || !previewUrl) return;
@@ -234,10 +292,16 @@ export default function WatermarkAdder() {
   }, [file, previewUrl, cleanupResult, imageRect, activeTab, textWm, imgWm, setResultBlob, setResultUrl, setError]);
 
   const handleReset = useCallback(() => {
+    if (imgWm.url) URL.revokeObjectURL(imgWm.url);
     resetAll();
     setIsProcessing(false);
     setActiveTab('text');
-  }, [resetAll]);
+    setTextWm(DEFAULT_TEXT_WM);
+    setImgWm(DEFAULT_IMAGE_WM);
+    setOverlayPos({ x: 0, y: 0 });
+    setOverlaySize({ width: 1, height: 1 });
+    hasInitializedPos.current = false;
+  }, [imgWm.url, resetAll]);
 
   const canProcess = useMemo(() => Boolean(file) && !isProcessing && !resultUrl, [file, isProcessing, resultUrl]);
   const downloadName = useMemo(() => generateSafeFilename(file?.name, 'watermarked', 'jpg'), [file?.name]);
@@ -276,6 +340,7 @@ export default function WatermarkAdder() {
                 <ImageWatermarkControls
                   watermarkImageRef={watermarkImageRef}
                   handleWatermarkImageUpload={handleWatermarkImageUpload}
+                  onRemoveWatermarkImage={handleRemoveWatermarkImage}
                   imgWm={imgWm}
                   setImgWm={setImgWm}
                   setError={setError}
@@ -314,24 +379,13 @@ export default function WatermarkAdder() {
                     onLoad={updateImageRect}
                   />
 
-                  <div
-                    ref={dragConstraintsRef}
-                    className="absolute pointer-events-none"
-                    style={{
-                      left: imageRect.left,
-                      top: imageRect.top,
-                      width: imageRect.width,
-                      height: imageRect.height,
-                    }}
-                  />
-
                   <WatermarkPreviewOverlay
                     overlayRef={overlayRef}
-                    dragConstraintsRef={dragConstraintsRef}
                     overlayPos={overlayPos}
                     activeTab={activeTab}
                     textWm={textWm}
                     imgWm={imgWm}
+                    dragBounds={dragBounds}
                   />
                 </>
               )}

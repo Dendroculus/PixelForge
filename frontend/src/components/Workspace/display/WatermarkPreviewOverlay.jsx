@@ -2,11 +2,11 @@ import { motion } from 'framer-motion';
 
 export default function WatermarkPreviewOverlay({
   overlayRef,
-  dragConstraintsRef,
   overlayPos,
   activeTab,
   textWm,
   imgWm,
+  dragBounds,
 }) {
   if (overlayPos.x === 0 && overlayPos.y === 0) return null;
 
@@ -16,10 +16,15 @@ export default function WatermarkPreviewOverlay({
       drag
       dragMomentum={false}
       dragElastic={0}
-      dragConstraints={dragConstraintsRef}
+      dragConstraints={dragBounds}
       initial={{ x: overlayPos.x, y: overlayPos.y }}
       className="absolute z-50 cursor-grab active:cursor-grabbing rounded-md border border-dashed border-transparent hover:border-indigo-400 hover:bg-white/10"
-      style={{ opacity: activeTab === 'text' ? textWm.opacity : imgWm.opacity, padding: '4px', left: 0, top: 0 }}
+      style={{
+        opacity: activeTab === 'text' ? textWm.opacity : imgWm.opacity,
+        padding: 0,
+        left: 0,
+        top: 0,
+      }}
     >
       {activeTab === 'text' ? (
         <span
@@ -43,7 +48,13 @@ export default function WatermarkPreviewOverlay({
         <img
           src={imgWm.url}
           alt="Logo overlay"
-          style={{ transform: `scale(${imgWm.scale})`, transformOrigin: 'top left', pointerEvents: 'none', userSelect: 'none', display: 'block' }}
+          style={{
+            width: `${Math.max(1, (imgWm.naturalWidth || 1) * imgWm.scale)}px`,
+            height: `${Math.max(1, (imgWm.naturalHeight || 1) * imgWm.scale)}px`,
+            pointerEvents: 'none',
+            userSelect: 'none',
+            display: 'block',
+          }}
         />
       ) : null}
     </motion.div>
