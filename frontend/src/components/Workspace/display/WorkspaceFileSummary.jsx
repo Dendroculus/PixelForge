@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { bytesToMB } from '../../../utils/fileUtils';
+import { bytesToMB } from '../../../utils/file/fileUtils';
 
 /**
  * Displays a styled summary card for a successfully staged file.
@@ -29,7 +29,7 @@ export default function WorkspaceFileSummary({ file }) {
               {file.name}
             </span>
             <span className="text-xs font-semibold text-slate-400">
-              {bytesToMB(file.size)} MB
+              { bytesToMB(file.size)} MB
             </span>
           </div>
 

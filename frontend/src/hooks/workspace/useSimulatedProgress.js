@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { makeStorageKeys } from '../../utils/storageKeys';
+import { makeStorageKeys } from '../../utils/storage/storageKeys';
 
 /**
  * React hook to simulate progressive loading during processing state.

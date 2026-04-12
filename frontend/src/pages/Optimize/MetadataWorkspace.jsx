@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import exifr from 'exifr';
 import UploadDropzone from '../../components/Upload/UploadDropzone';
-import { processImageWithCanvas } from '../../utils/imageUtils';
+import { processImageWithCanvas } from '../../utils/image/imageUtils';
 
 /**
  * Formats camelCase string keys into capitalized spaced strings.

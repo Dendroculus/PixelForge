@@ -1,6 +1,6 @@
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { apiService } from '../../services/apiService';
-import { clearAppSession } from '../../utils/session';
+import { clearAppSession } from '../../utils/storage/session';
 
 export function useActions({
   setJobId,

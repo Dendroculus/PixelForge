@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import PropTypes from 'prop-types';
-import { validateImageUpload } from '../../utils/fileValidation'; 
+import { validateImageUpload } from '../../utils/file/fileValidation'; 
 import { APP_CONFIG as config } from '../../config';
 
 

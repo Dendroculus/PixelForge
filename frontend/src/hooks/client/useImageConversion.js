@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { processImageWithCanvas } from '../../utils/imageUtils';
+import { processImageWithCanvas } from '../../utils/image/imageUtils';
 
 /**
  * Maps output format to MIME type.

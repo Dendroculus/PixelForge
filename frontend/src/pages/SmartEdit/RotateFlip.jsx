@@ -11,7 +11,7 @@ import WorkspaceActionRow from '../../components/Actions/WorkspaceActionRow';
 import WorkspaceResultDownload from '../../components/Workspace/display/WorkspaceResultDownload';
 import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
 import { useWorkspaceFile } from '../../hooks/workspace/useWorkspaceFile';
-import { generateSafeFilename } from '../../utils/fileUtils';
+import { generateSafeFilename } from '../../utils/file/fileUtils';
 
 export default function RotateFlip() {
   const fileInputRef = useRef(null);
