@@ -1,6 +1,6 @@
 <div align="center">
 
-  EN | [中文](./READMEcn.md)
+  EN | [中文](./docs/READMEcn.md)
 </div>
 
 <p align="center">
@@ -80,28 +80,7 @@ It combines <b>AI-powered processing via Replicate</b> (upscale, background remo
 
 ## 🏗️ Architecture & Stack
 
-<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 8px;">
-  <img src="https://skillicons.dev/icons?i=react,vite,tailwind,fastapi,postgres,python,azure,cloudflare&theme=dark" height="48" />
-
-  <div style="
-    width: 48px;
-    height: 48px;
-    background: #242424;
-    border-radius: 10px;
-    border: 1px solid #333;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-left: -14px;
-  ">
-    <img 
-      src="https://images.seeklogo.com/logo-png/61/1/replicate-icon-logo-png_seeklogo-611690.png"
-      style="width: 28px; height: 28px;"
-      alt="Replicate"
-    />
-  </div>
-</div>
-<br>
+<img src="./docs/TECH_STACKS.png" width="35%" alt="Tech Stacks">
 
 <div style="max-width: 760px; line-height: 1.65;">
 
