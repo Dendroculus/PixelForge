@@ -55,7 +55,7 @@ It combines <b>AI-powered processing via Replicate</b> (upscale, background remo
 9. 🧹 **Remove Metadata** — clean EXIF data  
 10. 🎯 **Color Palette Extractor** — draggable sampling points  
 11. 🏷️ **Add Watermark** — text/image with live preview  
-12. ✂️ **Crop Image** *(Coming Soon)*  
+12. ✂️ **Crop Image** — freeform or preset aspect ratios
 13. 🖼️ **Thumbnail Maker** *(Coming Soon)*  
 
 ### B) Platform / Security / Workflow

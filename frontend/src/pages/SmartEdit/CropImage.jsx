@@ -321,25 +321,44 @@ const applyAspect = useCallback(
         {previewUrl && !resultUrl && (
             <div className="absolute inset-0 p-2 sm:p-3 bg-white">
             <div className="h-full w-full rounded-md border border-slate-200 bg-white overflow-hidden">
+                
+                <style>{`
+                  /* 1. Stop the marching ants jiggle */
+                  .ReactCrop__crop-selection {
+                    animation: none !important;
+                    background-image: none !important;
+                    border: 2px solid white !important;
+                    box-shadow: 0 0 5px rgba(0,0,0,0.3) !important;
+                  }
+                  
+                  /* 2. Hide the unnecessary middle edge boxes */
+                  .ReactCrop__drag-handle.ord-n,
+                  .ReactCrop__drag-handle.ord-e,
+                  .ReactCrop__drag-handle.ord-s,
+                  .ReactCrop__drag-handle.ord-w {
+                    display: none !important;
+                  }
+                `}</style>
+
                 <ReactCrop
-                crop={crop}
-                onChange={(nextCrop) => {
+                  crop={crop}
+                  onChange={(nextCrop) => {
                     setCrop(nextCrop);
                     cleanupResult();
-                }}
-                onComplete={(nextCompletedCrop) => setCompletedCrop(nextCompletedCrop)}
-                aspect={aspect || undefined}
-                className="h-full w-full"
+                  }}
+                  onComplete={(nextCompletedCrop) => setCompletedCrop(nextCompletedCrop)}
+                  aspect={aspect || undefined}
+                  className="h-full w-full"
                 >
-                <img
+                  <img
                     ref={imgRef}
                     alt="Crop preview"
                     src={previewUrl}
                     onLoad={onImageLoad}
                     className="block h-full w-full object-contain"
-                />
+                  />
                 </ReactCrop>
-            </div>
+              </div>
             </div>
         )}
         </PreviewImageBox>
