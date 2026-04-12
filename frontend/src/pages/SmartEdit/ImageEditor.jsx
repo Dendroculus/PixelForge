@@ -14,7 +14,7 @@ import WorkspaceFileSummary from '../../components/Workspace/display/WorkspaceFi
 import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErrorAlert';
 import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
 import { useWorkspaceFile } from '../../hooks/workspace/useWorkspaceFile';
-import { generateSafeFilename } from '../../utils/fileUtils';
+import { generateSafeFilename } from '../../utils/file/fileUtils';
 
 const DEFAULT_FILTERS = {
   brightness: 100,

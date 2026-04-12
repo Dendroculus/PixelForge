@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { bytesToMB } from '../../../utils/fileUtils';
+import { bytesToMB } from '../../../utils/file/fileUtils';
 
 /**
  * Displays the final result size comparison and the download action button.

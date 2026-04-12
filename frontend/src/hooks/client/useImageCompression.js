@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { processImageWithCanvas } from '../../utils/imageUtils';
+import { processImageWithCanvas } from '../../utils/image/imageUtils';
 
 /**
  * Manages image compression task lifecycle and output generation.
