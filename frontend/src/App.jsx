@@ -106,9 +106,7 @@ export default function App() {
           </Suspense>
         </main>
 
-        <div className='absolute'> 
-          <FaqChatbotWidget />
-        </div>
+        <FaqChatbotWidget />
 
         <div className="mt-auto w-full relative z-50">
           <Footer openModal={openModal} />
