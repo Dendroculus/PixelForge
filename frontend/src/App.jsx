@@ -106,11 +106,14 @@ export default function App() {
           </Suspense>
         </main>
 
+        <div className='absolute'> 
+          <FaqChatbotWidget />
+        </div>
+
         <div className="mt-auto w-full relative z-50">
           <Footer openModal={openModal} />
         </div>
 
-        <FaqChatbotWidget />
         <LegalModal isOpen={modalState.isOpen} onClose={closeModal} title={activeModalData.title}>
           {activeModalData.content}
         </LegalModal>
