@@ -25,10 +25,11 @@
 
 ## 🚀 Why PixelForge
 
-<div style="max-width: 720px; line-height: 1.6;">
-PixelForge is a modern full-stack image platform built for creators who want fast results without bloated workflows.
-It combines <b>AI-powered processing via Replicate</b> (upscale, background removal, color restore) with fast <b>client-side editing tools</b> (compress, convert, resize, transform, metadata cleaning, palette extraction, watermarking).
-</div>
+<div style="max-width: 720px;">
+
+PixelForge started as a single-purpose AI upscaler and evolved into a full-stack image processing platform.
+It combines **AI-powered cloud processing** (upscale, background removal, restoration) with fast **client-side editing tools** (resize, compress, transform, metadata cleaning).
+The system is designed to handle real-world constraints such as rate limits, long-running AI jobs, and storage lifecycle management through an async queue-based architecture.</div>
 
 <br>
 
@@ -58,7 +59,7 @@ It combines <b>AI-powered processing via Replicate</b> (upscale, background remo
 12. ✂️ **Crop Image** — freeform or preset aspect ratios
 13. 🖼️ **Thumbnail Maker** *(Coming Soon)*  
 
-### B) Platform / Security / Workflow
+### B) Platform & System Capabilities
 
 14. 🛡️ **Turnstile Verification** — bot protection layer  
 15. 📊 **Usage Limits** — per-feature daily caps  
@@ -77,6 +78,56 @@ It combines <b>AI-powered processing via Replicate</b> (upscale, background remo
 28. 📢 **Modal System** — legal & alert handling  
 29. 🆚 **Comparison Slider** — before/after preview  
 30. 🎬 **Progress UX** — staged loading feedback  
+
+## 🧠 Architecture Highlights
+PixelForge is designed to balance performance, cost, and reliability while working with external AI APIs that have strict rate and concurrency limits. Key architectural decisions include:
+
+- Queue-based AI processing system to handle long-running jobs  
+- Decoupled upload → process → result pipeline  
+- Concurrency control to prevent overload and API abuse  
+- Stateless API with client-side job tracking  
+- Hybrid processing model (AI in cloud, instant tools in browser)  
+- Storage lifecycle management with automatic cleanup
+- Pluggable AI provider layer for future model integrations
+
+## 💡 Design Considerations
+
+- AI jobs are handled asynchronously due to long execution times and external API limits  
+- Polling is used instead of WebSockets for simplicity and reliability  
+- Signed URLs reduce backend load and improve upload/download performance  
+- Rate limiting and usage caps prevent abuse and control costs
+
+## 🔧 Processing Models
+PixelForge uses a hybrid processing model to balance performance and cost:
+AI-intensive tasks are handled asynchronously on the backend, while lightweight operations are executed instantly in the browser.
+
+<div style="max-width: 720px; line-height: 1.65; margin-left: 12px">
+
+### 🔄 AI Processing Flow (Asynchronous)
+The system separates processing paths based on workload type to optimize performance and cost :
+
+1. User uploads image → validated and sanitized  
+2. Backend generates signed upload URL (Azure Blob)  
+3. File uploaded directly to storage  
+4. Job created and queued for processing  
+5. AI provider executes task asynchronously  
+6. Client polls job status via API  
+7. Result stored with signed access URL  
+8. Frontend retrieves and displays result  
+9. Cleanup system removes expired data
+</div>
+
+<div style="max-width: 720px; line-height: 1.65; margin-left: 12px">
+
+### ⚡ Client-Side Processing Flow (Instant)
+The frontend handles all lightweight transformations directly in the browser for instant feedback and zero backend load to provide a seamless user experience:
+
+1. User uploads image  
+2. Image processed directly in browser (resize, compress, transform, etc.)  
+3. No backend interaction required  
+4. Result generated instantly  
+5. User downloads processed file
+</div>
 
 ## 🏗️ Architecture & Stack
 
