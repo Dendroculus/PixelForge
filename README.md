@@ -62,23 +62,23 @@ The system is designed to handle real-world constraints such as rate limits, lon
 
 ### B) Platform & System Capabilities
 
-14. 🛡️ **Turnstile Verification** — bot protection layer  
-15. 📊 **Usage Limits** — per-feature daily caps  
-16. 🚦 **Rate Limiting** — controlled API flow  
-17. ⚙️ **Async Job Queue** — safe background processing  
-18. 🔄 **Status Polling** — processing / ready / failed  
-19. 💾 **Session Persistence** — IndexedDB + localStorage  
-20. 🔁 **Session Restore** — recover after refresh  
-21. ⏳ **Expiration Handling** — results & drafts lifecycle  
-22. 🧽 **Azure Cleanup** — expired result janitor  
-23. 🧹 **DB Cleanup** — usage data maintenance  
-24. 🔑 **Signed URLs** — secure upload & access  
-25. 🔍 **File Validation** — type, size, spoof detection  
-26. 🏷️ **Filename Sanitization** — safe file handling  
-27. 🧩 **Workspace System** — reusable UI shell  
-28. 📢 **Modal System** — legal & alert handling  
-29. 🆚 **Comparison Slider** — before/after preview  
-30. 🎬 **Progress UX** — staged loading feedback  
+15. 🛡️ **Turnstile Verification** — bot protection layer  
+16. 📊 **Usage Limits** — per-feature daily caps  
+17. 🚦 **Rate Limiting** — controlled API flow  
+18. ⚙️ **Async Job Queue** — safe background processing  
+19. 🔄 **Status Polling** — processing / ready / failed  
+20. 💾 **Session Persistence** — IndexedDB + localStorage  
+21. 🔁 **Session Restore** — recover after refresh  
+22. ⏳ **Expiration Handling** — results & drafts lifecycle  
+23. 🧽 **Azure Cleanup** — expired result janitor  
+24. 🧹 **DB Cleanup** — usage data maintenance  
+25. 🔑 **Signed URLs** — secure upload & access  
+26. 🔍 **File Validation** — type, size, spoof detection  
+27. 🏷️ **Filename Sanitization** — safe file handling  
+28. 🧩 **Workspace System** — reusable UI shell  
+29. 📢 **Modal System** — legal & alert handling  
+30. 🆚 **Comparison Slider** — before/after preview  
+31. 🎬 **Progress UX** — staged loading feedback  
 
 ## 🧠 Architecture Highlights
 PixelForge is designed to balance performance, cost, and reliability while working with external AI APIs that have strict rate and concurrency limits. Key architectural decisions include:
