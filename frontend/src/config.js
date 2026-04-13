@@ -4,6 +4,7 @@ import logoTextWhite from './assets/PixelForgeAI_WhiteText.png';
 import logoFullBlack from './assets/PixelForgeAI_Black.png';
 import logoFullWhite from './assets/PixelForgeAI.png';
 import logoSvg from './assets/PixelForge.svg';
+import PixelForgeChatbot from './assets/PixelForgeChatbot.png'
 
 export const APP_CONFIG = {
   MAX_FILE_SIZE_MB: 10,
@@ -33,7 +34,8 @@ export const IMAGES = {
   textWhite: logoTextWhite,
   darkLogo: logoFullBlack,
   lightLogo: logoFullWhite,
-  svg: logoSvg
+  svg: logoSvg,
+  chatbotIcon: PixelForgeChatbot
 };
 
 export const FEATURE_LIMITS = {
