@@ -253,3 +253,39 @@ Licensed under the MIT License. See [LICENSE](./LICENSE) for details.
 - Real-ESRGAN ecosystem
 - Replicate platform
 - FastAPI, React, and open-source contributors
+
+## 👤 Contributors
+Made with ❤️ by the PixelForge team:
+
+<table>
+  <tr>
+    <td align="center" width="180">
+      <a href="https://github.com/Dendroculus">
+        <img src="https://github.com/Dendroculus.png?size=96" width="96" alt="Hans avatar" style="border-radius: 50%;"><br/>
+        <b>Hans</b><br/>
+      </a>
+        <sub><b>Lead Developer</b></sub>
+    </td>
+    <td align="center" width="180">
+      <a href="https://github.com/Serthonss">
+        <img src="https://github.com/Serthonss.png?size=96" width="96" alt="Wellson avatar" style="border-radius: 50%;"><br/>
+        <b>Wellson</b><br/>
+      </a>
+        <sub><b>Project Coordinator</b></sub>
+    </td>
+    <td align="center" width="180">
+      <a href="https://github.com/vincentlawi">
+        <img src="https://github.com/vincentlawi.png?size=96" width="96" alt="Lawi avatar" style="border-radius: 50%;"><br/>
+        <b>Lawi</b><br/>
+      </a>
+        <sub><b>UI/UX Designer</b></sub>
+    </td>
+    <td align="center" width="180">
+      <a href="https://github.com/Jensenix">
+        <img src="https://github.com/Jensenix.png?size=96" width="96" alt="Jensen avatar" style="border-radius: 50%;"><br/>
+        <b>Jensen</b><br/>
+      </a>
+        <sub><b>QA Lead & Stakeholder</b></sub>
+    </td>
+  </tr>
+</table>
