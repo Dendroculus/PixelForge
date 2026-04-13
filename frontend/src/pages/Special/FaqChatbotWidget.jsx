@@ -45,7 +45,12 @@ export default function FaqChatbotWidget() {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: WIDGET_STYLES }} />
-      <div className="fixed bottom-10 md:bottom-5 right-5 flex flex-col items-end z-999 fw text-slate-800">
+      <div
+      className="fixed right-4 sm:right-5 flex flex-col items-end z-999 fw text-slate-800"
+      style={{
+        bottom: 'calc(var(--footer-safe-offset, 16px) + env(safe-area-inset-bottom))',
+      }}
+    >
         <AnimatePresence>
           {isOpen && (
             <motion.div

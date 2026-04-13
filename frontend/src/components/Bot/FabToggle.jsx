@@ -8,7 +8,7 @@ export default function FabToggle({ isOpen, setIsOpen, img }) {
     <div className="relative flex items-center justify-center">
       <button
         onClick={() => setIsOpen((v) => !v)}
-        className="relative w-14 h-14 rounded-full overflow-hidden transition-all"
+        className="relative w-12 h-12 rounded-full overflow-hidden transition-all"
         style={{
           boxShadow: isOpen
             ? '0 8px 28px rgba(12,11,24,0.55)'
