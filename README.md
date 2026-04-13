@@ -58,6 +58,7 @@ The system is designed to handle real-world constraints such as rate limits, lon
 11. 🏷️ **Add Watermark** — text/image with live preview  
 12. ✂️ **Crop Image** — freeform or preset aspect ratios
 13. 🖼️ **Thumbnail Maker** *(Coming Soon)*  
+14. 🤖 **Chatbot** - Interactive FAQ assistant for quick answers and guided platform help
 
 ### B) Platform & System Capabilities
 
