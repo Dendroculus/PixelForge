@@ -44,7 +44,7 @@ export function useActions({
     const maxDurationMs = 600000;
 
     const handleFailure = async () => {
-      await clearAppSession(previewUrl, feature);
+      await clearAppSession(feature, previewUrl);
       setSelectedFile(null);
       setPreviewUrl(null);
       setResultUrl(null);
@@ -159,7 +159,7 @@ export function useActions({
       }
 
       setIsProcessing(false);
-      await clearAppSession(previewUrl, feature);
+      await clearAppSession(feature, previewUrl);
       resetTurnstile();
     }
   }, [

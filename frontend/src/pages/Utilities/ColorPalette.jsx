@@ -305,13 +305,16 @@ export default function ColorPalette() {
                     </div>
                   </div>
 
-                  <PaletteSwatches
-                    palette={palette}
-                    paletteStyle={paletteStyle}
-                    copiedHex={copiedHex}
-                    onCopy={copyToClipboard}
-                    isDragging={activePointId != null}
-                  />
+                <PaletteSwatches
+                  palette={palette.map((hex, i) => ({ 
+                    id: points[i]?.id ?? i, 
+                    hex 
+                  }))}
+                  paletteStyle={paletteStyle}
+                  copiedHex={copiedHex}
+                  onCopy={copyToClipboard}
+                  isDragging={activePointId != null}
+                />
                 </motion.div>
               )}
             </AnimatePresence>

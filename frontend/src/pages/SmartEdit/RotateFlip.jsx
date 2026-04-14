@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { APP_CONFIG } from '../../config';
 import UploadCard from '../../components/Upload/UploadCard';
 import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';

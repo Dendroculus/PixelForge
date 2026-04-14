@@ -29,10 +29,10 @@ export default function CategoryView({ activeCategory, CAT_ACCENT, handleBack, s
 
       {activeCategory.questions.map((qa, idx) => (
         <motion.button
-          key={idx}
+          key={qa.id || qa.q} 
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: idx * 0.05, ease: 'easeOut' }}
+          transition={{ delay: idx * 0.05, ease: 'easeOut' }} 
           onClick={() => startAnswerFlow(qa)}
           className="w-full p-3.5 rounded-xl text-left text-sm transition-all text-slate-700"
           style={{ background: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.6)' }}
