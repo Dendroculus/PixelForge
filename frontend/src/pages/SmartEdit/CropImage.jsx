@@ -1,25 +1,12 @@
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import ReactCrop, { centerCrop, makeAspectCrop } from 'react-image-crop';
-import { AnimatePresence } from 'framer-motion';
 import 'react-image-crop/dist/ReactCrop.css';
-import UploadCard from '../../components/Upload/UploadCard';
-import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
-import ToolPageWrapper from '../../components/Layout/ToolPageWrapper';
-import WorkspaceActionRow from '../../components/Actions/WorkspaceActionRow';
-import WorkspaceFileSummary from '../../components/Workspace/display/WorkspaceFileSummary';
-import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErrorAlert';
-import WorkspaceResultDownload from '../../components/Workspace/display/WorkspaceResultDownload';
-import PreviewImageBox from '../../components/Workspace/display/PreviewImageBox';
-import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
+import UploadDropzone from '../../components/Upload/UploadDropzone';
 import { useWorkspaceFile } from '../../hooks/workspace/useWorkspaceFile';
 import { generateSafeFilename } from '../../utils/file/fileUtils';
 
 /**
  * Builds a centered aspect crop in percent units.
- * @param {number} mediaWidth
- * @param {number} mediaHeight
- * @param {number} aspect
- * @returns {import('react-image-crop').Crop}
  */
 function centerAspectCrop(mediaWidth, mediaHeight, aspect) {
   return centerCrop(
@@ -31,10 +18,6 @@ function centerAspectCrop(mediaWidth, mediaHeight, aspect) {
 
 /**
  * Safely creates a centered default crop (free or aspect-locked).
- * @param {number} width
- * @param {number} height
- * @param {number|null} aspect
- * @returns {import('react-image-crop').Crop}
  */
 function buildDefaultCrop(width, height, aspect) {
   if (width <= 0 || height <= 0) {
@@ -70,7 +53,6 @@ export default function CropImage() {
   const {
     file,
     previewUrl,
-    resultBlob,
     setResultBlob,
     resultUrl,
     setResultUrl,
@@ -81,57 +63,51 @@ export default function CropImage() {
     cleanupResult,
   } = useWorkspaceFile(fileInputRef);
 
-  /**
-   * Handles image load and initializes crop box.
-   * @param {React.SyntheticEvent<HTMLImageElement>} e
-   */
-function onImageLoad(e) {
+  const handleFileSelectWrapper = useCallback((selectedFile) => {
+    if (selectedFile) {
+        onFileChange({ target: { files: [selectedFile] } });
+    }
+  }, [onFileChange]);
+
+  const onImageLoad = useCallback((e) => {
     const img = e.currentTarget;
-    const naturalWidth = img.naturalWidth || 0;
-    const naturalHeight = img.naturalHeight || 0;
-    setImageSize({ width: naturalWidth, height: naturalHeight });
-
-    const displayWidth = img.width || 0;
-    const displayHeight = img.height || 0;
-
-    const defaultCrop = buildDefaultCrop(displayWidth, displayHeight, aspect);
-    setCrop(defaultCrop);
-
-    // Set the initial completed crop right away
-    setCompletedCrop({
-      unit: 'px',
-      x: (defaultCrop.x * displayWidth) / 100,
-      y: (defaultCrop.y * displayHeight) / 100,
-      width: (defaultCrop.width * displayWidth) / 100,
-      height: (defaultCrop.height * displayHeight) / 100,
+    setImageSize({ 
+      width: img.naturalWidth || 0, 
+      height: img.naturalHeight || 0 
     });
-  }
+  }, []);
 
-const applyAspect = useCallback(
+  // Recalculates the crop box coordinates *after* the browser physically scales the image
+  useEffect(() => {
+    if (imgRef.current && imageSize.width > 0 && imageSize.height > 0) {
+      const timer = setTimeout(() => {
+        if (!imgRef.current) return;
+        const displayWidth = imgRef.current.width || 0;
+        const displayHeight = imgRef.current.height || 0;
+        
+        const defaultCrop = buildDefaultCrop(displayWidth, displayHeight, aspect);
+        setCrop(defaultCrop);
+        
+        setCompletedCrop({
+          unit: 'px',
+          x: (defaultCrop.x * displayWidth) / 100,
+          y: (defaultCrop.y * displayHeight) / 100,
+          width: (defaultCrop.width * displayWidth) / 100,
+          height: (defaultCrop.height * displayHeight) / 100,
+        });
+      }, 50); 
+      return () => clearTimeout(timer);
+    }
+  }, [imageSize, aspect]);
+
+  const applyAspect = useCallback(
     (nextAspect) => {
-    setAspect(nextAspect);
-    cleanupResult();
-
-    if (!imgRef.current) return;
-
-    // Use the displayed dimensions of the image
-    const displayWidth = imgRef.current.width || 0;
-    const displayHeight = imgRef.current.height || 0;
-    
-    const nextCrop = buildDefaultCrop(displayWidth, displayHeight, nextAspect);
-    setCrop(nextCrop);
-    
-    // Calculate the actual pixel coordinates to keep the Apply button active
-    setCompletedCrop({
-        unit: 'px',
-        x: (nextCrop.x * displayWidth) / 100,
-        y: (nextCrop.y * displayHeight) / 100,
-        width: (nextCrop.width * displayWidth) / 100,
-        height: (nextCrop.height * displayHeight) / 100,
-    });
+      setAspect(nextAspect);
+      cleanupResult();
+      // Notice: The useEffect above automatically handles adjusting the bounding box
     },
     [cleanupResult]
-);
+  );
 
   const applyCrop = useCallback(async () => {
     if (!completedCrop || !imgRef.current || !file) return;
@@ -237,146 +213,196 @@ const applyAspect = useCallback(
     [file?.name]
   );
 
-  return (
-    <ToolPageWrapper>
-      <ToolWorkspaceShell
-        minHeight="min-h-96"
-        leftHeader={<ClientSideHeader />}
-        leftBody={
-          <div className="space-y-6">
-            {!file ? (
-              <UploadCard inputId="crop-file-input" inputRef={fileInputRef} onChange={onFileChange} />
-            ) : (
-              <WorkspaceFileSummary file={file} />
-            )}
+  const isFocusMode = Boolean(file && !error && !isProcessing && !resultUrl);
 
-            <div className={`space-y-6 transition-opacity duration-300 ${!file || resultUrl ? 'pointer-events-none opacity-40' : 'opacity-100'}`}>
-              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">Crop Options</label>
-                  {imageSize.width > 0 && imageSize.height > 0 && (
-                    <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md">
-                      Original: {imageSize.width} x {imageSize.height}
-                    </span>
-                  )}
-                </div>
+  const imageAspect = imageSize.width > 0 && imageSize.height > 0
+    ? (imageSize.width / imageSize.height).toFixed(4)
+    : 1;
 
-                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-3">
-                  Aspect Ratio Presets
-                </label>
+  const content = (() => {
+    if (!file) {
+      return (
+        <div className="bg-white/40 backdrop-blur-2xl p-2 rounded-2xl border border-white/50 shadow-xl shadow-slate-900/5 max-w-2xl mx-auto">
+          <UploadDropzone onFileSelect={handleFileSelectWrapper} />
+          {/* Hidden input kept in sync for hook compatibility if needed */}
+          <input type="file" ref={fileInputRef} className="hidden" onChange={onFileChange} />
+        </div>
+      );
+    }
 
-                <div className="grid grid-cols-2 gap-2">
-                  {ASPECT_OPTIONS.map((option) => {
-                    const isSelected = aspect === option.value;
-                    return (
-                      <button
-                        key={option.label}
-                        onClick={() => applyAspect(option.value)}
-                        className={`px-3 py-2 rounded-lg border text-left transition-all ${
-                          isSelected
-                            ? 'bg-indigo-50 border-indigo-300 shadow-sm'
-                            : 'bg-slate-50 border-slate-200 hover:bg-white hover:border-indigo-200 hover:shadow-sm'
-                        }`}
-                      >
-                        <span className={`text-xs font-bold ${isSelected ? 'text-indigo-700' : 'text-slate-700'}`}>
-                          {option.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            <WorkspaceErrorAlert error={error} />
+    if (error) {
+      return (
+        <div className="bg-white/50 backdrop-blur-2xl p-8 rounded-2xl shadow-xl border border-rose-100/60 max-w-2xl mx-auto text-center flex flex-col items-center">
+          <div className="w-16 h-16 bg-rose-100 text-rose-500 rounded-full flex items-center justify-center mb-4 shadow-sm border border-rose-200">
+             <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+             </svg>
           </div>
-        }
-        leftFooter={
-          <WorkspaceActionRow
-            primaryLabel={isProcessing ? 'Cropping...' : 'Apply Crop'}
-            secondaryLabel="Reset"
-            onPrimaryClick={applyCrop}
-            onSecondaryClick={handleReset}
-            primaryDisabled={!canApply}
-          />
-        }
-        rightHeader={
-          <div className="flex items-center justify-between w-full">
-            <h3 className="text-sm font-medium text-slate-700">Crop Workspace</h3>
+          <h3 className="text-2xl font-black text-slate-800 mb-2">Something went wrong</h3>
+          <p className="text-rose-600 font-medium mb-6">{error}</p>
+          <button onClick={handleReset} className="px-8 py-3 text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-colors shadow-sm">
+             Try Again
+          </button>
+        </div>
+      );
+    }
+
+    if (isProcessing) {
+      return (
+        <div className="bg-white/40 backdrop-blur-2xl p-12 rounded-2xl border border-white/50 shadow-xl shadow-slate-900/5 max-w-md mx-auto flex flex-col items-center justify-center">
+          <div className="w-12 h-12 border-4 border-slate-300 border-t-indigo-600 rounded-full animate-spin mb-4"></div>
+          <p className="text-slate-600 font-bold animate-pulse">Applying precision crop...</p>
+        </div>
+      );
+    }
+
+    if (resultUrl) {
+      return (
+        <div className="bg-white/50 backdrop-blur-2xl p-8 rounded-2xl shadow-xl border border-indigo-100/60 max-w-2xl mx-auto text-center flex flex-col items-center">
+          <div className="w-16 h-16 bg-indigo-100 text-indigo-500 rounded-full flex items-center justify-center mb-4 shadow-sm border border-indigo-200">
+            <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          <h3 className="text-2xl font-black text-slate-800 mb-2">Crop Successful!</h3>
+          <p className="text-slate-600 font-medium mb-6">Your image has been perfectly cropped and is ready to use.</p>
+
+          <div className="bg-white/50 rounded-xl p-2 border border-white/40 mb-8 w-full max-w-sm h-48 flex justify-center shadow-inner">
+            <img src={resultUrl} alt="Cropped result" className="h-full w-auto object-contain rounded-lg" />
+          </div>
+
+          <div className="flex gap-3 mt-6 pt-4 border-t border-slate-200/50 w-full sm:w-auto">
+            <button
+              onClick={handleReset}
+              className="flex-1 py-3 px-6 text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-colors shadow-sm"
+            >
+              Crop Another
+            </button>
+            <a
+              href={resultUrl}
+              download={downloadName}
+              className="flex-2 flex justify-center items-center py-3 px-8 text-sm font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-500 transition-all shadow-md"
+            >
+              Download Image
+            </a>
+          </div>
+        </div>
+      );
+    }
+
+    // FOCUS MODE
+    return (
+      <div 
+        className="bg-[#0f172a] rounded-2xl shadow-2xl border border-slate-800 flex flex-col w-full max-w-6xl mx-auto overflow-hidden relative text-left"
+        style={{ height: 'calc(100vh - 60px)', minHeight: '600px' }}
+      >
+        {/* Header Strip */}
+        <div className="flex-none flex items-center justify-between px-6 py-4 bg-slate-900 border-b border-slate-800 shadow-sm z-10">
+          <div className="flex items-center gap-4">
+            <h2 className="text-white font-bold text-lg">Focus Crop</h2>
             {cropSizeLabel && (
-              <span className="px-2.5 py-1 rounded-md bg-indigo-100 text-indigo-700 text-[10px] font-black tracking-wider uppercase border border-indigo-200 shadow-sm">
+              <span className="hidden sm:inline-block px-2.5 py-1 rounded-md bg-slate-800 text-indigo-400 text-[10px] font-black tracking-wider uppercase border border-slate-700">
                 {cropSizeLabel}
               </span>
             )}
           </div>
-        }
-       rightBody={
-    <div className="absolute inset-2 flex flex-col bg-white rounded-xl">
-        <PreviewImageBox
-        previewUrl={null}
-        resultUrl={resultUrl}
-        resultAlt="Cropped result preview"
-        containerClassName="relative flex-1 min-h-0 w-full rounded-xl border border-slate-200 bg-white overflow-hidden"
-        >
-        {previewUrl && !resultUrl && (
-            <div className="absolute inset-0 p-2 sm:p-3 bg-white">
-            <div className="h-full w-full rounded-md border border-slate-200 bg-white overflow-hidden">
-                
-                <style>{`
-                  /* 1. Stop the marching ants jiggle */
-                  .ReactCrop__crop-selection {
-                    animation: none !important;
-                    background-image: none !important;
-                    border: 2px solid white !important;
-                    box-shadow: 0 0 5px rgba(0,0,0,0.3) !important;
-                  }
-                  
-                  /* 2. Hide the unnecessary middle edge boxes */
-                  .ReactCrop__drag-handle.ord-n,
-                  .ReactCrop__drag-handle.ord-e,
-                  .ReactCrop__drag-handle.ord-s,
-                  .ReactCrop__drag-handle.ord-w {
-                    display: none !important;
-                  }
-                `}</style>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={handleReset}
+              className="text-sm font-bold text-slate-400 hover:text-white transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={applyCrop}
+              disabled={!canApply}
+              className="px-6 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+            >
+              Apply Crop
+            </button>
+          </div>
+        </div>
 
-                <ReactCrop
-                  crop={crop}
-                  onChange={(nextCrop) => {
-                    setCrop(nextCrop);
-                    cleanupResult();
-                  }}
-                  onComplete={(nextCompletedCrop) => setCompletedCrop(nextCompletedCrop)}
-                  aspect={aspect || undefined}
-                  className="h-full w-full"
+        {/* Workspace Center Area */}
+        <div className="flex-1 min-h-0 w-full relative flex items-center justify-center p-4 sm:p-8 bg-slate-950/50 overflow-hidden">
+          <style>{`
+            .ReactCrop__crop-selection {
+              animation: none !important;
+              background-image: none !important;
+              border: 2px solid white !important;
+              box-shadow: 0 0 5px rgba(0,0,0,0.5) !important;
+            }
+            .ReactCrop__drag-handle.ord-n,
+            .ReactCrop__drag-handle.ord-e,
+            .ReactCrop__drag-handle.ord-s,
+            .ReactCrop__drag-handle.ord-w {
+              display: none !important;
+            }
+          `}</style>
+
+          <ReactCrop
+            crop={crop}
+            onChange={(nextCrop) => {
+              setCrop(nextCrop);
+              cleanupResult();
+            }}
+            onComplete={(nextCompletedCrop) => setCompletedCrop(nextCompletedCrop)}
+            aspect={aspect || undefined}
+            className="max-h-full max-w-full flex items-center justify-center"
+            style={{ margin: 'auto' }}
+          >
+            <img
+              ref={imgRef}
+              alt="Crop preview"
+              src={previewUrl}
+              onLoad={onImageLoad}
+              className="block"
+              style={{
+                /* Scaler algorithm: Forces element up to 100vh bound without distorting, keeping handles perfectly tight */
+                width: imageSize.width > 0 ? `calc(max(100vh - 280px, 300px) * ${imageAspect})` : 'auto',
+                maxWidth: '100%',
+                height: 'auto',
+                maxHeight: 'calc(100vh - 280px)',
+              }}
+            />
+          </ReactCrop>
+        </div>
+
+        {/* Footer Presets Strip */}
+        <div className="flex-none bg-slate-900 border-t border-slate-800 p-4 sm:p-5 overflow-x-auto z-10">
+          <div className="flex items-center justify-center gap-2 sm:gap-3 min-w-max mx-auto px-2">
+            {ASPECT_OPTIONS.map((option) => {
+              const isSelected = aspect === option.value;
+              return (
+                <button
+                  key={option.label}
+                  onClick={() => applyAspect(option.value)}
+                  className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all ${
+                    isSelected
+                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/50 scale-105'
+                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white border border-slate-700/50'
+                  }`}
                 >
-                  <img
-                    ref={imgRef}
-                    alt="Crop preview"
-                    src={previewUrl}
-                    onLoad={onImageLoad}
-                    className="block h-full w-full object-contain"
-                  />
-                </ReactCrop>
-              </div>
-            </div>
-        )}
-        </PreviewImageBox>
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  })();
 
-    <AnimatePresence>
-      {resultUrl && (
-        <WorkspaceResultDownload
-          resultUrl={resultUrl}
-          resultBlob={resultBlob}
-          originalFile={file}
-          downloadName={downloadName}
-          downloadLabel="Download Cropped Image"
-        />
-      )}
-    </AnimatePresence>
-  </div>
-}
-      />
-    </ToolPageWrapper>
+  return (
+    <div className="w-full">
+      <section 
+        className={isFocusMode 
+          ? "w-full mx-auto px-4 sm:px-6 pt-4 pb-6 relative z-10" 
+          : "max-w-6xl mx-auto px-6 pt-4 pb-16 text-center relative z-10"
+        }
+      >
+        <div>{content}</div>
+      </section>
+    </div>
   );
 }
