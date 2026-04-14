@@ -67,7 +67,7 @@ export function usePipeline(setProgress, usePipelineActions, feature = 'upscale'
   };
 
   const handleCancel = async () => {
-    await clearAppSession(previewUrl, feature);
+    await clearAppSession(feature, previewUrl);
     setSelectedFile(null);
     setPreviewUrl(null);
     setResultUrl(null);

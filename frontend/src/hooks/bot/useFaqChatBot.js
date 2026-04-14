@@ -96,13 +96,14 @@ export function useFaqChatBot() {
     setIsTyping(false);
     setShowAnswer(false);
 
-    if (view === 'answer' && query.trim()) {
-      setView('search');
-      return;
-    }
-
     if (view === 'answer') {
-      setView('category');
+      if (query.trim()) {
+        setView('search');
+      } else if (activeCategory) {
+        setView('category');
+      } else {
+        setView('home'); // <-- FIX: Routes to home if opened from Quick Action
+      }
       return;
     }
 

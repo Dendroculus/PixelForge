@@ -34,7 +34,7 @@ export function useSessionPersistence({
         const savedResult = localStorage.getItem(storageKeys.RESULT_URL);
 
         if (!savedResult && isExpired(uploadTimestamp, config.UPLOAD_DRAFT_EXPIRATION_TIME)) {
-          await clearAppSession(null, feature);
+          await clearAppSession(feature);
           setSelectedFile(null);
           setPreviewUrl(null);
           setResultUrl(null);
@@ -50,7 +50,7 @@ export function useSessionPersistence({
 
         if (savedResult) {
           if (isExpired(savedTimestamp, config.RESULT_EXPIRATION_TIME)) {
-            await clearAppSession(null, feature);
+            await clearAppSession(feature);
             setSelectedFile(null);
             setPreviewUrl(null);
 
@@ -115,7 +115,7 @@ export function useSessionPersistence({
         const savedTimestamp = localStorage.getItem(storageKeys.RESULT_TIMESTAMP);
 
         if (isExpired(savedTimestamp, config.RESULT_EXPIRATION_TIME)) {
-          await clearAppSession(previewUrl, feature);
+          await clearAppSession(feature, previewUrl);
           setSelectedFile(null);
           setPreviewUrl(null);
           setResultUrl(null);
@@ -144,7 +144,7 @@ export function useSessionPersistence({
         const uploadTimestamp = localStorage.getItem(storageKeys.UPLOAD_TIMESTAMP);
 
         if (isExpired(uploadTimestamp, config.UPLOAD_DRAFT_EXPIRATION_TIME)) {
-          await clearAppSession(previewUrl, feature);
+          await clearAppSession(feature, previewUrl);
           setSelectedFile(null);
           setPreviewUrl(null);
           setResultUrl(null);

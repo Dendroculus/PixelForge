@@ -9,7 +9,7 @@ import { makeStorageKeys } from './storageKeys';
  * @param {string} feature - The feature namespace to clear (e.g., 'upscale' or 'rembg')
  * @returns {Promise<void>}
  */
-export const clearAppSession = async (previewUrl = null, feature) => {
+export const clearAppSession = async (feature, previewUrl = null) => {
   if (!feature) {
     console.warn('clearAppSession called without feature parameter. Session clear aborted to prevent global data loss.');
     return;

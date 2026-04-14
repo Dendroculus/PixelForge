@@ -2,7 +2,7 @@ const apiUrl =
   import.meta.env.VITE_API_BASE_URL ||
   (import.meta.env.DEV ? 'http://127.0.0.1:8000/api' : '');
 
-const DEBUG_API = import.meta.env.DEV && false;
+const DEBUG_API = import.meta.env.DEV && import.meta.env.VITE_DEBUG_API === 'true';
 const debugLog = (...args) => {
   if (DEBUG_API) console.log(...args);
 };
