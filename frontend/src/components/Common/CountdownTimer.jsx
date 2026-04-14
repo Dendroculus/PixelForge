@@ -3,6 +3,11 @@ import PropTypes from 'prop-types';
 
 export default function CountdownTimer({ targetTimestamp, onExpire, isWarning = false }) {
   const hasExpiredRef = useRef(false);
+  const onExpireRef = useRef(onExpire);
+
+  useEffect(() => {
+    onExpireRef.current = onExpire;
+  }, [onExpire]);
 
   const [timeLeft, setTimeLeft] = useState(() => Math.max(0, targetTimestamp - Date.now()));
 
@@ -15,7 +20,7 @@ export default function CountdownTimer({ targetTimestamp, onExpire, isWarning = 
 
       if (next <= 0 && !hasExpiredRef.current) {
         hasExpiredRef.current = true;
-        onExpire?.();
+        onExpireRef.current?.(); 
       }
     };
 
@@ -23,7 +28,7 @@ export default function CountdownTimer({ targetTimestamp, onExpire, isWarning = 
     tick();
 
     return () => clearInterval(interval);
-  }, [targetTimestamp, onExpire]);
+  }, [targetTimestamp]); 
 
   if (timeLeft <= 0) {
     return <span className="font-bold text-rose-500">Expired</span>;

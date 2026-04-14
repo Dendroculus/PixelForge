@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { validateImageUpload } from '../../utils/file/fileValidation';
 
+const AcceptableImageMimeTypes = '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp';
+
 export default function UploadCard({
   inputId,
   inputRef,
   onChange,
   onValidationError,
   helperText,
-  accept = '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp',
+  accept = AcceptableImageMimeTypes,
   className = '',
   heightClass = 'h-36',
   validate = true,
@@ -77,7 +79,6 @@ export default function UploadCard({
 
       onChange?.(syntheticEvent);
     },
-    // Added maxSizeMB here:
     [validate, onChange, onValidationError, inputRef, clearLocalError, setErrorWithTimer, maxSizeMB]
   );
 
@@ -98,6 +99,7 @@ export default function UploadCard({
   return (
     <label
       htmlFor={inputId}
+      aria-label={localError ? localError : 'Upload image file'}
       className={`group relative flex w-full ${heightClass} flex-col items-center justify-center rounded-2xl border-2 border-dashed shadow-sm transition-all cursor-pointer hover:shadow-md ${cardStateClass} ${className}`}
     >
       <div className="flex flex-col items-center justify-center px-4 pt-5 pb-6 text-center">
