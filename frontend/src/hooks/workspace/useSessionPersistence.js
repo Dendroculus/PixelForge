@@ -25,7 +25,15 @@ export function useSessionPersistence({
     if (sessionRestored.current) return;
     sessionRestored.current = true;
 
-    const restoreSession = async () => {
+   const restoreSession = async () => {
+      const resetState = () => {
+        setSelectedFile(null);
+        setPreviewUrl(null);
+        setResultUrl(null);
+        setJobId(null);
+        setIsProcessing(false);
+      };
+
       try {
         const savedFile = await loadFileFromIDB(feature);
         if (!savedFile) return;
@@ -35,11 +43,7 @@ export function useSessionPersistence({
 
         if (!savedResult && isExpired(uploadTimestamp, config.UPLOAD_DRAFT_EXPIRATION_TIME)) {
           await clearAppSession(feature);
-          setSelectedFile(null);
-          setPreviewUrl(null);
-          setResultUrl(null);
-          setJobId(null);
-          setIsProcessing(false);
+          resetState();
           return;
         }
 
@@ -48,17 +52,18 @@ export function useSessionPersistence({
 
         const savedTimestamp = localStorage.getItem(storageKeys.RESULT_TIMESTAMP);
 
+        // Flattened this branch to reduce nesting/cognitive complexity
+        if (savedResult && isExpired(savedTimestamp, config.RESULT_EXPIRATION_TIME)) {
+          await clearAppSession(feature);
+          setSelectedFile(null);
+          setPreviewUrl(null);
+
+          localStorage.setItem(storageKeys.ALERT, 'expired');
+          setAppAlert({ show: true, type: 'expired' });
+          return;
+        }
+
         if (savedResult) {
-          if (isExpired(savedTimestamp, config.RESULT_EXPIRATION_TIME)) {
-            await clearAppSession(feature);
-            setSelectedFile(null);
-            setPreviewUrl(null);
-
-            localStorage.setItem(storageKeys.ALERT, 'expired');
-            setAppAlert({ show: true, type: 'expired' });
-            return;
-          }
-
           setResultUrl(savedResult);
           setIsProcessing(false);
           localStorage.removeItem(storageKeys.IS_PROCESSING);
@@ -83,18 +88,18 @@ export function useSessionPersistence({
             setAppAlert({ show: true, type: 'potato' });
           }
 
+          setIsProcessing(true);
           if (savedJobId) {
-            setIsProcessing(true);
             pollForResult(savedJobId);
           } else {
-            setIsProcessing(true);
             handleUpscale(savedFile);
           }
-        } else {
-          setIsProcessing(false);
-          localStorage.removeItem(storageKeys.IS_PROCESSING);
-          localStorage.removeItem(storageKeys.PROGRESS);
+          return;
         }
+
+        setIsProcessing(false);
+        localStorage.removeItem(storageKeys.IS_PROCESSING);
+        localStorage.removeItem(storageKeys.PROGRESS);
       } catch (error) {
         console.error('Session restoration failed:', error);
       }

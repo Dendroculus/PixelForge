@@ -3,11 +3,11 @@ import { IMAGES as img } from '../../config';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
-export default function Header({ 
-  badgeText = "The Open-Source Image Studio", 
-  titlePrefix = "What would you like to", 
-  words = ["transform.", "enhance.", "edit.", "optimize."], 
-  subtitle = "" 
+export default function Header({
+  badgeText = "The Open-Source Image Studio",
+  titlePrefix = "What would you like to",
+  words = ["transform.", "enhance.", "edit.", "optimize."],
+  subtitle = ""
 }) {
   const [index, setIndex] = useState(0);
   const [isFading, setIsFading] = useState(false);
@@ -15,30 +15,38 @@ export default function Header({
   useEffect(() => {
     if (!words || words.length <= 1) return;
 
-    const interval = setInterval(() => {
+    let fadeTimeout;
+
+    const advanceWord = () => {
+      setIndex(getNextIndex);
+      setIsFading(false);
+    };
+
+    const getNextIndex = (prev) => (prev + 1) % words.length;
+
+    const startFadeCycle = () => {
       setIsFading(true);
-      
-      setTimeout(() => {
-        setIndex((prev) => (prev + 1) % words.length);
-        setIsFading(false);
-      }, 300); 
+      fadeTimeout = setTimeout(advanceWord, 300);
+    };
 
-    }, 3000);
+    const interval = setInterval(startFadeCycle, 3000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      clearTimeout(fadeTimeout);
+    };
   }, [words]);
 
   const displayWord = words && words.length > 0 ? words[index] : '';
 
   return (
     <header className="w-full flex flex-col items-center pt-2 px-4 mb-6">
-      
       <Link to="/" className="group mb-5 relative">
         <div className="absolute inset-0 bg-white/20 rounded-full blur-xl group-hover:blur-2xl transition-all duration-700"></div>
-        <img 
-          src={img.darkLogo} 
-          alt="Pixel Forge" 
-          className="relative h-10 sm:h-12 w-auto object-contain transform transition-transform duration-500 group-hover:-translate-y-1 group-hover:scale-105" 
+        <img
+          src={img.darkLogo}
+          alt="Pixel Forge"
+          className="relative h-10 sm:h-12 w-auto object-contain transform transition-transform duration-500 group-hover:-translate-y-1 group-hover:scale-105"
         />
       </Link>
 
@@ -54,7 +62,7 @@ export default function Header({
 
       <h1 className="text-4xl sm:text-5xl md:text-6xl font-black text-slate-900 tracking-tighter text-center leading-[1.1] mb-4">
         {titlePrefix} <br />
-        <span 
+        <span
           className={`inline-block pb-2 text-transparent bg-clip-text bg-linear-to-r from-indigo-500 via-purple-500 to-fuchsia-500 transition-all duration-300 ease-in-out ${
             isFading ? 'opacity-0 translate-y-4 blur-sm' : 'opacity-100 translate-y-0 blur-0'
           }`}
@@ -68,7 +76,6 @@ export default function Header({
           {subtitle}
         </p>
       )}
-
     </header>
   );
 }
