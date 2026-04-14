@@ -1,11 +1,6 @@
 import { motion } from 'framer-motion';
 import EmptyWorkspaceState from '../../Common/EmptyWorkspaceState';
 
-/**
- * Reusable component for displaying image previews and results within tool workspaces.
- * @param {Object} props
- * @returns {JSX.Element}
- */
 export default function PreviewImageBox({
   previewUrl,
   resultUrl,
@@ -19,33 +14,43 @@ export default function PreviewImageBox({
   containerRef,
   children,
 }) {
+  let mediaContent = null;
+
+  if (resultUrl) {
+    mediaContent = (
+      <motion.img
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        src={resultUrl}
+        alt={resultAlt}
+        className="absolute inset-0 w-full h-full object-contain p-2"
+      />
+    );
+  } else if (previewUrl) {
+    mediaContent = (
+      <motion.img
+        ref={imageRef}
+        onLoad={onImageLoad}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        src={previewUrl}
+        alt="Original preview"
+        className={`absolute inset-0 w-full h-full object-contain p-2 ${
+          isProcessing ? processingClassName : previewClassName
+        }`}
+      />
+    );
+  } else {
+    mediaContent = (
+      <div className="absolute inset-0 flex items-center justify-center">
+        <EmptyWorkspaceState />
+      </div>
+    );
+  }
+
   return (
     <div ref={containerRef} className={containerClassName}>
-      {resultUrl ? (
-        <motion.img
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          src={resultUrl}
-          alt={resultAlt}
-          className="absolute inset-0 w-full h-full object-contain p-2"
-        />
-      ) : previewUrl ? (
-        <motion.img
-          ref={imageRef}
-          onLoad={onImageLoad}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          src={previewUrl}
-          alt="Original preview"
-          className={`absolute inset-0 w-full h-full object-contain p-2 ${
-            isProcessing ? processingClassName : previewClassName
-          }`}
-        />
-      ) : (
-        <div className="absolute inset-0 flex items-center justify-center">
-          <EmptyWorkspaceState />
-        </div>
-      )}
+      {mediaContent}
       {children}
     </div>
   );

@@ -43,6 +43,42 @@ export default function AiFeatureWorkspace({
   const showLimitCard = !selectedFile && !isProcessing && !jobId && !isLoading && usesRemaining <= 0;
   const showLoadingCard = !selectedFile && !isProcessing && !jobId && isLoading;
 
+  let rightPanelContent = null;
+
+  if (selectedFile) {
+    if (resultUrl) {
+      rightPanelContent = (
+        <div className={resultContainerClassName}>
+          <ResultViewer
+            originalImage={previewUrl}
+            processedImage={resultUrl}
+            onImageLoad={() => setIsResultLoaded(true)}
+            resultLabel={RESULT_LABELS[featureName] ?? 'Processed'}
+          />
+        </div>
+      );
+    } else {
+      rightPanelContent = (
+        <img
+          src={previewUrl}
+          alt="Upload preview"
+          className={previewImageClassName}
+        />
+      );
+    }
+  } else {
+    rightPanelContent = emptyState || (
+      <div className="text-center px-4">
+        <div className="w-16 h-16 rounded-full bg-white/50 flex items-center justify-center mx-auto mb-3 shadow-sm border border-white">
+          <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+        <p className="text-sm font-medium text-slate-400">Workspace is empty</p>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full">
       <section className="flex-1 w-full max-w-6xl mx-auto px-4 pt-6 pb-16">
@@ -92,7 +128,6 @@ export default function AiFeatureWorkspace({
 
                         <div className="bg-white/60 rounded-2xl p-4 border border-white shadow-sm">
                           {leftControls}
-
                           <ResultActions
                             resultUrl={resultUrl}
                             selectedFile={selectedFile}
@@ -107,37 +142,10 @@ export default function AiFeatureWorkspace({
                 )}
               </div>
             }
+            
             rightPanel={
               <div className={rightPanelClassName}>
-                {selectedFile ? (
-                  resultUrl ? (
-                    <div className={resultContainerClassName}>
-                      <ResultViewer
-                        originalImage={previewUrl}
-                        processedImage={resultUrl}
-                        onImageLoad={() => setIsResultLoaded(true)}
-                        resultLabel={RESULT_LABELS[featureName] ?? 'Processed'}
-                      />
-                    </div>
-                  ) : (
-                    <img
-                      src={previewUrl}
-                      alt="Upload preview"
-                      className={previewImageClassName}
-                    />
-                  )
-                ) : (
-                  emptyState || (
-                    <div className="text-center px-4">
-                      <div className="w-16 h-16 rounded-full bg-white/50 flex items-center justify-center mx-auto mb-3 shadow-sm border border-white">
-                        <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <p className="text-sm font-medium text-slate-400">Workspace is empty</p>
-                    </div>
-                  )
-                )}
+                {rightPanelContent}
               </div>
             }
           />

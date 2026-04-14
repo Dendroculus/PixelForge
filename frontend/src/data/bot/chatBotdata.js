@@ -39,7 +39,7 @@ export const FAQ_DATA = [
       },
       {
         q: 'What is the max upload size?',
-        a: 'Current upload limit is 10MB per image.'
+        a: 'Current upload limit is 10MB per image. With the exception of image compressor is 15MB.'
       }
     ]
   },
