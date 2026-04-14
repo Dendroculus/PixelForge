@@ -57,8 +57,10 @@ export function useUsageLimit(feature = 'upscale') {
 
   const recordUsage = useCallback(() => {
     setUsesRemaining((prev) => Math.max(0, prev - 1));
-    void refreshUsage();
-  }, [refreshUsage]);
+    refreshUsage().catch((err) => {
+      console.error(`Failed to refresh usage data for ${feature}:`, err);
+    });
+  }, [refreshUsage, feature]);
 
   const forceMaxLimit = useCallback(() => {
     setUsesRemaining(0);

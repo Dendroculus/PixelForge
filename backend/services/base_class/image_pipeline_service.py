@@ -84,6 +84,9 @@ class ImagePipelineService:
         if len(result_bytes) > self.max_file_size_bytes:
             raise ValueError("Output exceeds maximum size.")
 
+    # NOTE: Hook remains async by design.
+    # `run()` awaits preprocess_input/postprocess_output for a uniform pipeline contract.
+    # Base implementation may be sync-like (no internal await), but subclasses can perform real async I/O.
     async def preprocess_input(self, raw_bytes: bytes, **kwargs) -> io.BytesIO:
         stream = io.BytesIO(raw_bytes)
         stream.seek(0)
