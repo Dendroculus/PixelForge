@@ -42,7 +42,7 @@ export function usePipeline(setProgress, usePipelineActions, feature = 'upscale'
     setSelectedFile, setPreviewUrl, setResultUrl, setIsProcessing, setJobId,
     setAppAlert, appAlert, pollForResult,
     handleUpscale: (...args) => {
-      void handleProcess(...args).catch((err) => {
+      handleProcess(...args).catch((err) => {
         console.error(`Pipeline execution error: ${err}`);
       });
     },

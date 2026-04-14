@@ -190,12 +190,14 @@ export default function ColorPalette() {
 
     let rafId = null;
 
+    const runMoveInFrame = (ev) => {
+      movePointFromClient(id, ev.clientX, ev.clientY);
+      rafId = null;
+    };
+
     const onMove = (ev) => {
       if (rafId) return;
-      rafId = requestAnimationFrame(() => {
-        movePointFromClient(id, ev.clientX, ev.clientY);
-        rafId = null;
-      });
+      rafId = requestAnimationFrame(() => runMoveInFrame(ev));
     };
 
     const onUp = () => {
