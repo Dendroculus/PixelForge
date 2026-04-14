@@ -114,7 +114,7 @@ export default function AiFeatureWorkspace({
                     <div className={resultContainerClassName}>
                       <ResultViewer
                         originalImage={previewUrl}
-                        upscaledImage={resultUrl}
+                        processedImage={resultUrl}
                         onImageLoad={() => setIsResultLoaded(true)}
                         resultLabel={RESULT_LABELS[featureName] ?? 'Processed'}
                       />
