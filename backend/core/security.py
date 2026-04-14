@@ -59,18 +59,18 @@ def _process_image_cpu(file_bytes: bytes) -> Tuple[str, str, bytes]:
         return job_id, safe_filename, output_stream.getvalue()
     except HTTPException:
         raise
-    except UnidentifiedImageError:
+    except UnidentifiedImageError as e:
         logger.warning("Unidentified image format. Possible malicious polyglot attempt.")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid image data."
-        )
+        ) from e
     except Exception as e:
         logger.error(f"Image processing failed: {e}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Image processing failed due to file corruption or invalid data."
-        )
+        ) from e
 
 
 async def process_and_sanitize_image(file: UploadFile) -> Tuple[str, str, io.BytesIO]:
@@ -280,4 +280,4 @@ def _load_and_validate_structure(file_bytes: bytes) -> Tuple[Image.Image, str]:
     except Exception as e:
         if isinstance(e, HTTPException):
             raise e
-        raise HTTPException(status_code=400, detail="Invalid image data.")
+        raise HTTPException(status_code=400, detail="Invalid image data.") from e

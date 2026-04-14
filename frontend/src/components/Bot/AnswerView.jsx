@@ -6,6 +6,37 @@ import TypingDots from './TypingDots';
  * Renders answer conversation view.
  */
 export default function AnswerView({ img, activeQuestion, isTyping, showAnswer, handleBack }) {
+  let responseContent = null;
+
+  if (isTyping) {
+    responseContent = (
+      <motion.div
+        key="typing"
+        initial={{ opacity: 0, scale: 0.92, y: 8 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.94, y: -4 }}
+        transition={{ duration: 0.18 }}
+        className="rounded-2xl rounded-tl-sm px-4 py-3"
+        style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.8)' }}
+      >
+        <TypingDots />
+      </motion.div>
+    );
+  } else if (showAnswer) {
+    responseContent = (
+      <motion.div
+        key="answer"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+        className="max-w-[88%] rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed text-slate-700"
+        style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.8)' }}
+      >
+        {activeQuestion.a}
+      </motion.div>
+    );
+  }
+
   return (
     <div className="space-y-3 pt-1">
       <BackButton onClick={handleBack} />
@@ -21,32 +52,7 @@ export default function AnswerView({ img, activeQuestion, isTyping, showAnswer, 
 
       <div className="flex items-start gap-2.5">
         <img src={img.chatbotIcon} alt="Assistant" className="w-7 h-7 rounded-full object-cover mt-0.5" />
-        <AnimatePresence mode="wait">
-          {isTyping ? (
-            <motion.div
-              key="typing"
-              initial={{ opacity: 0, scale: 0.92, y: 8 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.94, y: -4 }}
-              transition={{ duration: 0.18 }}
-              className="rounded-2xl rounded-tl-sm px-4 py-3"
-              style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.8)' }}
-            >
-              <TypingDots />
-            </motion.div>
-          ) : showAnswer ? (
-            <motion.div
-              key="answer"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className="max-w-[88%] rounded-2xl rounded-tl-sm px-4 py-3 text-sm leading-relaxed text-slate-700"
-              style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(255,255,255,0.8)' }}
-            >
-              {activeQuestion.a}
-            </motion.div>
-          ) : null}
-        </AnimatePresence>
+        <AnimatePresence mode="wait">{responseContent}</AnimatePresence>
       </div>
     </div>
   );
