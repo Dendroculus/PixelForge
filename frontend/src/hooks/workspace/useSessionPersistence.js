@@ -36,12 +36,21 @@ export function useSessionPersistence({
 
       try {
         const savedFile = await loadFileFromIDB(feature);
-        if (!savedFile) return;
-
+        
         const uploadTimestamp = localStorage.getItem(storageKeys.UPLOAD_TIMESTAMP);
         const savedResult = localStorage.getItem(storageKeys.RESULT_URL);
+        const savedJobId = localStorage.getItem(storageKeys.JOB_ID);
+        const storedAlert = localStorage.getItem(storageKeys.ALERT);
 
-        if (!savedResult && isExpired(uploadTimestamp, config.UPLOAD_DRAFT_EXPIRATION_TIME)) {
+        if (!savedFile) {
+          if (uploadTimestamp || savedResult || savedJobId || storedAlert) {
+            await clearAppSession(feature);
+            localStorage.removeItem(storageKeys.ALERT);
+          }
+          return;
+        }
+
+        if (!savedResult && uploadTimestamp && isExpired(uploadTimestamp, config.UPLOAD_DRAFT_EXPIRATION_TIME)) {
           await clearAppSession(feature);
           resetState();
           return;
@@ -52,13 +61,10 @@ export function useSessionPersistence({
 
         const savedTimestamp = localStorage.getItem(storageKeys.RESULT_TIMESTAMP);
 
-        // Flattened this branch to reduce nesting/cognitive complexity
-        if (savedResult && isExpired(savedTimestamp, config.RESULT_EXPIRATION_TIME)) {
+        if (savedResult && savedTimestamp && isExpired(savedTimestamp, config.RESULT_EXPIRATION_TIME)) {
           await clearAppSession(feature);
           setSelectedFile(null);
           setPreviewUrl(null);
-
-          localStorage.setItem(storageKeys.ALERT, 'expired');
           setAppAlert({ show: true, type: 'expired' });
           return;
         }
@@ -69,13 +75,10 @@ export function useSessionPersistence({
           localStorage.removeItem(storageKeys.IS_PROCESSING);
           localStorage.removeItem(storageKeys.PROGRESS);
 
-          if (!appAlert.show) {
-            setAppAlert({ show: true, type: 'reserved_warning' });
-          }
+          setAppAlert({ show: true, type: 'reserved_warning' });
           return;
         }
 
-        const savedJobId = localStorage.getItem(storageKeys.JOB_ID);
         const isProcessingStored = localStorage.getItem(storageKeys.IS_PROCESSING) === 'true';
 
         if (savedJobId || isProcessingStored) {
@@ -115,29 +118,6 @@ export function useSessionPersistence({
   useEffect(() => {
     let interval;
 
-    if (resultUrl) {
-      interval = setInterval(async () => {
-        const savedTimestamp = localStorage.getItem(storageKeys.RESULT_TIMESTAMP);
-
-        if (isExpired(savedTimestamp, config.RESULT_EXPIRATION_TIME)) {
-          await clearAppSession(feature, previewUrl);
-          setSelectedFile(null);
-          setPreviewUrl(null);
-          setResultUrl(null);
-          setJobId(null);
-
-          localStorage.setItem(storageKeys.ALERT, 'expired');
-          setAppAlert({ show: true, type: 'expired' });
-        }
-      }, 5000);
-    }
-
-    return () => clearInterval(interval);
-  }, [resultUrl, previewUrl, setAppAlert, setJobId, setPreviewUrl, setResultUrl, setSelectedFile, storageKeys, feature]);
-
-  useEffect(() => {
-    let interval;
-
     const shouldWatchDraft =
       Boolean(previewUrl) &&
       !resultUrl &&
@@ -148,7 +128,7 @@ export function useSessionPersistence({
       interval = setInterval(async () => {
         const uploadTimestamp = localStorage.getItem(storageKeys.UPLOAD_TIMESTAMP);
 
-        if (isExpired(uploadTimestamp, config.UPLOAD_DRAFT_EXPIRATION_TIME)) {
+        if (uploadTimestamp && isExpired(uploadTimestamp, config.UPLOAD_DRAFT_EXPIRATION_TIME)) {
           await clearAppSession(feature, previewUrl);
           setSelectedFile(null);
           setPreviewUrl(null);
@@ -163,5 +143,22 @@ export function useSessionPersistence({
   }, [
     previewUrl, resultUrl, setIsProcessing, setJobId,
     setPreviewUrl, setResultUrl, setSelectedFile, storageKeys, feature
+  ]);
+
+  useEffect(() => {
+    if (appAlert.show && appAlert.type === 'expired') {
+      const performCleanup = async () => {
+        await clearAppSession(feature, previewUrl);
+        setSelectedFile(null);
+        setPreviewUrl(null);
+        setResultUrl(null);
+        setJobId(null);
+        setIsProcessing(false);
+      };
+      performCleanup();
+    }
+  }, [
+    appAlert.show, appAlert.type, feature, previewUrl, 
+    setSelectedFile, setPreviewUrl, setResultUrl, setJobId, setIsProcessing
   ]);
 }

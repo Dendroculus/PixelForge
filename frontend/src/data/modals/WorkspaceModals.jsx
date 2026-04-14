@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import LegalModal from '../../components/Common/LegalModal';
 import CountdownTimer from '../../components/Common/CountdownTimer';
@@ -6,6 +7,12 @@ import { makeStorageKeys } from '../../utils/storage/storageKeys';
 
 export default function WorkspaceModals({ appAlert, setAppAlert, featureName }) {
   const storageKeys = makeStorageKeys(featureName);
+
+  useEffect(() => {
+    if (appAlert.show) {
+      localStorage.removeItem(storageKeys.ALERT);
+    }
+  }, [appAlert.show, storageKeys.ALERT]);
 
   const closeAndClear = () => {
     setAppAlert({ show: false, type: null });
@@ -46,19 +53,22 @@ export default function WorkspaceModals({ appAlert, setAppAlert, featureName }) 
         onClose={() => setAppAlert({ show: false, type: null })}
         title="Session Restored 🔄"
       >
-        <div className="space-y-1.5 text-left">
-          <p className="font-semibold text-slate-800 text-base mb-2">We reserved your image!</p>
-          <p>Just letting you know that your {imageTypeName} image won't stay here forever.</p>
-          <p>
-            Please remember to download it before it expires in{' '}
-            <CountdownTimer
-              targetTimestamp={Number(localStorage.getItem(storageKeys.RESULT_TIMESTAMP)) + config.RESULT_EXPIRATION_TIME}
-              isWarning={true}
-              onExpire={() => setAppAlert({ show: true, type: 'expired' })}
-            />
-            {' '}minutes!
-          </p>
-        </div>
+        {/* FIX: Only render the timer if this specific modal is actually open */}
+        {appAlert.show && appAlert.type === 'reserved_warning' && (
+          <div className="space-y-1.5 text-left">
+            <p className="font-semibold text-slate-800 text-base mb-2">We reserved your image!</p>
+            <p>Just letting you know that your {imageTypeName} image won't stay here forever.</p>
+            <p>
+              Please remember to download it before it expires in{' '}
+              <CountdownTimer
+                targetTimestamp={Number(localStorage.getItem(storageKeys.RESULT_TIMESTAMP)) + config.RESULT_EXPIRATION_TIME}
+                isWarning={true}
+                onExpire={() => setAppAlert({ show: true, type: 'expired' })}
+              />
+              {' '}minutes!
+            </p>
+          </div>
+        )}
       </LegalModal>
 
       <LegalModal
