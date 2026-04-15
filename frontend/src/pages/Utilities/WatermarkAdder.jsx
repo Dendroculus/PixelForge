@@ -261,12 +261,6 @@ export default function WatermarkAdder() {
         ctx.font = `${fontStyle}${fontWeight}${nativeFontSize}px "${textWm.fontFamily}", sans-serif`;
         ctx.fillStyle = textWm.color;
         ctx.textBaseline = 'top';
-        ctx.shadowColor = 'rgba(0,0,0,0.45)';
-        ctx.shadowBlur = nativeFontSize * 0.08;
-        ctx.shadowOffsetX = nativeFontSize * 0.04;
-        ctx.shadowOffsetY = nativeFontSize * 0.04;
-
-        ctx.fillText(textWm.text, targetX, targetY);
 
         if (textWm.isUnderline) {
           const metrics = ctx.measureText(textWm.text || '');
@@ -274,6 +268,13 @@ export default function WatermarkAdder() {
           ctx.shadowColor = 'transparent';
           ctx.fillRect(targetX, targetY + nativeFontSize * 1.08, textW, Math.max(2, nativeFontSize * 0.06));
         }
+
+        ctx.shadowColor = 'rgba(0,0,0,0.45)';
+        ctx.shadowBlur = nativeFontSize * 0.08;
+        ctx.shadowOffsetX = nativeFontSize * 0.04;
+        ctx.shadowOffsetY = nativeFontSize * 0.04;
+        
+        ctx.fillText(textWm.text, targetX, targetY);
       } else if (activeTab === 'image' && imgWm.url) {
         const markImg = await loadImage(imgWm.url);
 
