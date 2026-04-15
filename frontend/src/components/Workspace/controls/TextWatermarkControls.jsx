@@ -27,7 +27,7 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
           value={textWm.text}
           onChange={(e) => setTextWm((prev) => ({ ...prev, text: e.target.value }))}
           placeholder="Enter watermark text&#10;Press Enter for new line"
-          className="custom-textarea-scroll min-h-[80px] w-full resize-y rounded-lg border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-700 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+          className="custom-textarea-scroll min-h-80px w-full resize-y rounded-lg border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-700 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
         />
       </div>
 

@@ -297,15 +297,13 @@ export default function ImageEditor() {
                 <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden">
                   <div className="relative h-full w-full">
                     
-                    {/* The base image rendering with standard CSS filters */}
                     <img
                       src={previewUrl}
-                      alt="Base Image"
+                      alt="Base Workspace"
                       className="absolute inset-0 h-full w-full object-contain pointer-events-none transition-all duration-150"
                       style={{ filter: cssFilterString }}
                     />
                     
-                    {/* CSS MASK WRAPPER: Limits all overlay effects to the exact shape of the image! */}
                     <div 
                       className="absolute inset-0 pointer-events-none transition-all duration-150"
                       style={{
