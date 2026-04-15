@@ -64,7 +64,6 @@ export default function WatermarkPreviewOverlay({
         isSelected ? 'border-indigo-400 bg-white/10' : 'border-transparent hover:border-indigo-300 hover:bg-white/10'
       }`}
       style={{
-        opacity: activeTab === 'text' ? textWm.opacity : imgWm.opacity,
         padding: 0,
         left: 0,
         top: 0,
@@ -80,7 +79,8 @@ export default function WatermarkPreviewOverlay({
           }}
           aria-label="Delete watermark"
           title="Delete watermark"
-          className="absolute -right-4 -top-4 z-70 inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 bg-white text-black shadow-md transition hover:bg-slate-100"        >
+          className="absolute -right-4 -top-4 z-70 inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 bg-white text-black shadow-md transition hover:bg-slate-100"
+        >
           <TrashIcon className='h-5 w-5'/>
         </button>
       )}
@@ -94,6 +94,8 @@ export default function WatermarkPreviewOverlay({
             fontWeight: textWm.isBold ? 'bold' : 'normal',
             fontStyle: textWm.isItalic ? 'italic' : 'normal',
             textDecoration: textWm.isUnderline ? 'underline' : 'none',
+            textDecorationSkipInk: 'none',
+            opacity: textWm.opacity,
             textShadow: '2px 2px 4px rgba(0,0,0,0.45)',
             lineHeight: 1,
             whiteSpace: 'nowrap',
@@ -110,6 +112,7 @@ export default function WatermarkPreviewOverlay({
           style={{
             width: `${Math.max(1, (imgWm.naturalWidth || 1) * imgWm.scale)}px`,
             height: `${Math.max(1, (imgWm.naturalHeight || 1) * imgWm.scale)}px`,
+            opacity: imgWm.opacity,
             pointerEvents: 'none',
             userSelect: 'none',
             display: 'block',
