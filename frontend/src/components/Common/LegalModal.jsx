@@ -52,7 +52,6 @@ export default function LegalModal({ isOpen, onClose, title, children }) {
 
         <div
           className="legal-panel relative bg-white/90 backdrop-blur-xl border border-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden"
-          onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/60 bg-white/50">
             <h2 id="modal-title" className="text-xl font-bold text-slate-800">{title}</h2>

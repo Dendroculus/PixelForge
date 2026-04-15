@@ -184,20 +184,24 @@ export default function ColorPalette() {
     setPoints((prev) => prev.map((p) => (p.id === id ? { ...p, x: nx, y: ny } : p)));
   }, [imageRect]);
 
-  const onPointPointerDown = useCallback((id) => (e) => {
+  const onPointPointerDown = useCallback((e, id) => {
     e.preventDefault();
     setActivePointId(id);
 
     let rafId = null;
+    let pendingEvent = null;
 
-    const runMoveInFrame = (ev) => {
-      movePointFromClient(id, ev.clientX, ev.clientY);
+    const runMoveInFrame = () => {
+      if (!pendingEvent) return;
+      movePointFromClient(id, pendingEvent.clientX, pendingEvent.clientY);
       rafId = null;
+      pendingEvent = null;
     };
 
     const onMove = (ev) => {
+      pendingEvent = ev; 
       if (rafId) return;
-      rafId = requestAnimationFrame(() => runMoveInFrame(ev));
+      rafId = requestAnimationFrame(runMoveInFrame); 
     };
 
     const onUp = () => {
@@ -362,7 +366,7 @@ export default function ColorPalette() {
                   return (
                     <button
                       key={`picker-${p.id}`}
-                      onPointerDown={onPointPointerDown(p.id)}
+                      onPointerDown={(e) => onPointPointerDown(e, p.id)}
                       className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/90 shadow-[0_0_0_1px_rgba(15,23,42,0.55)] cursor-grab active:cursor-grabbing"
                       style={{
                         left: `${imageRect.left + p.x * imageRect.width}px`,
