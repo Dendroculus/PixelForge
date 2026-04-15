@@ -3,15 +3,31 @@ import FormatDropdown from '../../../components/Workspace/controls/FormatDropdow
 export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies, watermarkColors }) {
   return (
     <div className="space-y-3 pb-1">
+      <style>{`
+        .custom-textarea-scroll::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-textarea-scroll::-webkit-scrollbar-track {
+          background: transparent;
+          margin: 4px 0;
+        }
+        .custom-textarea-scroll::-webkit-scrollbar-thumb {
+          background: rgba(148, 163, 184, 0.4); /* slate-400 */
+          border-radius: 10px;
+        }
+        .custom-textarea-scroll::-webkit-scrollbar-thumb:hover {
+          background: rgba(99, 102, 241, 0.8); /* indigo-500 */
+        }
+      `}</style>
+
       <div>
         <label htmlFor="watermark-text" className="mb-1.5 block text-xs font-bold text-slate-700 uppercase tracking-wide">Watermark Text</label>
-        <input
+        <textarea
           id="watermark-text"
-          type="text"
           value={textWm.text}
           onChange={(e) => setTextWm((prev) => ({ ...prev, text: e.target.value }))}
-          placeholder="Enter watermark text"
-          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+          placeholder="Enter watermark text&#10;Press Enter for new line"
+          className="custom-textarea-scroll min-h-[80px] w-full resize-y rounded-lg border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-700 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
         />
       </div>
 
