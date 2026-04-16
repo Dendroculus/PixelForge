@@ -14,6 +14,7 @@ import WorkspaceFileSummary from '../../components/Workspace/display/WorkspaceFi
 import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErrorAlert';
 import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
 import FitModeToggle from '../../components/Workspace/controls/FitModeToggle';
+import Magnifier, { ZoomButton } from '../../components/Workspace/controls/Magnifier';
 import { useWorkspaceFile } from '../../hooks/workspace/useWorkspaceFile';
 import { generateSafeFilename } from '../../utils/file/fileUtils';
 
@@ -46,7 +47,7 @@ export default function ImageEditor() {
 
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
   const [isProcessing, setIsProcessing] = useState(false);
-  const [fitMode, setFitMode] = useState('contain'); // Toggle state for preview
+  const [fitMode, setFitMode] = useState('contain'); 
 
   const {
     file,
@@ -76,6 +77,11 @@ export default function ImageEditor() {
     setFilters({ ...DEFAULT_FILTERS });
     setIsProcessing(false);
   }, [resetAll]);
+
+  const toggleFitMode = (e) => {
+    if (e) e.stopPropagation();
+    setFitMode((prev) => (prev === 'contain' ? 'cover' : 'contain'));
+  };
 
   const applyFilters = useCallback(async () => {
     if (!file || !previewUrl) return;
@@ -294,69 +300,83 @@ export default function ImageEditor() {
               previewUrl={previewUrl}
               resultUrl={null} 
               resultAlt="Edited output preview"
+              previewClassName="hidden"
+              processingClassName="hidden"
             >
               {previewUrl && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden">
-                  <div className="relative h-full w-full">
-                    
-                    <img
-                      src={previewUrl}
-                      alt="Base Workspace"
-                      className={`absolute inset-0 h-full w-full pointer-events-none transition-all duration-150 ${fitMode === 'contain' ? 'object-contain' : 'object-cover'}`}
-                      style={{ filter: cssFilterString }}
-                    />
-                    
-                    <div 
-                      className="absolute inset-0 pointer-events-none transition-all duration-150"
-                      style={{
-                        WebkitMaskImage: `url("${previewUrl}")`,
-                        WebkitMaskSize: fitMode,
-                        WebkitMaskPosition: 'center',
-                        WebkitMaskRepeat: 'no-repeat',
-                        maskImage: `url("${previewUrl}")`,
-                        maskSize: fitMode,
-                        maskPosition: 'center',
-                        maskRepeat: 'no-repeat'
-                      }}
-                    >
-                      {filters.temperature !== 0 && (
-                        <div 
-                          className="absolute inset-0 mix-blend-overlay"
-                          style={{ 
-                            backgroundColor: filters.temperature > 0 
-                              ? `rgba(255, 136, 0, ${filters.temperature / 400})` 
-                              : `rgba(0, 136, 255, ${Math.abs(filters.temperature) / 400})` 
-                          }} 
-                        />
-                      )}
-
-                      {filters.fade > 0 && (
-                        <div 
-                          className="absolute inset-0 mix-blend-lighten"
-                          style={{ backgroundColor: `rgba(255, 255, 255, ${filters.fade / 200})` }} 
-                        />
-                      )}
-
-                      {filters.vignette > 0 && (
-                        <div 
-                          className="absolute inset-0 mix-blend-multiply"
-                          style={{
-                            background: `radial-gradient(circle, rgba(0,0,0,0) 40%, rgba(0,0,0,${filters.vignette / 100}) 120%)`
-                          }}
-                        />
-                      )}
+                <Magnifier
+                  containerClassName="absolute inset-0 z-10 flex items-center justify-center overflow-hidden"
+                  innerClassName={`relative h-full w-full transition-all duration-200 ${isProcessing ? 'scale-105 opacity-60 blur-[1px] grayscale-[0.1]' : ''}`}
+                  renderControls={({ isZoomed, toggleZoom }) => (
+                    <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50 flex gap-2">
+                      <FitModeToggle
+                        isFitMode={fitMode === 'contain'}
+                        onToggle={toggleFitMode}
+                        fitTitle="Fill container"
+                        fillTitle="Show full image"
+                      />
+                      <ZoomButton
+                        isZoomed={isZoomed}
+                        onToggle={toggleZoom}
+                        className={`p-2 backdrop-blur rounded-lg border shadow-sm transition-colors ${
+                          isZoomed ? 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700' : 'bg-white/90 border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-white'
+                        }`}
+                      />
                     </div>
-                  </div>
-                  
-                  <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50">
-                    <FitModeToggle
-                      isFitMode={fitMode === 'contain'}
-                      onToggle={() => setFitMode(prev => prev === 'contain' ? 'cover' : 'contain')}
-                      fitTitle="Fill container"
-                      fillTitle="Show full image"
-                    />
-                  </div>
-                </div>
+                  )}
+                >
+                  {() => (
+                    <div className="relative h-full w-full">
+                      <img
+                        src={previewUrl}
+                        alt="Base Workspace"
+                        className={`absolute inset-0 h-full w-full pointer-events-none ${fitMode === 'contain' ? 'object-contain' : 'object-cover'}`}
+                        style={{ filter: cssFilterString }}
+                      />
+                      
+                      <div 
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                          WebkitMaskImage: `url("${previewUrl}")`,
+                          WebkitMaskSize: fitMode,
+                          WebkitMaskPosition: 'center',
+                          WebkitMaskRepeat: 'no-repeat',
+                          maskImage: `url("${previewUrl}")`,
+                          maskSize: fitMode,
+                          maskPosition: 'center',
+                          maskRepeat: 'no-repeat'
+                        }}
+                      >
+                        {filters.temperature !== 0 && (
+                          <div 
+                            className="absolute inset-0 mix-blend-overlay"
+                            style={{ 
+                              backgroundColor: filters.temperature > 0 
+                                ? `rgba(255, 136, 0, ${filters.temperature / 400})` 
+                                : `rgba(0, 136, 255, ${Math.abs(filters.temperature) / 400})` 
+                            }} 
+                          />
+                        )}
+
+                        {filters.fade > 0 && (
+                          <div 
+                            className="absolute inset-0 mix-blend-lighten"
+                            style={{ backgroundColor: `rgba(255, 255, 255, ${filters.fade / 200})` }} 
+                          />
+                        )}
+
+                        {filters.vignette > 0 && (
+                          <div 
+                            className="absolute inset-0 mix-blend-multiply"
+                            style={{
+                              background: `radial-gradient(circle, rgba(0,0,0,0) 40%, rgba(0,0,0,${filters.vignette / 100}) 120%)`
+                            }}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </Magnifier>
               )}
             </PreviewImageBox>
           </div>
