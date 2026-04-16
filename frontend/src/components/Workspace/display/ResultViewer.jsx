@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 function ResultViewerContent({
@@ -50,43 +50,13 @@ function ResultViewerContent({
     setMousePos({ x, y });
   };
 
-  const adjustSlider = useCallback((delta) => {
-    setSliderPosition((prev) => Math.max(0, Math.min(100, prev + delta)));
-  }, []);
-
-  const handleContainerKeyDown = useCallback(
-    (e) => {
-      if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        adjustSlider(-1);
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        adjustSlider(1);
-      } else if (e.key === 'Home') {
-        e.preventDefault();
-        setSliderPosition(0);
-      } else if (e.key === 'End') {
-        e.preventDefault();
-        setSliderPosition(100);
-      }
-    },
-    [adjustSlider]
-  );
-
   const fitClass = fitMode === 'cover' ? 'object-cover object-top' : 'object-contain bg-slate-100';
 
   return (
     <div
-      role="slider"
-      tabIndex={0}
-      aria-label="Image comparison slider"
-      aria-valuemin={0}
-      aria-valuemax={100}
-      aria-valuenow={sliderPosition}
       className={`relative w-full h-full overflow-hidden rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center min-h-96 group ${isZoomed ? 'cursor-crosshair' : ''}`}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => isZoomed && setMousePos({ x: 50, y: 50 })}
-      onKeyDown={handleContainerKeyDown}
     >
       {!isLoaded && (
         <div className="absolute inset-0 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm z-50 px-4 text-center">
@@ -115,9 +85,22 @@ function ResultViewerContent({
 
         <div
           className="absolute top-3 right-3 bg-slate-900/90 text-white text-[10px] font-medium px-2 py-0.5 rounded border border-slate-800 pointer-events-none uppercase tracking-wide shadow-sm z-20 transition-transform"
-          style={{ transform: isZoomed ? 'scale(0.4)' : 'scale(1)', transformOrigin: 'top right' }}
+          style={{ 
+            transform: isZoomed ? 'scale(0.4)' : 'scale(1)', 
+            transformOrigin: 'top right'
+          }}
         >
           {resultLabel}
+        </div>
+
+        <div
+          className="absolute top-3 left-3 bg-white/95 text-slate-700 text-[10px] font-medium px-2 py-0.5 rounded border border-slate-300 pointer-events-none uppercase tracking-wide shadow-sm z-20 transition-transform"
+          style={{ 
+            transform: isZoomed ? 'scale(0.4)' : 'scale(1)', 
+            transformOrigin: 'top left'
+          }}
+        >
+          {originalLabel}
         </div>
 
         <div
@@ -129,12 +112,6 @@ function ResultViewerContent({
             alt="Original input"
             className={`absolute inset-0 w-full h-full pointer-events-auto ${fitClass}`}
           />
-          <div
-            className="absolute top-3 left-3 bg-white/95 text-slate-700 text-[10px] font-medium px-2 py-0.5 rounded border border-slate-300 pointer-events-none uppercase tracking-wide shadow-sm transition-transform"
-            style={{ transform: isZoomed ? 'scale(0.4)' : 'scale(1)', transformOrigin: 'top left' }}
-          >
-            {originalLabel}
-          </div>
         </div>
 
         <div
