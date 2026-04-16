@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
+import FitModeToggle from '../controls/FitModeToggle';
 
 /**
  * Inner content logic for the interactive before/after image comparison slider.
@@ -39,7 +40,7 @@ function ResultViewerContent({
   };
 
   const toggleFitMode = (e) => {
-    e.stopPropagation();
+    if (e) e.stopPropagation();
     setFitMode((prev) => (prev === 'cover' ? 'contain' : 'cover'));
     setIsZoomed(false);
   };
@@ -152,21 +153,12 @@ function ResultViewerContent({
       </div>
 
       <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50 flex gap-2">
-        <button
-          onClick={toggleFitMode}
-          className="p-2 bg-white/90 backdrop-blur rounded-lg border border-slate-200 shadow-sm text-slate-600 hover:text-indigo-600 hover:bg-white transition-colors"
-          title={fitMode === 'cover' ? 'Show full image' : 'Fill container'}
-        >
-          {fitMode === 'cover' ? (
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-            </svg>
-          ) : (
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 4v4H4m4-4L3 3m13 1v4h4m-4-4l5-5m-5 13v4h-4m4-4l5 5M8 20v-4H4m4 4l-5 5" />
-            </svg>
-          )}
-        </button>
+        <FitModeToggle
+          isFitMode={fitMode === 'contain'}
+          onToggle={toggleFitMode}
+          fitTitle="Show full image"
+          fillTitle="Fill container"
+        />
         <button
           onClick={toggleZoom}
           className={`p-2 backdrop-blur rounded-lg border shadow-sm transition-colors ${isZoomed ? 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700' : 'bg-white/90 border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-white'}`}
