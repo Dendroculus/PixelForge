@@ -14,18 +14,24 @@ import WorkspaceFileSummary from '../../components/Workspace/display/WorkspaceFi
 import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErrorAlert';
 import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
 import FitModeToggle from '../../components/Workspace/controls/FitModeToggle';
+import Magnifier, { ZoomButton } from '../../components/Workspace/controls/Magnifier';
+import ImageEditorFilters from '../../components/Workspace/controls/ImageEditorFilters';
 import { useWorkspaceFile } from '../../hooks/workspace/useWorkspaceFile';
 import { generateSafeFilename } from '../../utils/file/fileUtils';
 
 const DEFAULT_FILTERS = {
-  brightness: 100,
-  contrast: 100,
-  saturation: 100,
+  brightness: 0,
+  contrast: 0,
+  saturation: 0,
   temperature: 0,
   blur: 0,
   vignette: 0,
   fade: 0,
 };
+
+const getCssBrightness = (val) => 100 + (val * 0.6); 
+const getCssContrast = (val) => 100 + (val * 0.6);   
+const getCssSaturation = (val) => 100 + val;         
 
 /**
  * Loads an image element from a given URL.
@@ -41,12 +47,16 @@ function loadImage(url) {
   });
 }
 
+/**
+ * Renders the main Image Editor tool workspace.
+ * @returns {JSX.Element}
+ */
 export default function ImageEditor() {
   const fileInputRef = useRef(null);
 
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
   const [isProcessing, setIsProcessing] = useState(false);
-  const [fitMode, setFitMode] = useState('contain'); // Toggle state for preview
+  const [fitMode, setFitMode] = useState('contain'); 
 
   const {
     file,
@@ -68,7 +78,7 @@ export default function ImageEditor() {
   };
 
   const cssFilterString = useMemo(() => {
-    return `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturation}%) blur(${filters.blur}px)`;
+    return `brightness(${getCssBrightness(filters.brightness)}%) contrast(${getCssContrast(filters.contrast)}%) saturate(${getCssSaturation(filters.saturation)}%) blur(${filters.blur}px)`;
   }, [filters.brightness, filters.contrast, filters.saturation, filters.blur]);
 
   const handleReset = useCallback(() => {
@@ -76,6 +86,11 @@ export default function ImageEditor() {
     setFilters({ ...DEFAULT_FILTERS });
     setIsProcessing(false);
   }, [resetAll]);
+
+  const toggleFitMode = (e) => {
+    if (e) e.stopPropagation();
+    setFitMode((prev) => (prev === 'contain' ? 'cover' : 'contain'));
+  };
 
   const applyFilters = useCallback(async () => {
     if (!file || !previewUrl) return;
@@ -94,26 +109,31 @@ export default function ImageEditor() {
       canvas.width = img.naturalWidth;
       canvas.height = img.naturalHeight;
 
-      ctx.filter = `brightness(${filters.brightness}%) contrast(${filters.contrast}%) saturate(${filters.saturation}%) blur(${filters.blur}px)`;
+      ctx.save();
+      ctx.filter = `brightness(${getCssBrightness(filters.brightness)}%) contrast(${getCssContrast(filters.contrast)}%) saturate(${getCssSaturation(filters.saturation)}%) blur(${filters.blur}px)`;
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      ctx.restore();
       
-      ctx.filter = 'none';
-
       if (filters.temperature !== 0) {
+        ctx.save();
         ctx.globalCompositeOperation = 'overlay';
         ctx.fillStyle = filters.temperature > 0 
           ? `rgba(255, 136, 0, ${filters.temperature / 400})` 
           : `rgba(0, 136, 255, ${Math.abs(filters.temperature) / 400})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
       }
 
       if (filters.fade > 0) {
+        ctx.save();
         ctx.globalCompositeOperation = 'lighten';
         ctx.fillStyle = `rgba(255, 255, 255, ${filters.fade / 200})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
       }
 
       if (filters.vignette > 0) {
+        ctx.save();
         ctx.globalCompositeOperation = 'multiply';
         const cx = canvas.width / 2;
         const cy = canvas.height / 2;
@@ -125,9 +145,8 @@ export default function ImageEditor() {
         
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
       }
-
-      ctx.globalCompositeOperation = 'source-over';
 
       canvas.toBlob(
         (blob) => {
@@ -142,7 +161,7 @@ export default function ImageEditor() {
           document.body.removeChild(link);
           URL.revokeObjectURL(downloadUrl);
 
-          handleReset();
+          setIsProcessing(false);
         },
         file.type || 'image/jpeg',
         0.95
@@ -152,7 +171,7 @@ export default function ImageEditor() {
       setError('Failed to process image. Please try again.');
       setIsProcessing(false);
     }
-  }, [file, previewUrl, filters, cleanupResult, setError, handleReset]);
+  }, [file, previewUrl, filters, cleanupResult, setError]);
 
   const canProcess = useMemo(() => 
     Boolean(file) && !isProcessing, 
@@ -177,71 +196,10 @@ export default function ImageEditor() {
             )}
 
             <div className={`space-y-6 transition-opacity duration-300 ${!file ? 'pointer-events-none opacity-40' : 'opacity-100'}`}>
-              
-              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
-                <h3 className="block text-xs font-bold text-slate-700 uppercase tracking-wide border-b border-slate-100 pb-2">Light & Color</h3>
-                
-                <div>
-                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1" aria-hidden="true">
-                    <span>Brightness</span>
-                    <span>{filters.brightness}%</span>
-                  </div>
-                  <input aria-label="Brightness" type="range" min="0" max="200" value={filters.brightness} onChange={(e) => handleFilterChange('brightness', Number(e.target.value))} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1" aria-hidden="true">
-                    <span>Contrast</span>
-                    <span>{filters.contrast}%</span>
-                  </div>
-                  <input aria-label="Contrast" type="range" min="0" max="200" value={filters.contrast} onChange={(e) => handleFilterChange('contrast', Number(e.target.value))} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1" aria-hidden="true">
-                    <span>Saturation</span>
-                    <span>{filters.saturation}%</span>
-                  </div>
-                  <input aria-label="Saturation" type="range" min="0" max="200" value={filters.saturation} onChange={(e) => handleFilterChange('saturation', Number(e.target.value))} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1" aria-hidden="true">
-                    <span>Temperature</span>
-                    <span>{filters.temperature > 0 ? `+${filters.temperature}` : filters.temperature}</span>
-                  </div>
-                  <input aria-label="Temperature" type="range" min="-100" max="100" value={filters.temperature} onChange={(e) => handleFilterChange('temperature', Number(e.target.value))} className="w-full h-1.5 bg-linear-to-r from-blue-400 via-slate-200 to-orange-400 rounded-lg appearance-none cursor-pointer accent-slate-700" />
-                </div>
-              </div>
-
-              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
-                <h3 className="block text-xs font-bold text-slate-700 uppercase tracking-wide border-b border-slate-100 pb-2">Effects & Tone</h3>
-                
-                <div>
-                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1" aria-hidden="true">
-                    <span>Fade</span>
-                    <span>{filters.fade}</span>
-                  </div>
-                  <input aria-label="Fade" type="range" min="0" max="100" value={filters.fade} onChange={(e) => handleFilterChange('fade', Number(e.target.value))} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1" aria-hidden="true">
-                    <span>Vignette</span>
-                    <span>{filters.vignette}</span>
-                  </div>
-                  <input aria-label="Vignette" type="range" min="0" max="100" value={filters.vignette} onChange={(e) => handleFilterChange('vignette', Number(e.target.value))} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
-                </div>
-
-                <div>
-                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1" aria-hidden="true">
-                    <span>Blur</span>
-                    <span>{filters.blur}px</span>
-                  </div>
-                  <input aria-label="Blur" type="range" min="0" max="20" step="0.5" value={filters.blur} onChange={(e) => handleFilterChange('blur', Number(e.target.value))} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
-                </div>
-              </div>
-
+              <ImageEditorFilters 
+                filters={filters} 
+                onFilterChange={handleFilterChange} 
+              />
             </div>
 
             <WorkspaceErrorAlert error={error} />
@@ -294,69 +252,83 @@ export default function ImageEditor() {
               previewUrl={previewUrl}
               resultUrl={null} 
               resultAlt="Edited output preview"
+              previewClassName="hidden"
+              processingClassName="hidden"
             >
               {previewUrl && (
-                <div className="absolute inset-0 z-10 flex items-center justify-center overflow-hidden">
-                  <div className="relative h-full w-full">
-                    
-                    <img
-                      src={previewUrl}
-                      alt="Base Workspace"
-                      className={`absolute inset-0 h-full w-full pointer-events-none transition-all duration-150 ${fitMode === 'contain' ? 'object-contain' : 'object-cover'}`}
-                      style={{ filter: cssFilterString }}
-                    />
-                    
-                    <div 
-                      className="absolute inset-0 pointer-events-none transition-all duration-150"
-                      style={{
-                        WebkitMaskImage: `url("${previewUrl}")`,
-                        WebkitMaskSize: fitMode,
-                        WebkitMaskPosition: 'center',
-                        WebkitMaskRepeat: 'no-repeat',
-                        maskImage: `url("${previewUrl}")`,
-                        maskSize: fitMode,
-                        maskPosition: 'center',
-                        maskRepeat: 'no-repeat'
-                      }}
-                    >
-                      {filters.temperature !== 0 && (
-                        <div 
-                          className="absolute inset-0 mix-blend-overlay"
-                          style={{ 
-                            backgroundColor: filters.temperature > 0 
-                              ? `rgba(255, 136, 0, ${filters.temperature / 400})` 
-                              : `rgba(0, 136, 255, ${Math.abs(filters.temperature) / 400})` 
-                          }} 
-                        />
-                      )}
-
-                      {filters.fade > 0 && (
-                        <div 
-                          className="absolute inset-0 mix-blend-lighten"
-                          style={{ backgroundColor: `rgba(255, 255, 255, ${filters.fade / 200})` }} 
-                        />
-                      )}
-
-                      {filters.vignette > 0 && (
-                        <div 
-                          className="absolute inset-0 mix-blend-multiply"
-                          style={{
-                            background: `radial-gradient(circle, rgba(0,0,0,0) 40%, rgba(0,0,0,${filters.vignette / 100}) 120%)`
-                          }}
-                        />
-                      )}
+                <Magnifier
+                  containerClassName="absolute inset-0 z-10 flex items-center justify-center overflow-hidden"
+                  innerClassName={`relative h-full w-full transition-all duration-200 ${isProcessing ? 'scale-105 opacity-60 blur-[1px] grayscale-[0.1]' : ''}`}
+                  renderControls={({ isZoomed, toggleZoom }) => (
+                    <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50 flex gap-2">
+                      <FitModeToggle
+                        isFitMode={fitMode === 'contain'}
+                        onToggle={toggleFitMode}
+                        fitTitle="Fill container"
+                        fillTitle="Show full image"
+                      />
+                      <ZoomButton
+                        isZoomed={isZoomed}
+                        onToggle={toggleZoom}
+                        className={`p-2 backdrop-blur rounded-lg border shadow-sm transition-colors ${
+                          isZoomed ? 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700' : 'bg-white/90 border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-white'
+                        }`}
+                      />
                     </div>
-                  </div>
-                  
-                  <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50">
-                    <FitModeToggle
-                      isFitMode={fitMode === 'contain'}
-                      onToggle={() => setFitMode(prev => prev === 'contain' ? 'cover' : 'contain')}
-                      fitTitle="Fill container"
-                      fillTitle="Show full image"
-                    />
-                  </div>
-                </div>
+                  )}
+                >
+                  {() => (
+                    <div className="relative h-full w-full">
+                      <img
+                        src={previewUrl}
+                        alt="Base Workspace"
+                        className={`absolute inset-0 h-full w-full pointer-events-none ${fitMode === 'contain' ? 'object-contain' : 'object-cover'}`}
+                        style={{ filter: cssFilterString }}
+                      />
+                      
+                      <div 
+                        className="absolute inset-0 pointer-events-none"
+                        style={{
+                          WebkitMaskImage: `url("${previewUrl}")`,
+                          WebkitMaskSize: fitMode,
+                          WebkitMaskPosition: 'center',
+                          WebkitMaskRepeat: 'no-repeat',
+                          maskImage: `url("${previewUrl}")`,
+                          maskSize: fitMode,
+                          maskPosition: 'center',
+                          maskRepeat: 'no-repeat'
+                        }}
+                      >
+                        {filters.temperature !== 0 && (
+                          <div 
+                            className="absolute inset-0 mix-blend-overlay"
+                            style={{ 
+                              backgroundColor: filters.temperature > 0 
+                                ? `rgba(255, 136, 0, ${filters.temperature / 400})` 
+                                : `rgba(0, 136, 255, ${Math.abs(filters.temperature) / 400})` 
+                            }} 
+                          />
+                        )}
+
+                        {filters.fade > 0 && (
+                          <div 
+                            className="absolute inset-0 mix-blend-lighten"
+                            style={{ backgroundColor: `rgba(255, 255, 255, ${filters.fade / 200})` }} 
+                          />
+                        )}
+
+                        {filters.vignette > 0 && (
+                          <div 
+                            className="absolute inset-0 mix-blend-multiply"
+                            style={{
+                              background: `radial-gradient(circle, rgba(0,0,0,0) 40%, rgba(0,0,0,${filters.vignette / 100}) 120%)`
+                            }}
+                          />
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </Magnifier>
               )}
             </PreviewImageBox>
           </div>
@@ -365,3 +337,5 @@ export default function ImageEditor() {
     </ToolPageWrapper>
   );
 }
+
+ImageEditor.propTypes = {};

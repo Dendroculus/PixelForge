@@ -7,6 +7,7 @@ import { CROP_ASPECT_RATIOS } from '../../config';
 import ToolStateWrapper from '../../components/Layout/ToolStateWrapper';
 import WorkspaceSuccessCard from '../../components/Workspace/cards/WorkspaceSuccessCard';
 import FitModeToggle from '../../components/Workspace/controls/FitModeToggle';
+import Magnifier, { ZoomButton } from '../../components/Workspace/controls/Magnifier';
 
 export default function CropImage() {
   const fileInputRef = useRef(null);
@@ -107,92 +108,107 @@ export default function CropImage() {
         </div>
 
         <div className="flex-1 min-h-0 w-full relative bg-slate-950/50 flex flex-col overflow-hidden">
-          <div 
-            className={`flex-1 w-full h-full p-4 sm:p-8 ${
+          <Magnifier
+            containerClassName={`flex-1 w-full h-full p-4 sm:p-8 ${
               fitMode === 'fit' 
                 ? 'flex items-center justify-center overflow-hidden' 
                 : 'overflow-y-auto overflow-x-hidden custom-scroll block'
             }`}
+            innerClassName={fitMode === 'fit' ? 'flex items-center justify-center w-full h-full' : 'w-full h-full'}
+            renderControls={({ isZoomed, toggleZoom }) => (
+              <div className="absolute bottom-6 right-6 z-50 flex gap-2">
+                <FitModeToggle
+                  isFitMode={fitMode === 'fit'}
+                  onToggle={() => setFitMode(prev => prev === 'fit' ? 'scroll' : 'fit')}
+                  className="p-2.5 bg-slate-800/90 backdrop-blur rounded-lg border border-slate-700 shadow-lg text-slate-300 hover:text-white hover:bg-slate-700 hover:border-slate-500 transition-all"
+                  fitTitle="Fit to Screen"
+                  fillTitle="Switch to Scroll Mode for tall images"
+                />
+                <ZoomButton
+                  isZoomed={isZoomed}
+                  onToggle={toggleZoom}
+                  className={`p-2.5 backdrop-blur rounded-lg border shadow-lg transition-all ${
+                    isZoomed 
+                      ? 'bg-indigo-600 border-indigo-500 text-white hover:bg-indigo-500' 
+                      : 'bg-slate-800/90 border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 hover:border-slate-500'
+                  }`}
+                />
+              </div>
+            )}
           >
-            <style>{`
-              .custom-scroll::-webkit-scrollbar {
-                width: 8px;
-              }
-              .custom-scroll::-webkit-scrollbar-track {
-                background: rgba(15, 23, 42, 0.4); 
-                border-radius: 4px;
-              }
-              .custom-scroll::-webkit-scrollbar-thumb {
-                background: rgba(71, 85, 105, 0.8); 
-                border-radius: 4px;
-              }
-              .custom-scroll::-webkit-scrollbar-thumb:hover {
-                background: rgba(99, 102, 241, 0.9); 
-              }
-              .ReactCrop__crop-selection {
-                animation: none !important;
-                background-image: none !important;
-                border: 2px solid white !important;
-                box-shadow: 0 0 5px rgba(0,0,0,0.5) !important;
-              }
-              .ReactCrop__drag-handle.ord-n,
-              .ReactCrop__drag-handle.ord-e,
-              .ReactCrop__drag-handle.ord-s,
-              .ReactCrop__drag-handle.ord-w {
-                display: none !important;
-              }
-            `}</style>
+            {() => (
+              <>
+                <style>{`
+                  .custom-scroll::-webkit-scrollbar {
+                    width: 8px;
+                  }
+                  .custom-scroll::-webkit-scrollbar-track {
+                    background: rgba(15, 23, 42, 0.4); 
+                    border-radius: 4px;
+                  }
+                  .custom-scroll::-webkit-scrollbar-thumb {
+                    background: rgba(71, 85, 105, 0.8); 
+                    border-radius: 4px;
+                  }
+                  .custom-scroll::-webkit-scrollbar-thumb:hover {
+                    background: rgba(99, 102, 241, 0.9); 
+                  }
+                  .ReactCrop__crop-selection {
+                    animation: none !important;
+                    background-image: none !important;
+                    border: 2px solid white !important;
+                    box-shadow: 0 0 5px rgba(0,0,0,0.5) !important;
+                  }
+                  .ReactCrop__drag-handle.ord-n,
+                  .ReactCrop__drag-handle.ord-e,
+                  .ReactCrop__drag-handle.ord-s,
+                  .ReactCrop__drag-handle.ord-w {
+                    display: none !important;
+                  }
+                `}</style>
 
-            <ReactCrop
-              crop={crop}
-              onChange={(pixelCrop, percentCrop) => setCrop(percentCrop)}
-              onComplete={(pixelCrop, percentCrop) => {
-                setCompletedCrop(percentCrop);
-                cleanupResult();
-              }}
-              aspect={aspect || undefined}
-              className={fitMode === 'fit' ? "flex items-center justify-center" : ""}
-              style={
-                fitMode === 'fit'
-                  ? {
-                      width: imageSize.width > 0 ? `calc((100vh - 260px) * ${imageAspect})` : 'auto',
-                      maxWidth: '100%',
-                      maxHeight: '100%',
-                      margin: 'auto'
-                    }
-                  : {
+                <ReactCrop
+                  crop={crop}
+                  onChange={(pixelCrop, percentCrop) => setCrop(percentCrop)}
+                  onComplete={(pixelCrop, percentCrop) => {
+                    setCompletedCrop(percentCrop);
+                    cleanupResult();
+                  }}
+                  aspect={aspect || undefined}
+                  className={fitMode === 'fit' ? "flex items-center justify-center" : ""}
+                  style={
+                    fitMode === 'fit'
+                      ? {
+                          width: imageSize.width > 0 ? `calc((100vh - 260px) * ${imageAspect})` : 'auto',
+                          maxWidth: '100%',
+                          maxHeight: '100%',
+                          margin: 'auto'
+                        }
+                      : {
+                          width: '100%',
+                          maxWidth: '800px', 
+                          height: 'max-content',
+                          margin: '0 auto',
+                          display: 'block'
+                        }
+                  }
+                >
+                  <img
+                    ref={imgRef}
+                    alt="Crop preview"
+                    src={previewUrl}
+                    onLoad={onImageLoad}
+                    className={`block ${fitMode === 'scroll' ? 'shadow-2xl' : ''}`}
+                    style={{
                       width: '100%',
-                      maxWidth: '800px', 
-                      height: 'max-content',
-                      margin: '0 auto',
+                      height: 'auto',
                       display: 'block'
-                    }
-              }
-            >
-              <img
-                ref={imgRef}
-                alt="Crop preview"
-                src={previewUrl}
-                onLoad={onImageLoad}
-                className={`block ${fitMode === 'scroll' ? 'shadow-2xl' : ''}`}
-                style={{
-                  width: '100%',
-                  height: 'auto',
-                  display: 'block'
-                }}
-              />
-            </ReactCrop>
-          </div>
-
-          <div className="absolute bottom-6 right-6 z-50 flex gap-2">
-            <FitModeToggle
-              isFitMode={fitMode === 'fit'}
-              onToggle={() => setFitMode(prev => prev === 'fit' ? 'scroll' : 'fit')}
-              className="p-2.5 bg-slate-800/90 backdrop-blur rounded-lg border border-slate-700 shadow-lg text-slate-300 hover:text-white hover:bg-slate-700 hover:border-slate-500 transition-all"
-              fitTitle="Fit to Screen"
-              fillTitle="Switch to Scroll Mode for tall images"
-            />
-          </div>
+                    }}
+                  />
+                </ReactCrop>
+              </>
+            )}
+          </Magnifier>
         </div>
 
         <div className="flex-none bg-slate-900 border-t border-slate-800 p-4 sm:p-5 overflow-x-auto z-10">
