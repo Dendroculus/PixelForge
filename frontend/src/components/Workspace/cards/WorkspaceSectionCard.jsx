@@ -1,9 +1,10 @@
+import PropTypes from 'prop-types';
+
 /**
  * Provides a reusable section card container preserving existing workspace visual style.
- * @param {{
- *   children: React.ReactNode,
- *   className?: string
- * }} props
+ * @param {Object} props - The component props.
+ * @param {React.ReactNode} props.children - The content to wrap inside the card.
+ * @param {string} [props.className=''] - Additional Tailwind CSS classes.
  * @returns {JSX.Element}
  */
 export default function WorkspaceSectionCard({ children, className = '' }) {
@@ -13,3 +14,8 @@ export default function WorkspaceSectionCard({ children, className = '' }) {
     </div>
   );
 }
+
+WorkspaceSectionCard.propTypes = {
+  children: PropTypes.node.isRequired,
+  className: PropTypes.string,
+};

@@ -1,6 +1,16 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
+/**
+ * Inner content logic for the interactive before/after image comparison slider.
+ * @param {Object} props - The component props.
+ * @param {string} props.originalImage - Object URL of the baseline image.
+ * @param {string} props.processedImage - Object URL of the output image.
+ * @param {Function} [props.onImageLoad] - Callback when the processed image finishes rendering.
+ * @param {string} [props.originalLabel='Original'] - Text badge for the left side.
+ * @param {string} [props.resultLabel='Result'] - Text badge for the right side.
+ * @returns {JSX.Element}
+ */
 function ResultViewerContent({
   originalImage,
   processedImage,
@@ -54,6 +64,7 @@ function ResultViewerContent({
 
   return (
     <div
+      role='presentation'
       className={`relative w-full h-full overflow-hidden rounded-lg border border-slate-200 bg-slate-50 flex items-center justify-center min-h-96 group ${isZoomed ? 'cursor-crosshair' : ''}`}
       onMouseMove={handleMouseMove}
       onMouseLeave={() => isZoomed && setMousePos({ x: 50, y: 50 })}
@@ -184,6 +195,11 @@ ResultViewerContent.propTypes = {
   resultLabel: PropTypes.string,
 };
 
+/**
+ * Wrapper for the result viewer that forces re-mounts when the processed image changes.
+ * @param {Object} props - Inherits props from ResultViewerContent.
+ * @returns {JSX.Element}
+ */
 export default function ResultViewer(props) {
   return <ResultViewerContent key={props.processedImage} {...props} />;
 }

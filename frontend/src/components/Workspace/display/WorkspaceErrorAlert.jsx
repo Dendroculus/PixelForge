@@ -1,8 +1,11 @@
 import { AnimatePresence, motion } from 'framer-motion';
+import PropTypes from 'prop-types';
 
 /**
  * Displays a consistent animated error alert block for workspace screens.
- * @param {{ error: string | null | undefined, className?: string }} props
+ * @param {Object} props - The component props.
+ * @param {string|null} [props.error] - The error message string to display.
+ * @param {string} [props.className='mb-2'] - Additional custom Tailwind classes.
  * @returns {JSX.Element | null}
  */
 export default function WorkspaceErrorAlert({ error, className = 'mb-2' }) {
@@ -23,3 +26,8 @@ export default function WorkspaceErrorAlert({ error, className = 'mb-2' }) {
     </AnimatePresence>
   );
 }
+
+WorkspaceErrorAlert.propTypes = {
+  error: PropTypes.string,
+  className: PropTypes.string,
+};

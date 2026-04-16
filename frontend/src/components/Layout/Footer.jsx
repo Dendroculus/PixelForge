@@ -2,7 +2,7 @@ import PropTypes from 'prop-types';
 
 /**
  * Renders the application footer containing copyright and legal links.
- * * @param {Object} props
+ * @param {Object} props - The component props.
  * @param {Function} props.openModal - Handler to open specific legal documents in the modal.
  * @returns {JSX.Element}
  */

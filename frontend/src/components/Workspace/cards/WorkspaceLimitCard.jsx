@@ -1,6 +1,16 @@
 import PropTypes from 'prop-types';
 import CountdownTimer from '../../Common/CountdownTimer';
 
+/**
+ * Displays a limit reached message or a loading state for AI workspace features.
+ * @param {Object} props - The component props.
+ * @param {boolean} props.showLoading - Whether to show the initial loading spinner.
+ * @param {boolean} props.showLimit - Whether to show the daily limit reached card.
+ * @param {number} props.maxLimit - The maximum allowed uses per day.
+ * @param {number} [props.resetTimestamp] - Unix timestamp for when the limit resets.
+ * @param {string} props.featureText - Descriptive text of the limited feature (e.g., "AI upscales").
+ * @returns {JSX.Element|null}
+ */
 export default function WorkspaceLimitCard({ showLoading, showLimit, maxLimit, resetTimestamp, featureText }) {
   if (showLoading) {
     return (

@@ -1,8 +1,10 @@
+import PropTypes from 'prop-types';
+
 /**
  * Renders the palette style toggle buttons.
  * @param {{
- *   paletteStyle: 'square' | 'circle',
- *   setPaletteStyle: (value: 'square' | 'circle') => void
+ * paletteStyle: 'square' | 'circle',
+ * setPaletteStyle: (value: 'square' | 'circle') => void
  * }} props
  * @returns {JSX.Element}
  */
@@ -34,3 +36,8 @@ export default function PaletteStyleToggle({ paletteStyle, setPaletteStyle }) {
     </div>
   );
 }
+
+PaletteStyleToggle.propTypes = {
+  paletteStyle: PropTypes.oneOf(['square', 'circle']).isRequired,
+  setPaletteStyle: PropTypes.func.isRequired,
+};

@@ -1,5 +1,10 @@
+import PropTypes from 'prop-types';
+
 /**
  * Renders reusable back button.
+ * @param {Object} props - The component props.
+ * @param {Function} props.onClick - Callback function triggered when the back button is clicked.
+ * @returns {JSX.Element}
  */
 export default function BackButton({ onClick }) {
   return (
@@ -21,3 +26,7 @@ export default function BackButton({ onClick }) {
     </button>
   );
 }
+
+BackButton.propTypes = {
+  onClick: PropTypes.func.isRequired,
+};

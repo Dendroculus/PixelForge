@@ -1,3 +1,13 @@
+import PropTypes from 'prop-types';
+
+/**
+ * Displays a compact card showing the currently staged file's status and processing state.
+ * @param {Object} props - The component props.
+ * @param {File|Object} props.selectedFile - The file object currently selected/staged.
+ * @param {boolean} props.isProcessing - Whether the file is currently being processed by the backend.
+ * @param {string} [props.resultUrl] - The URL of the completed result image, if finished.
+ * @returns {JSX.Element|null}
+ */
 export default function StagedFileCard({ selectedFile, isProcessing, resultUrl }) {
   if (!selectedFile) return null;
 
@@ -33,3 +43,12 @@ export default function StagedFileCard({ selectedFile, isProcessing, resultUrl }
     </div>
   );
 }
+
+StagedFileCard.propTypes = {
+  selectedFile: PropTypes.shape({
+    name: PropTypes.string.isRequired,
+    size: PropTypes.number.isRequired,
+  }),
+  isProcessing: PropTypes.bool,
+  resultUrl: PropTypes.string,
+};

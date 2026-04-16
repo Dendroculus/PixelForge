@@ -1,6 +1,16 @@
+import PropTypes from 'prop-types';
 import UploadCard from '../../Upload/UploadCard';
 import { APP_CONFIG } from '../../../config';
 
+/**
+ * Control inputs specifically for adjusting image logo watermarks (scale and opacity).
+ * @param {Object} props - The component props.
+ * @param {React.MutableRefObject} props.watermarkImageRef - Ref attached to the watermark file input.
+ * @param {Function} props.handleWatermarkImageUpload - Callback fired when a logo image is uploaded.
+ * @param {Object} props.imgWm - State holding image watermark properties.
+ * @param {Function} props.setImgWm - State setter for image watermark properties.
+ * @returns {JSX.Element}
+ */
 export default function ImageWatermarkControls({
   watermarkImageRef,
   handleWatermarkImageUpload,
@@ -59,3 +69,17 @@ export default function ImageWatermarkControls({
     </div>
   );
 }
+
+ImageWatermarkControls.propTypes = {
+  watermarkImageRef: PropTypes.oneOfType([
+    PropTypes.func,
+    PropTypes.shape({ current: PropTypes.any })
+  ]),
+  handleWatermarkImageUpload: PropTypes.func.isRequired,
+  imgWm: PropTypes.shape({
+    url: PropTypes.string,
+    scale: PropTypes.number,
+    opacity: PropTypes.number,
+  }).isRequired,
+  setImgWm: PropTypes.func.isRequired,
+};

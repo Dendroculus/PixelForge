@@ -1,6 +1,18 @@
 import PropTypes from 'prop-types';
 import UploadDropzone from '../../components/Upload/UploadDropzone';
 
+/**
+ * Wrapper component that handles different tool states (uploading, processing, error, active).
+ * @param {Object} props - The component props.
+ * @param {Object} [props.file] - The currently selected file, if any.
+ * @param {string} [props.error] - Error message to display, if any.
+ * @param {boolean} [props.isProcessing] - Whether the tool is currently processing data.
+ * @param {string} [props.processingText="Processing..."] - Text to display while processing.
+ * @param {Function} props.onFileSelect - Callback when a file is selected via the dropzone.
+ * @param {Function} [props.onReset] - Callback to reset the tool state after an error.
+ * @param {React.ReactNode} props.children - The main tool content to display when ready.
+ * @returns {JSX.Element}
+ */
 export default function ToolStateWrapper({
   file,
   error,

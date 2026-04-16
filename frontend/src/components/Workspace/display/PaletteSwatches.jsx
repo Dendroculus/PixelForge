@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import PropTypes from 'prop-types';
 
 /**
  * Calculates YIQ contrast to determine text visibility over backgrounds.
@@ -16,12 +17,11 @@ function getContrastYIQ(hexcolor) {
 
 /**
  * Renders palette swatches with smooth morphing color interpolation.
- * @param {{
- * palette: { id: string | number, hex: string }[],
- * paletteStyle: 'square' | 'circle',
- * copiedHex: string | null,
- * onCopy: (hex: string) => void
- * }} props
+ * @param {Object} props - The component props.
+ * @param {Array<{id: string|number, hex: string}>} props.palette - Array of extracted colors.
+ * @param {'square'|'circle'} props.paletteStyle - Visual style toggle for the swatches.
+ * @param {string|null} props.copiedHex - Currently copied hex code to show success icon.
+ * @param {Function} props.onCopy - Callback to copy a hex code to the clipboard.
  * @returns {JSX.Element}
  */
 export default function PaletteSwatches({
@@ -94,3 +94,15 @@ export default function PaletteSwatches({
     </div>
   );
 }
+
+PaletteSwatches.propTypes = {
+  palette: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      hex: PropTypes.string.isRequired,
+    })
+  ).isRequired,
+  paletteStyle: PropTypes.oneOf(['square', 'circle']).isRequired,
+  copiedHex: PropTypes.string,
+  onCopy: PropTypes.func.isRequired,
+};

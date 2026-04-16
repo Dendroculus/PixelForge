@@ -1,5 +1,19 @@
 import PropTypes from 'prop-types';
 
+/**
+ * Displays a success card with the generated result, reset actions, and download options.
+ * @param {Object} props - The component props.
+ * @param {string} [props.title='Task Successful!'] - Header title text.
+ * @param {string} [props.description='Your file is ready to use.'] - Subtitle description text.
+ * @param {string} [props.resultUrl] - Object URL of the generated output image.
+ * @param {string} [props.downloadName] - Formatted filename string for the download link.
+ * @param {Function} props.onReset - Callback to clear the workspace and start over.
+ * @param {string} [props.resetText='Start Over'] - Custom label for the reset button.
+ * @param {string} [props.downloadText='Download File'] - Custom label for the download button.
+ * @param {React.ReactNode} [props.icon] - Optional custom icon to replace the default checkmark.
+ * @param {string} [props.imageContainerStyle='max-h-[500px] h-auto overflow-y-auto result-scroll p-2'] - CSS classes for the preview image container.
+ * @returns {JSX.Element}
+ */
 export default function WorkspaceSuccessCard({
   title = 'Task Successful!',
   description = 'Your file is ready to use.',

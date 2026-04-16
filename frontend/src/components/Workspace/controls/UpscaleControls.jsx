@@ -4,7 +4,20 @@ import ProgressBar from '../../Common/ProgressBar';
 import ActionControls from './ActionControls';
 
 /**
- * Renders Upscale feature controls without altering existing UI behavior.
+ * Renders Upscale feature controls with Turnstile integration and background processing feedback.
+ * @param {Object} props - The component props.
+ * @param {boolean} props.isProcessing - Whether the tool is actively sending or polling a job.
+ * @param {boolean} props.isWaitingForToken - Whether Turnstile is actively fetching a token.
+ * @param {string|null} props.resultUrl - The object URL of the completed upscaled image.
+ * @param {number} props.progress - The current percentage (0-100) of the upscale job.
+ * @param {string|null} props.jobId - The current active background job ID.
+ * @param {Function} props.handleCancel - Callback to cancel the job or reset the workspace.
+ * @param {Function} props.handleUpscale - Callback to initiate the ESRGAN upscaling job.
+ * @param {React.MutableRefObject} props.turnstileRef - Ref attached to the Turnstile wrapper.
+ * @param {Function} props.setTurnstileToken - Callback to update the Turnstile validation token.
+ * @param {number} props.scale - The chosen upscale multiplier (1, 2, 3, or 4).
+ * @param {Function} props.setScale - Callback to update the chosen upscale multiplier.
+ * @returns {JSX.Element}
  */
 export default function UpscaleControls({
   isProcessing,

@@ -1,5 +1,6 @@
 /**
- * Renders animated typing indicator bubbles.
+ * Renders animated typing indicator bubbles to simulate active bot response.
+ * @returns {JSX.Element} The SVG dot animation structure.
  */
 export default function TypingDots() {
   return (

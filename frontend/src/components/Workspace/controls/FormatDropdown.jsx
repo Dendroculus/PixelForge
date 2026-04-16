@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
+import PropTypes from 'prop-types';
 
 /**
  * Renders a reusable fixed-position format dropdown with Type-to-Search.
@@ -173,3 +174,15 @@ export default function FormatDropdown({
     </div>
   );
 }
+
+FormatDropdown.propTypes = {
+  value: PropTypes.string.isRequired,
+  options: PropTypes.arrayOf(PropTypes.string).isRequired,
+  onChange: PropTypes.func.isRequired,
+  label: PropTypes.string,
+  transform: PropTypes.oneOf(['uppercase', 'lowercase', 'none']),
+  labelClassName: PropTypes.string,
+  buttonClassName: PropTypes.string,
+  getOptionStyle: PropTypes.func,
+  optionClassName: PropTypes.string,
+};

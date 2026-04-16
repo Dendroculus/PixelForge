@@ -1,6 +1,19 @@
 import PropTypes from 'prop-types';
 import { Turnstile } from '@marsidev/react-turnstile';
 
+/**
+ * Renders the primary action buttons, scale selection, and Turnstile integration for upscaling.
+ * @param {Object} props - The component props.
+ * @param {string|null} props.jobId - The current active job ID if processing.
+ * @param {boolean} props.isProcessing - Whether a job is currently actively processing.
+ * @param {Function} props.handleCancel - Callback to cancel the current job or clear workspace.
+ * @param {Function} props.handleUpscale - Callback to trigger the upscale process.
+ * @param {React.MutableRefObject} props.turnstileRef - Ref attached to the Turnstile component.
+ * @param {Function} props.setTurnstileToken - Callback to update the Turnstile security token.
+ * @param {number} props.scale - The currently selected scale multiplier (1, 2, 3, or 4).
+ * @param {Function} props.setScale - Callback to update the selected scale multiplier.
+ * @returns {JSX.Element}
+ */
 export default function ActionControls({
   jobId,
   isProcessing,

@@ -1,15 +1,15 @@
 import { motion } from 'framer-motion';
+import PropTypes from 'prop-types';
 import { bytesToMB } from '../../../utils/file/fileUtils';
 
 /**
  * Displays the final result size comparison and the download action button.
- * @param {{
- * resultUrl: string,
- * resultBlob: Blob,
- * originalFile: File,
- * downloadName: string,
- * downloadLabel: string
- * }} props
+ * @param {Object} props - The component props.
+ * @param {string} props.resultUrl - The object URL linking to the blob.
+ * @param {Blob} props.resultBlob - The exported Blob object payload.
+ * @param {File} props.originalFile - The source File object payload.
+ * @param {string} props.downloadName - Formatted string for the file download name.
+ * @param {string} [props.downloadLabel='Download Image'] - Text for the action button.
  * @returns {JSX.Element | null}
  */
 export default function WorkspaceResultDownload({
@@ -75,3 +75,11 @@ export default function WorkspaceResultDownload({
     </motion.div>
   );
 }
+
+WorkspaceResultDownload.propTypes = {
+  resultUrl: PropTypes.string,
+  resultBlob: PropTypes.shape({ size: PropTypes.number }),
+  originalFile: PropTypes.shape({ size: PropTypes.number }),
+  downloadName: PropTypes.string.isRequired,
+  downloadLabel: PropTypes.string,
+};

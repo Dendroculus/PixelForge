@@ -1,6 +1,11 @@
 import { motion } from 'framer-motion';
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 
+/**
+ * Sub-component to render the delete action icon.
+ * @param {{ className?: string }} props 
+ */
 function TrashIcon({ className = 'h-4 w-4' }) {
   return (
     <svg
@@ -22,6 +27,24 @@ function TrashIcon({ className = 'h-4 w-4' }) {
   );
 }
 
+TrashIcon.propTypes = {
+  className: PropTypes.string,
+};
+
+/**
+ * Draggable overlay layer for placing text and image watermarks on the canvas.
+ * @param {Object} props - The component props.
+ * @param {React.MutableRefObject} props.overlayRef - Ref for the draggable div.
+ * @param {{x: number, y: number}} props.overlayPos - Coordinates for initial placement.
+ * @param {string} props.activeTab - Determines whether to show 'text' or 'image' mark.
+ * @param {Object} props.textWm - State object holding text styling logic.
+ * @param {Object} props.imgWm - State object holding image overlay logic.
+ * @param {Object} props.dragBounds - Constraints object to keep the overlay in the canvas.
+ * @param {boolean} props.isSelected - Whether the overlay is currently clicked/focused.
+ * @param {Function} props.onSelect - Callback fired when clicked to set active state.
+ * @param {Function} props.onDelete - Callback fired when the trash icon is clicked.
+ * @returns {JSX.Element|null}
+ */
 export default function WatermarkPreviewOverlay({
   overlayRef,
   overlayPos,
@@ -122,3 +145,41 @@ export default function WatermarkPreviewOverlay({
     </motion.div>
   );
 }
+
+WatermarkPreviewOverlay.propTypes = {
+  overlayRef: PropTypes.oneOfType([
+    PropTypes.func,
+    PropTypes.shape({ current: PropTypes.any })
+  ]),
+  overlayPos: PropTypes.shape({
+    x: PropTypes.number,
+    y: PropTypes.number,
+  }).isRequired,
+  activeTab: PropTypes.string.isRequired,
+  textWm: PropTypes.shape({
+    text: PropTypes.string,
+    fontFamily: PropTypes.string,
+    color: PropTypes.string,
+    fontSize: PropTypes.number,
+    isBold: PropTypes.bool,
+    isItalic: PropTypes.bool,
+    isUnderline: PropTypes.bool,
+    opacity: PropTypes.number,
+  }).isRequired,
+  imgWm: PropTypes.shape({
+    url: PropTypes.string,
+    naturalWidth: PropTypes.number,
+    naturalHeight: PropTypes.number,
+    scale: PropTypes.number,
+    opacity: PropTypes.number,
+  }).isRequired,
+  dragBounds: PropTypes.shape({
+    left: PropTypes.number,
+    right: PropTypes.number,
+    top: PropTypes.number,
+    bottom: PropTypes.number,
+  }).isRequired,
+  isSelected: PropTypes.bool,
+  onSelect: PropTypes.func,
+  onDelete: PropTypes.func,
+};
