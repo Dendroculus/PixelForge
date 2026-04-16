@@ -155,7 +155,7 @@ export default function RotateFlip() {
               
               {/* Rotation Controls */}
               <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <label className="mb-3 block text-xs font-bold text-slate-700 uppercase tracking-wide">Rotate Image</label>
+                <h3 className="mb-3 block text-xs font-bold text-slate-700 uppercase tracking-wide">Rotate Image</h3>
                 <div className="flex gap-3">
                   <button
                     onClick={handleRotateLeft}
@@ -180,7 +180,7 @@ export default function RotateFlip() {
 
               {/* Flip Controls */}
               <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                <label className="mb-3 block text-xs font-bold text-slate-700 uppercase tracking-wide">Flip Image</label>
+                <h3 className="mb-3 block text-xs font-bold text-slate-700 uppercase tracking-wide">Flip Image</h3>
                 <div className="flex gap-3">
                   <button
                     onClick={handleFlipHorizontal}
