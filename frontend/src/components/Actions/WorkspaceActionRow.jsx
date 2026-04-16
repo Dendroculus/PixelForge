@@ -1,15 +1,17 @@
+import PropTypes from 'prop-types';
+
 /**
  * Renders a reusable action button row for primary/secondary workspace actions.
  * @param {{
- *   primaryLabel: string,
- *   secondaryLabel?: string,
- *   onPrimaryClick: () => void,
- *   onSecondaryClick?: () => void,
- *   primaryDisabled?: boolean,
- *   secondaryDisabled?: boolean,
- *   primaryType?: 'button' | 'submit' | 'reset',
- *   secondaryType?: 'button' | 'submit' | 'reset',
- *   className?: string
+ * primaryLabel: string,
+ * secondaryLabel?: string,
+ * onPrimaryClick: () => void,
+ * onSecondaryClick?: () => void,
+ * primaryDisabled?: boolean,
+ * secondaryDisabled?: boolean,
+ * primaryType?: 'button' | 'submit' | 'reset',
+ * secondaryType?: 'button' | 'submit' | 'reset',
+ * className?: string
  * }} props
  * @returns {JSX.Element}
  */
@@ -48,3 +50,15 @@ export default function WorkspaceActionRow({
     </div>
   );
 }
+
+WorkspaceActionRow.propTypes = {
+  primaryLabel: PropTypes.string.isRequired,
+  secondaryLabel: PropTypes.string,
+  onPrimaryClick: PropTypes.func.isRequired,
+  onSecondaryClick: PropTypes.func,
+  primaryDisabled: PropTypes.bool,
+  secondaryDisabled: PropTypes.bool,
+  primaryType: PropTypes.oneOf(['button', 'submit', 'reset']),
+  secondaryType: PropTypes.oneOf(['button', 'submit', 'reset']),
+  className: PropTypes.string,
+};

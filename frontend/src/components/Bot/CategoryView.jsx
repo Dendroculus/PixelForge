@@ -1,8 +1,20 @@
 import { motion } from 'framer-motion';
+import PropTypes from 'prop-types';
 import BackButton from './BackButton';
 
 /**
  * Renders category questions view.
+ * @param {Object} props - The component props.
+ * @param {Object} props.activeCategory - The currently selected category object.
+ * @param {string} props.activeCategory.id - Category ID.
+ * @param {string} props.activeCategory.title - Category title.
+ * @param {string} props.activeCategory.description - Category description.
+ * @param {string} props.activeCategory.icon - Category icon.
+ * @param {Array<Object>} props.activeCategory.questions - Array of questions belonging to this category.
+ * @param {Object} props.CAT_ACCENT - Mapping of category IDs to their specific styling configuration.
+ * @param {Function} props.handleBack - Callback to return to the home view.
+ * @param {Function} props.startAnswerFlow - Callback to initiate the answer animation sequence.
+ * @returns {JSX.Element}
  */
 export default function CategoryView({ activeCategory, CAT_ACCENT, handleBack, startAnswerFlow }) {
   const accent = CAT_ACCENT[activeCategory.id] ?? CAT_ACCENT['getting-started'];
@@ -43,3 +55,26 @@ export default function CategoryView({ activeCategory, CAT_ACCENT, handleBack, s
     </div>
   );
 }
+
+CategoryView.propTypes = {
+  activeCategory: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    title: PropTypes.string.isRequired,
+    description: PropTypes.string.isRequired,
+    icon: PropTypes.string.isRequired,
+    questions: PropTypes.arrayOf(
+      PropTypes.shape({
+        id: PropTypes.string,
+        q: PropTypes.string.isRequired,
+      })
+    ).isRequired,
+  }).isRequired,
+  CAT_ACCENT: PropTypes.objectOf(
+    PropTypes.shape({
+      bg: PropTypes.string.isRequired,
+      glow: PropTypes.string.isRequired,
+    })
+  ).isRequired,
+  handleBack: PropTypes.func.isRequired,
+  startAnswerFlow: PropTypes.func.isRequired,
+};

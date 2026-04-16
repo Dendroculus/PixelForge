@@ -1,3 +1,7 @@
+/**
+ * Renders a small badge indicating that a tool operates entirely client-side.
+ * @returns {JSX.Element}
+ */
 export default function ClientSideHeader() {
   return (
     <div className="flex items-center gap-2">

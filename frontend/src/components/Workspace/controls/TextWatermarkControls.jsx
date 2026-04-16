@@ -1,9 +1,8 @@
+import PropTypes from 'prop-types';
 import FormatDropdown from '../../../components/Workspace/controls/FormatDropdown';
 
-export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies, watermarkColors }) {
-  return (
-    <div className="space-y-3 pb-1">
-      <style>{`
+const CustomScrollbarStyle = 
+      `
         .custom-textarea-scroll::-webkit-scrollbar {
           width: 6px;
         }
@@ -18,7 +17,21 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
         .custom-textarea-scroll::-webkit-scrollbar-thumb:hover {
           background: rgba(99, 102, 241, 0.8); /* indigo-500 */
         }
-      `}</style>
+      `
+
+/**
+ * Control inputs specifically for styling and configuring text watermarks.
+ * @param {Object} props - The component props.
+ * @param {Object} props.textWm - State holding text watermark configuration.
+ * @param {Function} props.setTextWm - State setter for text watermark properties.
+ * @param {string[]} props.fontFamilies - Array of available font family strings.
+ * @param {string[]} props.watermarkColors - Array of standard hex colors for quick selection.
+ * @returns {JSX.Element}
+ */
+export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies, watermarkColors }) {
+  return (
+    <div className="space-y-3 pb-1">
+      <style>{CustomScrollbarStyle}</style>
 
       <div>
         <label htmlFor="watermark-text" className="mb-1.5 block text-xs font-bold text-slate-700 uppercase tracking-wide">Watermark Text</label>
@@ -27,7 +40,7 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
           value={textWm.text}
           onChange={(e) => setTextWm((prev) => ({ ...prev, text: e.target.value }))}
           placeholder="Enter watermark text&#10;Press Enter for new line"
-          className="custom-textarea-scroll min-h-80px w-full resize-y rounded-lg border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-700 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
+          className="custom-textarea-scroll min-h-20 w-full resize-y rounded-lg border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-700 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
         />
       </div>
 
@@ -79,7 +92,7 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
       </div>
 
       <div>
-        <label className="mb-1.5 block text-xs font-bold text-slate-700 uppercase tracking-wide">Text Color</label>
+        <h3 className="mb-1.5 block text-xs font-bold text-slate-700 uppercase tracking-wide">Text Color</h3>
         <div className="flex flex-wrap items-center gap-2">
           {watermarkColors.map((color) => (
             <button
@@ -155,3 +168,19 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
     </div>
   );
 }
+
+TextWatermarkControls.propTypes = {
+  textWm: PropTypes.shape({
+    text: PropTypes.string,
+    fontFamily: PropTypes.string,
+    color: PropTypes.string,
+    fontSize: PropTypes.number,
+    isBold: PropTypes.bool,
+    isItalic: PropTypes.bool,
+    isUnderline: PropTypes.bool,
+    opacity: PropTypes.number,
+  }).isRequired,
+  setTextWm: PropTypes.func.isRequired,
+  fontFamilies: PropTypes.arrayOf(PropTypes.string).isRequired,
+  watermarkColors: PropTypes.arrayOf(PropTypes.string).isRequired,
+};

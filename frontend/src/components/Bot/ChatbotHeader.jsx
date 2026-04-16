@@ -1,5 +1,16 @@
+import PropTypes from 'prop-types';
+
 /**
  * Renders chatbot header with title, avatar, close, and search.
+ * @param {Object} props - The component props.
+ * @param {Object} props.img - Object containing image assets.
+ * @param {string} props.query - The current search query string.
+ * @param {Function} props.setQuery - Callback to update the search query.
+ * @param {Function} props.setView - Callback to change the active view string (e.g., 'home', 'search').
+ * @param {boolean} props.searchFocused - Whether the search input is currently focused.
+ * @param {Function} props.setSearchFocused - Callback to update the search input focus state.
+ * @param {Function} props.handleClose - Callback to close the chatbot modal.
+ * @returns {JSX.Element}
  */
 export default function ChatbotHeader({
   img,
@@ -94,3 +105,15 @@ export default function ChatbotHeader({
     </div>
   );
 }
+
+ChatbotHeader.propTypes = {
+  img: PropTypes.shape({
+    chatbotIcon: PropTypes.string.isRequired,
+  }).isRequired,
+  query: PropTypes.string.isRequired,
+  setQuery: PropTypes.func.isRequired,
+  setView: PropTypes.func.isRequired,
+  searchFocused: PropTypes.bool.isRequired,
+  setSearchFocused: PropTypes.func.isRequired,
+  handleClose: PropTypes.func.isRequired,
+};

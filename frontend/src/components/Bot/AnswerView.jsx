@@ -1,9 +1,19 @@
 import { AnimatePresence, motion } from 'framer-motion';
+import PropTypes from 'prop-types';
 import BackButton from './BackButton';
 import TypingDots from './TypingDots';
 
 /**
  * Renders answer conversation view.
+ * @param {Object} props - The component props.
+ * @param {Object} props.img - Object containing image assets.
+ * @param {Object} props.activeQuestion - The currently selected question and answer object.
+ * @param {string} props.activeQuestion.q - The question text.
+ * @param {string|JSX.Element} props.activeQuestion.a - The answer content.
+ * @param {boolean} props.isTyping - Whether the chatbot is currently simulating typing.
+ * @param {boolean} props.showAnswer - Whether to display the answer content.
+ * @param {Function} props.handleBack - Callback to return to the previous view.
+ * @returns {JSX.Element}
  */
 export default function AnswerView({ img, activeQuestion, isTyping, showAnswer, handleBack }) {
   let responseContent = null;
@@ -57,3 +67,16 @@ export default function AnswerView({ img, activeQuestion, isTyping, showAnswer, 
     </div>
   );
 }
+
+AnswerView.propTypes = {
+  img: PropTypes.shape({
+    chatbotIcon: PropTypes.string.isRequired,
+  }).isRequired,
+  activeQuestion: PropTypes.shape({
+    q: PropTypes.string.isRequired,
+    a: PropTypes.node.isRequired,
+  }).isRequired,
+  isTyping: PropTypes.bool.isRequired,
+  showAnswer: PropTypes.bool.isRequired,
+  handleBack: PropTypes.func.isRequired,
+};

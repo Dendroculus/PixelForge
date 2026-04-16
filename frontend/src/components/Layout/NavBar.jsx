@@ -1,10 +1,14 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import { IMAGES as img } from '../../config';
 import { NavLinks } from '../../data/navConfig';
 
 /**
  * Standardized SVG Icon wrapper.
+ * @param {Object} props - The component props.
+ * @param {string} props.d - The SVG path data string.
+ * @returns {JSX.Element}
  */
 const Icon = ({ d }) => (
   <svg className="w-5.5 h-5.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -12,8 +16,16 @@ const Icon = ({ d }) => (
   </svg>
 );
 
+Icon.propTypes = {
+  d: PropTypes.string.isRequired,
+};
+
 /**
  * Desktop dropdown container.
+ * @param {Object} props - The component props.
+ * @param {string} props.title - The title of the dropdown menu.
+ * @param {React.ReactNode} props.children - The dropdown items.
+ * @returns {JSX.Element}
  */
 const NavDropdown = ({ title, children }) => (
   <div className="relative group">
@@ -31,9 +43,20 @@ const NavDropdown = ({ title, children }) => (
   </div>
 );
 
+NavDropdown.propTypes = {
+  title: PropTypes.string.isRequired,
+  children: PropTypes.node.isRequired,
+};
+
 /**
  * Individual link item within desktop dropdowns.
  * Applies visual hierarchy based on AI usage requirements.
+ * @param {Object} props - The component props.
+ * @param {string} props.to - The route path to link to.
+ * @param {React.ReactNode} props.icon - The icon element to display.
+ * @param {React.ReactNode} props.children - The link label/content.
+ * @param {boolean} [props.isAi=false] - Whether the link points to an AI-powered tool.
+ * @returns {JSX.Element}
  */
 const DropdownItem = ({ to, icon, children, isAi }) => {
   const baseHoverClass = isAi 
@@ -68,8 +91,16 @@ const DropdownItem = ({ to, icon, children, isAi }) => {
   );
 };
 
+DropdownItem.propTypes = {
+  to: PropTypes.string.isRequired,
+  icon: PropTypes.node.isRequired,
+  children: PropTypes.node.isRequired,
+  isAi: PropTypes.bool,
+};
+
 /**
  * Main Navigation component wrapping global routing and responsive menus.
+ * @returns {JSX.Element}
  */
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);

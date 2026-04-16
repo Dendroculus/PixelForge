@@ -3,6 +3,15 @@ import { IMAGES as img } from '../../config';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
+/**
+ * Renders the main application header with a rotating text animation.
+ * @param {Object} props - The component props.
+ * @param {string} [props.badgeText="The Open-Source Image Studio"] - Text to display in the top badge.
+ * @param {string} [props.titlePrefix="What would you like to"] - The static part of the main heading.
+ * @param {Array<string>} [props.words=["transform.", "enhance.", "edit.", "optimize."]] - Array of words to animate through.
+ * @param {string} [props.subtitle=""] - Optional subtitle text displayed below the main heading.
+ * @returns {JSX.Element}
+ */
 export default function Header({
   badgeText = "The Open-Source Image Studio",
   titlePrefix = "What would you like to",

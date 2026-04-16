@@ -1,8 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import PropTypes from 'prop-types';
 import { validateImageUpload } from '../../utils/file/fileValidation';
 
 const AcceptableImageMimeTypes = '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp';
 
+/**
+ * Renders a customizable upload card for file selection with validation.
+ * @param {Object} props - The component props.
+ * @param {string} props.inputId - HTML id attribute for the file input element.
+ * @param {React.MutableRefObject} [props.inputRef] - Ref attached to the hidden file input.
+ * @param {Function} [props.onChange] - Callback fired when a file is selected.
+ * @param {Function} [props.onValidationError] - Callback fired if file validation fails.
+ * @param {string} [props.helperText] - Text to display below the main upload instruction.
+ * @param {string} [props.accept='.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp'] - Accepted file mime types.
+ * @param {string} [props.className=''] - Additional CSS classes for the card container.
+ * @param {string} [props.heightClass='h-36'] - CSS class to control the card's height.
+ * @param {boolean} [props.validate=true] - Whether to validate the file before triggering onChange.
+ * @param {number} [props.clearErrorAfterMs=5000] - Time in ms to clear validation error messages.
+ * @param {number} [props.maxSizeMB] - Maximum allowed file size in MB.
+ * @returns {JSX.Element}
+ */
 export default function UploadCard({
   inputId,
   inputRef,
@@ -145,3 +162,20 @@ export default function UploadCard({
     </label>
   );
 }
+
+UploadCard.propTypes = {
+  inputId: PropTypes.string.isRequired,
+  inputRef: PropTypes.oneOfType([
+    PropTypes.func,
+    PropTypes.shape({ current: PropTypes.any })
+  ]),
+  onChange: PropTypes.func,
+  onValidationError: PropTypes.func,
+  helperText: PropTypes.string,
+  accept: PropTypes.string,
+  className: PropTypes.string,
+  heightClass: PropTypes.string,
+  validate: PropTypes.bool,
+  clearErrorAfterMs: PropTypes.number,
+  maxSizeMB: PropTypes.number,
+};

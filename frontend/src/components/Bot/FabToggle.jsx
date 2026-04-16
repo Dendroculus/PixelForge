@@ -1,7 +1,13 @@
 import { AnimatePresence, motion } from 'framer-motion';
+import PropTypes from 'prop-types';
 
 /**
  * Renders floating action button for chatbot open/close.
+ * @param {Object} props - The component props.
+ * @param {boolean} props.isOpen - Whether the chatbot is currently open.
+ * @param {Function} props.setIsOpen - Callback to toggle the chatbot visibility state.
+ * @param {Object} props.img - Object containing image assets.
+ * @returns {JSX.Element}
  */
 export default function FabToggle({ isOpen, setIsOpen, img }) {
   return (
@@ -51,3 +57,11 @@ export default function FabToggle({ isOpen, setIsOpen, img }) {
     </div>
   );
 }
+
+FabToggle.propTypes = {
+  isOpen: PropTypes.bool.isRequired,
+  setIsOpen: PropTypes.func.isRequired,
+  img: PropTypes.shape({
+    chatbotIcon: PropTypes.string.isRequired,
+  }).isRequired,
+};

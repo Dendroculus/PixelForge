@@ -1,5 +1,13 @@
 import PropTypes from 'prop-types';
 
+/**
+ * Renders the marketing/features section for a workspace tool landing page.
+ * @param {Object} props - The component props.
+ * @param {string} props.subtitle - Subtitle text describing the tool's purpose.
+ * @param {Array<{title: string, icon: React.ReactNode, desc: string}>} props.features - Array of feature highlights.
+ * @param {Array<{step: string|number, title: string, desc: string}>} props.steps - Array of "How It Works" steps.
+ * @returns {JSX.Element}
+ */
 export default function WorkspaceMarketing({ subtitle, features, steps }) {
   return (
     <>
@@ -40,6 +48,18 @@ export default function WorkspaceMarketing({ subtitle, features, steps }) {
 
 WorkspaceMarketing.propTypes = {
   subtitle: PropTypes.string.isRequired,
-  features: PropTypes.array.isRequired,
-  steps: PropTypes.array.isRequired,
+  features: PropTypes.arrayOf(
+    PropTypes.shape({
+      title: PropTypes.string.isRequired,
+      icon: PropTypes.node.isRequired,
+      desc: PropTypes.string.isRequired,
+    })
+  ).isRequired,
+  steps: PropTypes.arrayOf(
+    PropTypes.shape({
+      step: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+      title: PropTypes.string.isRequired,
+      desc: PropTypes.string.isRequired,
+    })
+  ).isRequired,
 };

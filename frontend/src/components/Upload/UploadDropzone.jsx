@@ -3,9 +3,14 @@ import PropTypes from 'prop-types';
 import { validateImageUpload } from '../../utils/file/fileValidation'; 
 import { APP_CONFIG as config } from '../../config';
 
-
 const AllowedFormatsText = config.ALLOWED_EXTENSIONS.map(e => e.toUpperCase()).join(', ');
 
+/**
+ * Renders a drag-and-drop zone for file uploads with built-in validation.
+ * @param {Object} props - The component props.
+ * @param {Function} props.onFileSelect - Callback fired when a valid file is successfully dropped or selected.
+ * @returns {JSX.Element}
+ */
 export default function UploadDropzone({ onFileSelect }) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState(null);
@@ -32,7 +37,6 @@ export default function UploadDropzone({ onFileSelect }) {
     if (error) setError(null); 
     fileInputRef.current.click(); 
   };
-  
   
   const handleChange = (e) => { 
     if (e.target.files?.length > 0) processFile(e.target.files[0]); 

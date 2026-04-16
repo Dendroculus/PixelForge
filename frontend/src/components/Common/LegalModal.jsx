@@ -1,6 +1,15 @@
 import { useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 
+/**
+ * Renders a modal dialog for displaying legal information (Privacy, Terms, etc.).
+ * @param {Object} props - The component props.
+ * @param {boolean} props.isOpen - Whether the modal is currently open.
+ * @param {Function} props.onClose - Callback to close the modal.
+ * @param {string} props.title - The title of the modal.
+ * @param {React.ReactNode} props.children - The content to display inside the modal.
+ * @returns {JSX.Element}
+ */
 export default function LegalModal({ isOpen, onClose, title, children }) {
   const dialogRef = useRef(null);
 
@@ -52,6 +61,7 @@ export default function LegalModal({ isOpen, onClose, title, children }) {
 
         <div
           className="legal-panel relative bg-white/90 backdrop-blur-xl border border-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[80vh] flex flex-col overflow-hidden"
+          onClick={(e) => e.stopPropagation()}
         >
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/60 bg-white/50">
             <h2 id="modal-title" className="text-xl font-bold text-slate-800">{title}</h2>

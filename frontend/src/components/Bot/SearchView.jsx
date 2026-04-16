@@ -1,8 +1,16 @@
 import { motion } from 'framer-motion';
+import PropTypes from 'prop-types';
 import BackButton from './BackButton';
 
 /**
  * Renders search results view.
+ * @param {Object} props - The component props.
+ * @param {string} props.query - The current active search query string.
+ * @param {Function} props.setQuery - Callback to update the search query state.
+ * @param {Array<Object>} props.filteredResults - Array of questions matching the current search query.
+ * @param {Function} props.handleBack - Callback to return to the previous view.
+ * @param {Function} props.startAnswerFlow - Callback to initiate the answer animation sequence.
+ * @returns {JSX.Element}
  */
 export default function SearchView({ query, setQuery, filteredResults, handleBack, startAnswerFlow }) {
   let content;
@@ -55,3 +63,17 @@ export default function SearchView({ query, setQuery, filteredResults, handleBac
     </div>
   );
 }
+
+SearchView.propTypes = {
+  query: PropTypes.string.isRequired,
+  setQuery: PropTypes.func.isRequired,
+  filteredResults: PropTypes.arrayOf(
+    PropTypes.shape({
+      q: PropTypes.string.isRequired,
+      category: PropTypes.string,
+      icon: PropTypes.string,
+    })
+  ).isRequired,
+  handleBack: PropTypes.func.isRequired,
+  startAnswerFlow: PropTypes.func.isRequired,
+};

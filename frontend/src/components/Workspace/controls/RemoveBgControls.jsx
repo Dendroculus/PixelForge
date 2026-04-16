@@ -3,7 +3,18 @@ import { Turnstile } from '@marsidev/react-turnstile';
 import ProgressBar from '../../Common/ProgressBar';
 
 /**
- * Renders Remove Background feature controls without altering existing UI behavior.
+ * Renders Remove Background feature controls and localized progress tracking.
+ * @param {Object} props - The component props.
+ * @param {boolean} props.isProcessing - Whether the job is actively generating a mask.
+ * @param {boolean} props.isWaitingForToken - Whether Turnstile is actively fetching a token.
+ * @param {string|null} props.resultUrl - The object URL of the completed result.
+ * @param {number} props.progress - The current percentage (0-100) of the background job.
+ * @param {string|null} props.jobId - The current active background job ID.
+ * @param {Function} props.handleCancel - Callback to cancel the job or reset the workspace.
+ * @param {Function} props.handleProcess - Callback to initiate the background removal job.
+ * @param {React.MutableRefObject} props.turnstileRef - Ref attached to the Turnstile wrapper.
+ * @param {Function} props.setTurnstileToken - Callback to update the Turnstile validation token.
+ * @returns {JSX.Element}
  */
 export default function RemoveBgControls({
   isProcessing,

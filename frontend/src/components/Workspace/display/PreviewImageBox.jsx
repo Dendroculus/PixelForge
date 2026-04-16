@@ -1,6 +1,23 @@
 import { motion } from 'framer-motion';
+import PropTypes from 'prop-types';
 import EmptyWorkspaceState from '../../Common/EmptyWorkspaceState';
 
+/**
+ * Standardized container for displaying active workspace images and processing states.
+ * @param {Object} props - The component props.
+ * @param {string} [props.previewUrl] - The object URL of the source image.
+ * @param {string} [props.resultUrl] - The object URL of the completed output.
+ * @param {string} [props.resultAlt='Result preview'] - Alt text for the result image.
+ * @param {boolean} [props.isProcessing=false] - Triggers blur/grayscale loading state.
+ * @param {React.MutableRefObject} [props.imageRef] - Ref attached to the preview image.
+ * @param {Function} [props.onImageLoad] - Callback fired when the preview image loads.
+ * @param {string} [props.previewClassName] - Custom classes for the base preview.
+ * @param {string} [props.processingClassName] - Custom classes for the active processing state.
+ * @param {string} [props.containerClassName] - Custom classes for the outer wrapper.
+ * @param {React.MutableRefObject} [props.containerRef] - Ref attached to the outer wrapper.
+ * @param {React.ReactNode} [props.children] - Absolute positioned overlays (like watermarks or points).
+ * @returns {JSX.Element}
+ */
 export default function PreviewImageBox({
   previewUrl,
   resultUrl,
@@ -55,3 +72,23 @@ export default function PreviewImageBox({
     </div>
   );
 }
+
+PreviewImageBox.propTypes = {
+  previewUrl: PropTypes.string,
+  resultUrl: PropTypes.string,
+  resultAlt: PropTypes.string,
+  isProcessing: PropTypes.bool,
+  imageRef: PropTypes.oneOfType([
+    PropTypes.func,
+    PropTypes.shape({ current: PropTypes.any })
+  ]),
+  onImageLoad: PropTypes.func,
+  previewClassName: PropTypes.string,
+  processingClassName: PropTypes.string,
+  containerClassName: PropTypes.string,
+  containerRef: PropTypes.oneOfType([
+    PropTypes.func,
+    PropTypes.shape({ current: PropTypes.any })
+  ]),
+  children: PropTypes.node,
+};

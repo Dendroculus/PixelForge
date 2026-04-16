@@ -1,7 +1,15 @@
 import { motion } from 'framer-motion';
+import PropTypes from 'prop-types';
 
 /**
  * Renders chatbot home view.
+ * @param {Object} props - The component props.
+ * @param {Array<Object>} props.FAQ_DATA - Array containing FAQ categories and questions.
+ * @param {Array<string>} props.QUICK_ACTIONS - Array of quick action strings to render as tags.
+ * @param {Object} props.CAT_ACCENT - Mapping of category IDs to their specific styling configuration.
+ * @param {Function} props.openFromQuickAction - Callback executed when a quick action is clicked.
+ * @param {Function} props.openCategory - Callback executed when an FAQ category is clicked.
+ * @returns {JSX.Element}
  */
 export default function HomeView({ FAQ_DATA, QUICK_ACTIONS, CAT_ACCENT, openFromQuickAction, openCategory }) {
   return (
@@ -75,3 +83,23 @@ export default function HomeView({ FAQ_DATA, QUICK_ACTIONS, CAT_ACCENT, openFrom
     </div>
   );
 }
+
+HomeView.propTypes = {
+  FAQ_DATA: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      title: PropTypes.string.isRequired,
+      description: PropTypes.string.isRequired,
+      icon: PropTypes.string.isRequired,
+    })
+  ).isRequired,
+  QUICK_ACTIONS: PropTypes.arrayOf(PropTypes.string).isRequired,
+  CAT_ACCENT: PropTypes.objectOf(
+    PropTypes.shape({
+      bg: PropTypes.string.isRequired,
+      glow: PropTypes.string.isRequired,
+    })
+  ).isRequired,
+  openFromQuickAction: PropTypes.func.isRequired,
+  openCategory: PropTypes.func.isRequired,
+};

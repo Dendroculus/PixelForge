@@ -2,6 +2,20 @@ import PropTypes from 'prop-types';
 import { Turnstile } from '@marsidev/react-turnstile';
 import ProgressBar from '../../Common/ProgressBar';
 
+/**
+ * Renders the action controls and progress bar specifically for the Color Restoration tool.
+ * @param {Object} props - The component props.
+ * @param {boolean} props.isProcessing - Whether the tool is currently processing.
+ * @param {boolean} props.isWaitingForToken - Whether Turnstile is actively fetching a token.
+ * @param {string|null} props.resultUrl - The URL of the completed result.
+ * @param {number} props.progress - The current percentage (0-100) of the background job.
+ * @param {string|null} props.jobId - The current active background job ID.
+ * @param {Function} props.handleCancel - Callback to cancel the job or reset the workspace.
+ * @param {Function} props.handleProcess - Callback to initiate the color restoration job.
+ * @param {React.MutableRefObject} props.turnstileRef - Ref attached to the Turnstile wrapper.
+ * @param {Function} props.setTurnstileToken - Callback to update the Turnstile validation token.
+ * @returns {JSX.Element}
+ */
 export default function ColorRestoreControls({
   isProcessing,
   isWaitingForToken,
