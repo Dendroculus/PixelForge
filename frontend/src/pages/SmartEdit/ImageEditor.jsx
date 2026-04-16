@@ -177,66 +177,66 @@ export default function ImageEditor() {
             <div className={`space-y-6 transition-opacity duration-300 ${!file ? 'pointer-events-none opacity-40' : 'opacity-100'}`}>
               
               <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide border-b border-slate-100 pb-2">Light & Color</label>
+                <h3 className="block text-xs font-bold text-slate-700 uppercase tracking-wide border-b border-slate-100 pb-2">Light & Color</h3>
                 
                 <div>
-                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1">
+                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1" aria-hidden="true">
                     <span>Brightness</span>
                     <span>{filters.brightness}%</span>
                   </div>
-                  <input type="range" min="0" max="200" value={filters.brightness} onChange={(e) => handleFilterChange('brightness', Number(e.target.value))} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
+                  <input aria-label="Brightness" type="range" min="0" max="200" value={filters.brightness} onChange={(e) => handleFilterChange('brightness', Number(e.target.value))} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1">
+                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1" aria-hidden="true">
                     <span>Contrast</span>
                     <span>{filters.contrast}%</span>
                   </div>
-                  <input type="range" min="0" max="200" value={filters.contrast} onChange={(e) => handleFilterChange('contrast', Number(e.target.value))} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
+                  <input aria-label="Contrast" type="range" min="0" max="200" value={filters.contrast} onChange={(e) => handleFilterChange('contrast', Number(e.target.value))} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1">
+                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1" aria-hidden="true">
                     <span>Saturation</span>
                     <span>{filters.saturation}%</span>
                   </div>
-                  <input type="range" min="0" max="200" value={filters.saturation} onChange={(e) => handleFilterChange('saturation', Number(e.target.value))} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
+                  <input aria-label="Saturation" type="range" min="0" max="200" value={filters.saturation} onChange={(e) => handleFilterChange('saturation', Number(e.target.value))} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1">
+                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1" aria-hidden="true">
                     <span>Temperature</span>
                     <span>{filters.temperature > 0 ? `+${filters.temperature}` : filters.temperature}</span>
                   </div>
-                  <input type="range" min="-100" max="100" value={filters.temperature} onChange={(e) => handleFilterChange('temperature', Number(e.target.value))} className="w-full h-1.5 bg-linear-to-r from-blue-400 via-slate-200 to-orange-400 rounded-lg appearance-none cursor-pointer accent-slate-700" />
+                  <input aria-label="Temperature" type="range" min="-100" max="100" value={filters.temperature} onChange={(e) => handleFilterChange('temperature', Number(e.target.value))} className="w-full h-1.5 bg-linear-to-r from-blue-400 via-slate-200 to-orange-400 rounded-lg appearance-none cursor-pointer accent-slate-700" />
                 </div>
               </div>
 
               <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm space-y-4">
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide border-b border-slate-100 pb-2">Effects & Tone</label>
+                <h3 className="block text-xs font-bold text-slate-700 uppercase tracking-wide border-b border-slate-100 pb-2">Effects & Tone</h3>
                 
                 <div>
-                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1">
+                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1" aria-hidden="true">
                     <span>Fade</span>
                     <span>{filters.fade}</span>
                   </div>
-                  <input type="range" min="0" max="100" value={filters.fade} onChange={(e) => handleFilterChange('fade', Number(e.target.value))} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
+                  <input aria-label="Fade" type="range" min="0" max="100" value={filters.fade} onChange={(e) => handleFilterChange('fade', Number(e.target.value))} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1">
+                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1" aria-hidden="true">
                     <span>Vignette</span>
                     <span>{filters.vignette}</span>
                   </div>
-                  <input type="range" min="0" max="100" value={filters.vignette} onChange={(e) => handleFilterChange('vignette', Number(e.target.value))} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
+                  <input aria-label="Vignette" type="range" min="0" max="100" value={filters.vignette} onChange={(e) => handleFilterChange('vignette', Number(e.target.value))} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
                 </div>
 
                 <div>
-                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1">
+                  <div className="flex justify-between text-xs font-bold text-slate-500 mb-1" aria-hidden="true">
                     <span>Blur</span>
                     <span>{filters.blur}px</span>
                   </div>
-                  <input type="range" min="0" max="20" step="0.5" value={filters.blur} onChange={(e) => handleFilterChange('blur', Number(e.target.value))} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
+                  <input aria-label="Blur" type="range" min="0" max="20" step="0.5" value={filters.blur} onChange={(e) => handleFilterChange('blur', Number(e.target.value))} className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600" />
                 </div>
               </div>
 

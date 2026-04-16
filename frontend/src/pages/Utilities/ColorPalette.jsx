@@ -288,7 +288,7 @@ export default function ColorPalette() {
                   className="mb-4 flex flex-col"
                 >
                   <div className="mb-2 flex items-center justify-between gap-3">
-                    <label className="text-sm font-bold text-slate-700">Palette</label>
+                    <h3 className="text-sm font-bold text-slate-700">Palette</h3>
                     <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 text-[11px] font-bold">
                       <button
                         type="button"

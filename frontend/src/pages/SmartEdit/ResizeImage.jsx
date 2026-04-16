@@ -323,7 +323,7 @@ export default function ResizeImage() {
             <div className={`space-y-6 transition-opacity duration-300 ${!file || resultUrl ? 'pointer-events-none opacity-40' : 'opacity-100'}`}>
               <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">Custom Dimensions</label>
+                  <h3 className="block text-xs font-bold text-slate-700 uppercase tracking-wide">Custom Dimensions</h3>
                   {origWidth > 0 && (
                     <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md">
                       Original: {origWidth} x {origHeight}
@@ -333,8 +333,9 @@ export default function ResizeImage() {
 
                 <div className="flex items-center gap-3">
                   <div className="flex-1 relative">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1 absolute -top-2 left-2 bg-white px-1">Width</label>
+                    <label htmlFor="targetWidth" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1 absolute -top-2 left-2 bg-white px-1">Width</label>
                     <input
+                      id="targetWidth"
                       type="number"
                       value={targetWidth}
                       onChange={handleWidthChange}
@@ -367,8 +368,9 @@ export default function ResizeImage() {
                   </button>
 
                   <div className="flex-1 relative">
-                    <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1 absolute -top-2 left-2 bg-white px-1">Height</label>
+                    <label htmlFor="targetHeight" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1 absolute -top-2 left-2 bg-white px-1">Height</label>
                     <input
+                      id="targetHeight"
                       type="number"
                       value={targetHeight}
                       onChange={handleHeightChange}
@@ -382,7 +384,7 @@ export default function ResizeImage() {
                 </div>
 
                 <div className="mt-5 pt-4 border-t border-slate-100">
-                  <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-3">Quick Presets</label>
+                  <h3 className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-3">Quick Presets</h3>
                   <div className="grid grid-cols-2 gap-2">
                     {RESIZE_PRESETS.map((preset) => {
                       const isSelected = Number(targetWidth) === preset.width && Number(targetHeight) === preset.height;
