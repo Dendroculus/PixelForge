@@ -6,6 +6,7 @@ import { useImageCrop } from '../../hooks/workspace/useImageCrop';
 import { CROP_ASPECT_RATIOS } from '../../config';
 import ToolStateWrapper from '../../components/Layout/ToolStateWrapper';
 import WorkspaceSuccessCard from '../../components/Workspace/cards/WorkspaceSuccessCard';
+import FitModeToggle from '../../components/Workspace/controls/FitModeToggle';
 
 export default function CropImage() {
   const fileInputRef = useRef(null);
@@ -105,98 +106,92 @@ export default function CropImage() {
           </div>
         </div>
 
-        <div 
-          className={`flex-1 min-h-0 w-full relative p-4 sm:p-8 bg-slate-950/50 ${
-            fitMode === 'fit' 
-              ? 'flex items-center justify-center overflow-hidden' 
-              : 'overflow-y-auto overflow-x-hidden custom-scroll block'
-          }`}
-        >
-          <style>{`
-            .custom-scroll::-webkit-scrollbar {
-              width: 8px;
-            }
-            .custom-scroll::-webkit-scrollbar-track {
-              background: rgba(15, 23, 42, 0.4); 
-              border-radius: 4px;
-            }
-            .custom-scroll::-webkit-scrollbar-thumb {
-              background: rgba(71, 85, 105, 0.8); 
-              border-radius: 4px;
-            }
-            .custom-scroll::-webkit-scrollbar-thumb:hover {
-              background: rgba(99, 102, 241, 0.9); 
-            }
-            .ReactCrop__crop-selection {
-              animation: none !important;
-              background-image: none !important;
-              border: 2px solid white !important;
-              box-shadow: 0 0 5px rgba(0,0,0,0.5) !important;
-            }
-            .ReactCrop__drag-handle.ord-n,
-            .ReactCrop__drag-handle.ord-e,
-            .ReactCrop__drag-handle.ord-s,
-            .ReactCrop__drag-handle.ord-w {
-              display: none !important;
-            }
-          `}</style>
-
-          <ReactCrop
-            crop={crop}
-            onChange={(pixelCrop, percentCrop) => setCrop(percentCrop)}
-            onComplete={(pixelCrop, percentCrop) => {
-              setCompletedCrop(percentCrop);
-              cleanupResult();
-            }}
-            aspect={aspect || undefined}
-            className={fitMode === 'fit' ? "flex items-center justify-center" : ""}
-            style={
-              fitMode === 'fit'
-                ? {
-                    width: imageSize.width > 0 ? `calc((100vh - 260px) * ${imageAspect})` : 'auto',
-                    maxWidth: '100%',
-                    maxHeight: '100%',
-                    margin: 'auto'
-                  }
-                : {
-                    width: '100%',
-                    maxWidth: '800px', 
-                    height: 'max-content',
-                    margin: '0 auto',
-                    display: 'block'
-                  }
-            }
+        <div className="flex-1 min-h-0 w-full relative bg-slate-950/50 flex flex-col overflow-hidden">
+          <div 
+            className={`flex-1 w-full h-full p-4 sm:p-8 ${
+              fitMode === 'fit' 
+                ? 'flex items-center justify-center overflow-hidden' 
+                : 'overflow-y-auto overflow-x-hidden custom-scroll block'
+            }`}
           >
-            <img
-              ref={imgRef}
-              alt="Crop preview"
-              src={previewUrl}
-              onLoad={onImageLoad}
-              className={`block ${fitMode === 'scroll' ? 'shadow-2xl' : ''}`}
-              style={{
-                width: '100%',
-                height: 'auto',
-                display: 'block'
+            <style>{`
+              .custom-scroll::-webkit-scrollbar {
+                width: 8px;
+              }
+              .custom-scroll::-webkit-scrollbar-track {
+                background: rgba(15, 23, 42, 0.4); 
+                border-radius: 4px;
+              }
+              .custom-scroll::-webkit-scrollbar-thumb {
+                background: rgba(71, 85, 105, 0.8); 
+                border-radius: 4px;
+              }
+              .custom-scroll::-webkit-scrollbar-thumb:hover {
+                background: rgba(99, 102, 241, 0.9); 
+              }
+              .ReactCrop__crop-selection {
+                animation: none !important;
+                background-image: none !important;
+                border: 2px solid white !important;
+                box-shadow: 0 0 5px rgba(0,0,0,0.5) !important;
+              }
+              .ReactCrop__drag-handle.ord-n,
+              .ReactCrop__drag-handle.ord-e,
+              .ReactCrop__drag-handle.ord-s,
+              .ReactCrop__drag-handle.ord-w {
+                display: none !important;
+              }
+            `}</style>
+
+            <ReactCrop
+              crop={crop}
+              onChange={(pixelCrop, percentCrop) => setCrop(percentCrop)}
+              onComplete={(pixelCrop, percentCrop) => {
+                setCompletedCrop(percentCrop);
+                cleanupResult();
               }}
-            />
-          </ReactCrop>
+              aspect={aspect || undefined}
+              className={fitMode === 'fit' ? "flex items-center justify-center" : ""}
+              style={
+                fitMode === 'fit'
+                  ? {
+                      width: imageSize.width > 0 ? `calc((100vh - 260px) * ${imageAspect})` : 'auto',
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                      margin: 'auto'
+                    }
+                  : {
+                      width: '100%',
+                      maxWidth: '800px', 
+                      height: 'max-content',
+                      margin: '0 auto',
+                      display: 'block'
+                    }
+              }
+            >
+              <img
+                ref={imgRef}
+                alt="Crop preview"
+                src={previewUrl}
+                onLoad={onImageLoad}
+                className={`block ${fitMode === 'scroll' ? 'shadow-2xl' : ''}`}
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  display: 'block'
+                }}
+              />
+            </ReactCrop>
+          </div>
 
           <div className="absolute bottom-6 right-6 z-50 flex gap-2">
-            <button
-              onClick={() => setFitMode(prev => prev === 'fit' ? 'scroll' : 'fit')}
+            <FitModeToggle
+              isFitMode={fitMode === 'fit'}
+              onToggle={() => setFitMode(prev => prev === 'fit' ? 'scroll' : 'fit')}
               className="p-2.5 bg-slate-800/90 backdrop-blur rounded-lg border border-slate-700 shadow-lg text-slate-300 hover:text-white hover:bg-slate-700 hover:border-slate-500 transition-all"
-              title={fitMode === 'fit' ? 'Switch to Scroll Mode for tall images' : 'Fit to Screen'}
-            >
-              {fitMode === 'fit' ? (
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                </svg>
-              ) : (
-                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 4v4H4m4-4L3 3m13 1v4h4m-4-4l5-5m-5 13v4h-4m4-4l5 5M8 20v-4H4m4 4l-5 5" />
-                </svg>
-              )}
-            </button>
+              fitTitle="Fit to Screen"
+              fillTitle="Switch to Scroll Mode for tall images"
+            />
           </div>
         </div>
 

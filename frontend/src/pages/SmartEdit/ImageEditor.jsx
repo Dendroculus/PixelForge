@@ -13,6 +13,7 @@ import PreviewImageBox from '../../components/Workspace/display/PreviewImageBox'
 import WorkspaceFileSummary from '../../components/Workspace/display/WorkspaceFileSummary';
 import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErrorAlert';
 import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
+import FitModeToggle from '../../components/Workspace/controls/FitModeToggle';
 import { useWorkspaceFile } from '../../hooks/workspace/useWorkspaceFile';
 import { generateSafeFilename } from '../../utils/file/fileUtils';
 
@@ -45,6 +46,7 @@ export default function ImageEditor() {
 
   const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
   const [isProcessing, setIsProcessing] = useState(false);
+  const [fitMode, setFitMode] = useState('contain'); // Toggle state for preview
 
   const {
     file,
@@ -287,7 +289,7 @@ export default function ImageEditor() {
         }
         rightHeader={<h3 className="text-sm font-medium text-slate-700">Preview Workspace</h3>}
         rightBody={
-          <div className="absolute inset-2 flex flex-col bg-slate-100 rounded-xl overflow-hidden shadow-inner">
+          <div className="absolute inset-2 flex flex-col bg-slate-100 rounded-xl overflow-hidden shadow-inner group">
             <PreviewImageBox
               previewUrl={previewUrl}
               resultUrl={null} 
@@ -300,7 +302,7 @@ export default function ImageEditor() {
                     <img
                       src={previewUrl}
                       alt="Base Workspace"
-                      className="absolute inset-0 h-full w-full object-contain pointer-events-none transition-all duration-150"
+                      className={`absolute inset-0 h-full w-full pointer-events-none transition-all duration-150 ${fitMode === 'contain' ? 'object-contain' : 'object-cover'}`}
                       style={{ filter: cssFilterString }}
                     />
                     
@@ -308,11 +310,11 @@ export default function ImageEditor() {
                       className="absolute inset-0 pointer-events-none transition-all duration-150"
                       style={{
                         WebkitMaskImage: `url("${previewUrl}")`,
-                        WebkitMaskSize: 'contain',
+                        WebkitMaskSize: fitMode,
                         WebkitMaskPosition: 'center',
                         WebkitMaskRepeat: 'no-repeat',
                         maskImage: `url("${previewUrl}")`,
-                        maskSize: 'contain',
+                        maskSize: fitMode,
                         maskPosition: 'center',
                         maskRepeat: 'no-repeat'
                       }}
@@ -344,6 +346,15 @@ export default function ImageEditor() {
                         />
                       )}
                     </div>
+                  </div>
+                  
+                  <div className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-50">
+                    <FitModeToggle
+                      isFitMode={fitMode === 'contain'}
+                      onToggle={() => setFitMode(prev => prev === 'contain' ? 'cover' : 'contain')}
+                      fitTitle="Fill container"
+                      fillTitle="Show full image"
+                    />
                   </div>
                 </div>
               )}
