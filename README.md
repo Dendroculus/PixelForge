@@ -45,20 +45,112 @@ The system is designed to handle real-world constraints such as rate limits, lon
 
 ### A) Core Image Tools
 
-1. 🔍 **Upscale Image (AI)** — Real-ESRGAN enhancement  
-2. 🧍 **Remove Background (AI)** — clean subject extraction  
-3. 🎨 **Restore Color (AI)** — revive grayscale & faded photos  
-4. 🎛️ **Image Editor** — brightness, contrast, saturation, blur, vignette  
-5. 📐 **Resize Image** — custom size, aspect lock, presets  
-6. 🔄 **Rotate & Flip** — quick transform controls  
-7. 🗜️ **Compress Image** — reduce size with quality control  
-8. 🔁 **Convert Format** — PNG / JPG / WEBP  
-9. 🧹 **Remove Metadata** — clean EXIF data  
-10. 🎯 **Color Palette Extractor** — draggable sampling points  
-11. 🏷️ **Add Watermark** — text/image with live preview  
+1. 🔍 **Upscale Image (AI)** — Real-ESRGAN enhancement
+
+<details>
+  <summary><b>🎥 Click to watch the preview </b></summary>
+  <br>
+  <video src="https://github.com/user-attachments/assets/61cff1c1-69f2-4707-9cef-025cee09298f">
+</details>
+
+2. 🧍 **Remove Background (AI)** — clean subject extraction
+
+<details>
+  <summary><b>🎥 Click to watch the preview </b></summary>
+  <br>
+  <video src="https://github.com/user-attachments/assets/d22a42c6-ad5d-41b6-8f83-419aba47d09f">
+</details>
+
+3. 🎨 **Restore Color (AI)** — revive grayscale & faded photos
+
+<details>
+  <summary><b>🎥 Click to watch the preview </b></summary>
+  <br>
+  <video src="https://github.com/user-attachments/assets/68491a17-057d-49cf-b1a2-03cbc2f5f9ca">
+</details>
+
+4. 🎛️ **Image Editor** — brightness, contrast, saturation, blur, vignette
+
+<details>
+  <summary><b>🎥 Click to watch the preview </b></summary>
+  <br>
+  <video src="https://github.com/user-attachments/assets/a2e1db98-212e-4801-afa5-3d0d548925df">
+</details>
+
+5. 📐 **Resize Image** — custom size, aspect lock, presets
+
+<details>
+  <summary><b>🎥 Click to watch the preview </b></summary>
+  <br>
+  <video src="https://github.com/user-attachments/assets/169353e7-1916-44e5-bfe0-5075bbf4fa8e">
+</details>
+
+6. 🔄 **Rotate & Flip** — quick transform controls
+
+<details>
+  <summary><b>🎥 Click to watch the preview </b></summary>
+  <br>
+  <video src="https://github.com/user-attachments/assets/a1dda108-f6dd-4a7c-9002-6db21ef25d49">
+</details>
+
+7. 🗜️ **Compress Image** — reduce size with quality control
+
+<details>
+  <summary><b>🎥 Click to watch the preview </b></summary>
+  <br>
+  <video src="https://github.com/user-attachments/assets/25a7f82c-8550-4e0e-8d4c-9a4420d646d9">
+</details>
+
+8. 🔁 **Convert Format** — PNG / JPG / WEBP
+
+<details>
+  <summary><b>🎥 Click to watch the preview </b></summary>
+  <br>
+  <video src="https://github.com/user-attachments/assets/3d353e7a-b614-4bdc-b549-e8a092a41621">
+</details>
+
+9. 🧹 **Remove Metadata** — clean EXIF data
+
+<details>
+  <summary><b>🎥 Click to watch the preview </b></summary>
+  <br>
+  <video src="https://github.com/user-attachments/assets/3b06be04-1020-4b0e-aad8-7aff77e76f58">
+</details>
+
+10. 🎯 **Color Palette Extractor** — draggable sampling points
+
+<details>
+  <summary><b>🎥 Click to watch the preview </b></summary>
+  <br>
+  <video src="https://github.com/user-attachments/assets/da8a8267-428f-4c02-8abb-4029305511d6">
+</details>
+
+11. 🏷️ **Add Watermark** — text/image with live preview
+
+<details>
+  <summary><b>🎥 Click to watch the preview </b></summary>
+  <br>
+  <video src="https://github.com/user-attachments/assets/928bb069-7643-4a0c-b6e5-1056706547f6">
+</details>
+
 12. ✂️ **Crop Image** — freeform or preset aspect ratios
-13. 🖼️ **Thumbnail Maker** *(Coming Soon)*  
-14. 🤖 **Chatbot** - Interactive FAQ assistant for quick answers and guided platform help
+
+<details>
+  <summary><b>🎥 Click to watch the preview </b></summary>
+  <br>
+  <video src="https://github.com/user-attachments/assets/717edf23-64d5-4673-bffa-21b10fec7ca9">
+</details>
+
+13. 🖼️ **Thumbnail Maker** *(Coming Soon)*
+
+14. 🤖 **Chatbot** — Interactive FAQ assistant for quick answers and guided platform help
+
+<details>
+  <summary><b>🎥 Click to watch the preview </b></summary>
+  <br>
+  <video src="https://github.com/user-attachments/assets/90083dfb-915a-43f1-a2b3-d9fbefc10bdd">
+</details>
+
 
 ### B) Platform & System Capabilities
 

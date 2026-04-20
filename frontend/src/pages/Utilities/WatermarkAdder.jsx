@@ -262,19 +262,30 @@ export default function WatermarkAdder() {
         ctx.fillStyle = textWm.color;
         ctx.textBaseline = 'top';
 
-        if (textWm.isUnderline) {
-          const metrics = ctx.measureText(textWm.text || '');
-          const textW = Math.max(1, metrics.width);
-          ctx.shadowColor = 'transparent';
-          ctx.fillRect(targetX, targetY + nativeFontSize * 1.08, textW, Math.max(2, nativeFontSize * 0.06));
-        }
-
         ctx.shadowColor = 'rgba(0,0,0,0.45)';
         ctx.shadowBlur = nativeFontSize * 0.08;
         ctx.shadowOffsetX = nativeFontSize * 0.04;
         ctx.shadowOffsetY = nativeFontSize * 0.04;
+
+        const lines = (textWm.text || '').split('\n');
+        const lineHeight = nativeFontSize * 1.2; 
+
+        lines.forEach((line, index) => {
+          const currentY = targetY + (index * lineHeight);
+
+          if (textWm.isUnderline) {
+            const metrics = ctx.measureText(line);
+            const textW = Math.max(1, metrics.width);
+            
+            ctx.save();
+            ctx.shadowColor = 'transparent';
+            ctx.fillRect(targetX, currentY + nativeFontSize * 1.08, textW, Math.max(2, nativeFontSize * 0.06));
+            ctx.restore();
+          }
+
+          ctx.fillText(line, targetX, currentY);
+        });
         
-        ctx.fillText(textWm.text, targetX, targetY);
       } else if (activeTab === 'image' && imgWm.url) {
         const markImg = await loadImage(imgWm.url);
 
