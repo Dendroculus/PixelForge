@@ -121,7 +121,7 @@ export default function WatermarkPreviewOverlay({
             opacity: textWm.opacity,
             textShadow: '2px 2px 4px rgba(0,0,0,0.45)',
             lineHeight: 1,
-            whiteSpace: 'nowrap',
+            whiteSpace: 'pre-wrap',
             pointerEvents: 'none',
             userSelect: 'none',
           }}
