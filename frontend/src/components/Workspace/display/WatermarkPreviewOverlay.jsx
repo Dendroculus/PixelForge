@@ -66,6 +66,86 @@ export default function WatermarkPreviewOverlay({
 
   const showActions = isSelected || isDragging;
 
+  const renderTextWatermark = () => {
+    const chars = textWm.text || '';
+    const styles = textWm.charStyles || [];
+
+    // Split text and styles into lines to mimic canvas multi-line behavior
+    const lines = [];
+    let currentLineText = '';
+    let currentLineStyles = [];
+
+    for (let i = 0; i < chars.length; i++) {
+      if (chars[i] === '\n') {
+        lines.push({ text: currentLineText, styles: currentLineStyles });
+        currentLineText = '';
+        currentLineStyles = [];
+      } else {
+        currentLineText += chars[i];
+        currentLineStyles.push(styles[i] || { b: textWm.isBold, i: textWm.isItalic, u: textWm.isUnderline });
+      }
+    }
+    lines.push({ text: currentLineText, styles: currentLineStyles });
+
+    return (
+      <div
+        style={{
+          fontFamily: `"${textWm.fontFamily}", sans-serif`,
+          color: textWm.color,
+          fontSize: `${textWm.fontSize}px`,
+          opacity: textWm.opacity,
+          textShadow: '2px 2px 4px rgba(0,0,0,0.45)',
+          lineHeight: 1.2,
+          whiteSpace: 'pre',
+          pointerEvents: 'none',
+          userSelect: 'none',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {lines.map((line, lineIndex) => {
+          // Handle completely empty lines (like pressing Enter twice)
+          if (!line.text) {
+            return <span key={lineIndex} style={{ height: `${textWm.fontSize * 1.2}px`, display: 'block' }} />;
+          }
+
+          // Group consecutive characters with identical styles into spans
+          const segments = [];
+          let currentSegment = { text: line.text[0], ...line.styles[0] };
+
+          for (let i = 1; i < line.text.length; i++) {
+            const style = line.styles[i] || { b: false, i: false, u: false };
+            if (style.b === currentSegment.b && style.i === currentSegment.i && style.u === currentSegment.u) {
+              currentSegment.text += line.text[i];
+            } else {
+              segments.push(currentSegment);
+              currentSegment = { text: line.text[i], ...style };
+            }
+          }
+          segments.push(currentSegment);
+
+          return (
+            <div key={lineIndex}>
+              {segments.map((seg, segIndex) => (
+                <span
+                  key={segIndex}
+                  style={{
+                    fontWeight: seg.b ? 'bold' : 'normal',
+                    fontStyle: seg.i ? 'italic' : 'normal',
+                    textDecoration: seg.u ? 'underline' : 'none',
+                    textDecorationSkipInk: 'none',
+                  }}
+                >
+                  {seg.text}
+                </span>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <motion.div
       ref={overlayRef}
@@ -108,27 +188,7 @@ export default function WatermarkPreviewOverlay({
         </button>
       )}
 
-      {hasText ? (
-        <span
-          style={{
-            fontFamily: `"${textWm.fontFamily}", sans-serif`,
-            color: textWm.color,
-            fontSize: `${textWm.fontSize}px`,
-            fontWeight: textWm.isBold ? 'bold' : 'normal',
-            fontStyle: textWm.isItalic ? 'italic' : 'normal',
-            textDecoration: textWm.isUnderline ? 'underline' : 'none',
-            textDecorationSkipInk: 'none',
-            opacity: textWm.opacity,
-            textShadow: '2px 2px 4px rgba(0,0,0,0.45)',
-            lineHeight: 1,
-            whiteSpace: 'pre-wrap',
-            pointerEvents: 'none',
-            userSelect: 'none',
-          }}
-        >
-          {textWm.text}
-        </span>
-      ) : (
+      {hasText ? renderTextWatermark() : (
         <img
           src={imgWm.url}
           alt="Logo overlay"
@@ -158,6 +218,13 @@ WatermarkPreviewOverlay.propTypes = {
   activeTab: PropTypes.string.isRequired,
   textWm: PropTypes.shape({
     text: PropTypes.string,
+    charStyles: PropTypes.arrayOf(
+      PropTypes.shape({
+        b: PropTypes.bool,
+        i: PropTypes.bool,
+        u: PropTypes.bool,
+      })
+    ),
     fontFamily: PropTypes.string,
     color: PropTypes.string,
     fontSize: PropTypes.number,
