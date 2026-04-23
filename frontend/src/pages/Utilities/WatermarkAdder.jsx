@@ -44,6 +44,7 @@ const WATERMARK_COLORS = ['#ffffff', '#000000', '#ef4444', '#3b82f6', '#10b981',
 
 const DEFAULT_TEXT_WM = {
   text: 'Your Text Here',
+  charStyles: Array('Your Text Here'.length).fill({ b: true, i: false, u: false }),
   fontFamily: 'Inter',
   color: '#ffffff',
   fontSize: 40,
@@ -205,7 +206,7 @@ export default function WatermarkAdder() {
   }, [imgWm.url, cleanupResult]);
 
   const handleClearTextWatermark = useCallback(() => {
-    setTextWm((prev) => ({ ...prev, text: '' }));
+    setTextWm((prev) => ({ ...prev, text: '', charStyles: [] }));
     setIsOverlaySelected(false);
     cleanupResult();
   }, [cleanupResult]);
@@ -255,37 +256,80 @@ export default function WatermarkAdder() {
 
       if (activeTab === 'text') {
         const nativeFontSize = Math.max(1, textWm.fontSize / Math.max(imageRect.scale, 0.0001));
-        const fontStyle = textWm.isItalic ? 'italic ' : '';
-        const fontWeight = textWm.isBold ? 'bold ' : 'normal ';
 
-        ctx.font = `${fontStyle}${fontWeight}${nativeFontSize}px "${textWm.fontFamily}", sans-serif`;
-        ctx.fillStyle = textWm.color;
         ctx.textBaseline = 'top';
-
         ctx.shadowColor = 'rgba(0,0,0,0.45)';
         ctx.shadowBlur = nativeFontSize * 0.08;
         ctx.shadowOffsetX = nativeFontSize * 0.04;
         ctx.shadowOffsetY = nativeFontSize * 0.04;
 
-        const lines = (textWm.text || '').split('\n');
-        const lineHeight = nativeFontSize * 1.2; 
+        const chars = textWm.text || '';
+        const styles = textWm.charStyles || [];
+
+        // Split text and styles into lines
+        const lines = [];
+        let currentLineText = '';
+        let currentLineStyles = [];
+
+        for (let i = 0; i < chars.length; i++) {
+          if (chars[i] === '\n') {
+            lines.push({ text: currentLineText, styles: currentLineStyles });
+            currentLineText = '';
+            currentLineStyles = [];
+          } else {
+            currentLineText += chars[i];
+            currentLineStyles.push(styles[i] || { b: textWm.isBold, i: textWm.isItalic, u: textWm.isUnderline });
+          }
+        }
+        lines.push({ text: currentLineText, styles: currentLineStyles });
+
+        const lineHeight = nativeFontSize * 1.2;
 
         lines.forEach((line, index) => {
           const currentY = targetY + (index * lineHeight);
+          let currentX = targetX;
 
-          if (textWm.isUnderline) {
-            const metrics = ctx.measureText(line);
-            const textW = Math.max(1, metrics.width);
-            
-            ctx.save();
-            ctx.shadowColor = 'transparent';
-            ctx.fillRect(targetX, currentY + nativeFontSize * 1.08, textW, Math.max(2, nativeFontSize * 0.06));
-            ctx.restore();
+          if (!line.text) return;
+
+          // Group consecutive characters with identical styles into segments
+          const segments = [];
+          let currentSegment = { text: line.text[0], ...line.styles[0] };
+
+          for (let i = 1; i < line.text.length; i++) {
+            const style = line.styles[i] || { b: false, i: false, u: false };
+            if (style.b === currentSegment.b && style.i === currentSegment.i && style.u === currentSegment.u) {
+              currentSegment.text += line.text[i];
+            } else {
+              segments.push(currentSegment);
+              currentSegment = { text: line.text[i], ...style };
+            }
           }
+          segments.push(currentSegment);
 
-          ctx.fillText(line, targetX, currentY);
+          // Render styled segments horizontally
+          segments.forEach((seg) => {
+            const fontStyle = seg.i ? 'italic ' : '';
+            const fontWeight = seg.b ? 'bold ' : 'normal ';
+            
+            ctx.font = `${fontStyle}${fontWeight}${nativeFontSize}px "${textWm.fontFamily}", sans-serif`;
+            ctx.fillStyle = textWm.color;
+
+            const metrics = ctx.measureText(seg.text);
+            const textW = Math.max(1, metrics.width);
+
+            if (seg.u) {
+              ctx.save();
+              ctx.shadowColor = 'transparent';
+              ctx.fillStyle = textWm.color;
+              ctx.fillRect(currentX, currentY + nativeFontSize * 1.08, textW, Math.max(2, nativeFontSize * 0.06));
+              ctx.restore();
+            }
+
+            ctx.fillText(seg.text, currentX, currentY);
+            currentX += textW; // Increment X-offset for the next segment
+          });
         });
-        
+
       } else if (activeTab === 'image' && imgWm.url) {
         const markImg = await loadImage(imgWm.url);
 
@@ -338,7 +382,6 @@ export default function WatermarkAdder() {
 
   const canProcess = useMemo(() => Boolean(file) && !isProcessing && !resultUrl, [file, isProcessing, resultUrl]);
   const downloadName = useMemo(() => generateSafeFilename(file?.name, 'watermarked', 'jpg'), [file?.name]);
-
 
   return (
     <ToolPageWrapper>
