@@ -8,6 +8,7 @@ const ERROR_MESSAGES = {
   VIDEO: "Why do you even try to upload a video to an image upscaler web? 🤔",
   TIMEOUT: "The file took too long to process. Is it corrupted? ⏳",
   DEFAULT: "Uh oh! This file is not supported.",
+  COLORIZED: "This image already has color! Please upload a black and white image.",
 };
 
 const allowedMimeTypes = new Set(
@@ -17,9 +18,9 @@ const allowedMimeTypes = new Set(
 /**
  * @param {File} file - The file object from the dropzone/input.
  * @param {number} [customMaxSizeMB] - Optional override for max file size.
- * @param {boolean} [rejectGrayscale] - If true, rejects black and white images.
+ * @param {boolean} [requireGrayscale] - If true, rejects images that already have color.
  */
-export const validateImageUpload = (file, customMaxSizeMB = null, rejectGrayscale = false) => {
+export const validateImageUpload = (file, customMaxSizeMB = null, requireGrayscale = false) => {
   return new Promise((resolve) => {
     if (!file) {
       return resolve({ isValid: false, error: ERROR_MESSAGES.DEFAULT });
@@ -60,7 +61,7 @@ export const validateImageUpload = (file, customMaxSizeMB = null, rejectGrayscal
     img.onload = () => {
       clearTimeout(timeoutId);
 
-      if (rejectGrayscale) {
+      if (requireGrayscale) {
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d', { willReadFrequently: true });
         
@@ -89,17 +90,17 @@ export const validateImageUpload = (file, customMaxSizeMB = null, rejectGrayscal
             }
           }
 
-          const isGrayscale = validPixels > 0 && (colorPixels / validPixels) < 0.05;
+          const hasColor = validPixels > 0 && (colorPixels / validPixels) >= 0.05;
 
-          if (isGrayscale) {
+          if (hasColor) {
             URL.revokeObjectURL(objectUrl);
             return resolve({ 
               isValid: false, 
-              error: "THIS IMAGE IS BLACK AND WHITE, RESTORING COLOR MAY NOT WORK WELL" 
+              error: ERROR_MESSAGES.COLORIZED 
             });
           }
         } catch (e) {
-          console.warn("Could not read image data for grayscale check", e);
+          console.warn("Could not read image data for color check", e);
         }
       }
 

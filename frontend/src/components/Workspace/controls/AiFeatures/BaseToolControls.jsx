@@ -35,17 +35,20 @@ export default function BaseToolControls({
   turnstileHidden = false,
   children,
 }) {
+  const shouldHideTurnstile = turnstileHidden || isProcessing || !!resultUrl;
+
   return (
     <>
-      {turnstileHidden && (
-        <div style={{ position: 'absolute', left: '-99999px', top: 'auto', width: 1, height: 1, overflow: 'hidden' }}>
-          <Turnstile
-            ref={turnstileRef}
-            siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-            onSuccess={setTurnstileToken}
-          />
-        </div>
-      )}
+      <div 
+        className={!shouldHideTurnstile ? "w-full flex justify-center mb-4" : ""}
+        style={shouldHideTurnstile ? { position: 'absolute', left: '-99999px', top: 'auto', width: 1, height: 1, overflow: 'hidden' } : {}}
+      >
+        <Turnstile
+          ref={turnstileRef}
+          siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+          onSuccess={setTurnstileToken}
+        />
+      </div>
 
       {(isProcessing || isWaitingForToken) && (
         <div className="w-full py-1">
@@ -58,16 +61,6 @@ export default function BaseToolControls({
 
       {!isProcessing && !resultUrl && (
         <div className="flex flex-col items-center justify-center gap-4 w-full">
-          {!turnstileHidden && (
-            <div className="w-full flex justify-center">
-              <Turnstile
-                ref={turnstileRef}
-                siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-                onSuccess={setTurnstileToken}
-              />
-            </div>
-          )}
-
           {!isWaitingForToken && (
             children ? (
               children
