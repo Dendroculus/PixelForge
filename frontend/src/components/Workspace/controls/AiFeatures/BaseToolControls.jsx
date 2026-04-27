@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { Turnstile } from '@marsidev/react-turnstile';
-import ProgressBar from '../../Common/ProgressBar';
+import ProgressBar from '../../../Common/ProgressBar';
 
 /**
  * Renders a generic tool controls component with Turnstile integration and background processing feedback.
