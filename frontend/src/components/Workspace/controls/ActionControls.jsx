@@ -1,5 +1,4 @@
 import PropTypes from 'prop-types';
-import { Turnstile } from '@marsidev/react-turnstile';
 
 /**
  * Renders the primary action buttons, scale selection, and Turnstile integration for upscaling.
@@ -19,8 +18,6 @@ export default function ActionControls({
   isProcessing,
   handleCancel,
   handleUpscale,
-  turnstileRef,
-  setTurnstileToken,
   scale,
   setScale,
 }) {
@@ -33,14 +30,6 @@ export default function ActionControls({
 
   return (
     <div className="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto">
-      <div>
-        <Turnstile
-          ref={turnstileRef}
-          siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-          onSuccess={(token) => setTurnstileToken(token)}
-          onError={() => console.error('Turnstile failed to initialize or verify.')}
-        />
-      </div>
 
       <div className="flex items-center bg-white rounded-lg p-1 shadow-sm border border-slate-200">
         {[1, 2, 3, 4].map((mult) => (
