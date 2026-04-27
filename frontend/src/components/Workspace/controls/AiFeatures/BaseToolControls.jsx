@@ -40,8 +40,16 @@ export default function BaseToolControls({
   return (
     <>
       <div 
-        className={!shouldHideTurnstile ? "w-full flex justify-center mb-4" : ""}
-        style={shouldHideTurnstile ? { position: 'absolute', left: '-99999px', top: 'auto', width: 1, height: 1, overflow: 'hidden' } : {}}
+        className={!shouldHideTurnstile ? "w-full flex justify-center mb-6" : ""}
+        style={shouldHideTurnstile ? { 
+          position: 'absolute', 
+          opacity: 0, 
+          pointerEvents: 'none', 
+          width: '10px', 
+          height: '10px', 
+          zIndex: -1,
+          overflow: 'hidden' 
+        } : {}}
       >
         <Turnstile
           ref={turnstileRef}
@@ -51,7 +59,7 @@ export default function BaseToolControls({
       </div>
 
       {(isProcessing || isWaitingForToken) && (
-        <div className="w-full py-1">
+        <div className="w-full py-4 mt-2 flex flex-col items-center justify-center">
           <ProgressBar
             progress={progress}
             customText={isWaitingForToken ? "Verifying secure connection, don't refresh..." : progressText}
