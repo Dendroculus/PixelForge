@@ -33,6 +33,7 @@ export default function ColorRestoration() {
 
   return (
     <AiFeatureWorkspace
+      rejectGrayscale={true}
       selectedFile={selectedFile}
       previewUrl={previewUrl}
       isProcessing={isProcessing}

@@ -37,6 +37,7 @@ export default function AiFeatureWorkspace({
   rightPanelClassName = 'flex-1 min-h-105 relative rounded-2xl border border-white/50 bg-white/30 flex items-center justify-center overflow-hidden shadow-inner',
   previewImageClassName = '',
   resultContainerClassName = 'w-full h-full',
+  rejectGrayscale = false,
 }) {
   const [isResultLoaded, setIsResultLoaded] = useState(false);
 
@@ -102,7 +103,7 @@ export default function AiFeatureWorkspace({
 
                 {!selectedFile ? (
                   <div className="flex flex-col flex-1 justify-center pb-4">
-                    <UploadDropzone onFileSelect={onFileSelect} />
+                    <UploadDropzone onFileSelect={onFileSelect} rejectGrayscale={rejectGrayscale} />
                     {!isProcessing && !jobId && (
                       <div className="text-center mt-5 text-sm font-medium text-slate-500">
                         Free Uses Remaining:{' '}
@@ -195,4 +196,5 @@ AiFeatureWorkspace.propTypes = {
   rightPanelClassName: PropTypes.string,
   previewImageClassName: PropTypes.string,
   resultContainerClassName: PropTypes.string,
+  rejectGrayscale: PropTypes.bool,
 };

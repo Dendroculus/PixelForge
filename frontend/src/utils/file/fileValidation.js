@@ -17,8 +17,9 @@ const allowedMimeTypes = new Set(
 /**
  * @param {File} file - The file object from the dropzone/input.
  * @param {number} [customMaxSizeMB] - Optional override for max file size.
+ * @param {boolean} [rejectGrayscale] - If true, rejects black and white images.
  */
-export const validateImageUpload = (file, customMaxSizeMB = null) => {
+export const validateImageUpload = (file, customMaxSizeMB = null, rejectGrayscale = false) => {
   return new Promise((resolve) => {
     if (!file) {
       return resolve({ isValid: false, error: ERROR_MESSAGES.DEFAULT });
@@ -58,6 +59,50 @@ export const validateImageUpload = (file, customMaxSizeMB = null) => {
 
     img.onload = () => {
       clearTimeout(timeoutId);
+
+      if (rejectGrayscale) {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        
+        canvas.width = 100;
+        canvas.height = 100;
+        ctx.drawImage(img, 0, 0, 100, 100);
+        
+        try {
+          const data = ctx.getImageData(0, 0, 100, 100).data;
+          let colorPixels = 0;
+          let validPixels = 0;
+          
+          for (let i = 0; i < data.length; i += 4) {
+            if (data[i + 3] < 20) continue; 
+            validPixels++;
+            
+            const r = data[i];
+            const g = data[i + 1];
+            const b = data[i + 2];
+            
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            
+            if (max - min > 35) {
+              colorPixels++;
+            }
+          }
+
+          const isGrayscale = validPixels > 0 && (colorPixels / validPixels) < 0.05;
+
+          if (isGrayscale) {
+            URL.revokeObjectURL(objectUrl);
+            return resolve({ 
+              isValid: false, 
+              error: "THIS IMAGE IS BLACK AND WHITE, RESTORING COLOR MAY NOT WORK WELL" 
+            });
+          }
+        } catch (e) {
+          console.warn("Could not read image data for grayscale check", e);
+        }
+      }
+
       URL.revokeObjectURL(objectUrl);
       resolve({ isValid: true, file }); 
     };

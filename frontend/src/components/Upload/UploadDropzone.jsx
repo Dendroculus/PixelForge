@@ -9,9 +9,10 @@ const AllowedFormatsText = config.ALLOWED_EXTENSIONS.map(e => e.toUpperCase()).j
  * Renders a drag-and-drop zone for file uploads with built-in validation.
  * @param {Object} props - The component props.
  * @param {Function} props.onFileSelect - Callback fired when a valid file is successfully dropped or selected.
+ * @param {boolean} [props.rejectGrayscale=false] - Whether to reject B&W images.
  * @returns {JSX.Element}
  */
-export default function UploadDropzone({ onFileSelect }) {
+export default function UploadDropzone({ onFileSelect, rejectGrayscale = false }) {
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState(null);
   const fileInputRef = useRef(null);
@@ -43,7 +44,7 @@ export default function UploadDropzone({ onFileSelect }) {
   };
   
   const processFile = async (file) => {
-    const result = await validateImageUpload(file);
+    const result = await validateImageUpload(file, null, rejectGrayscale);
 
     if (result.isValid) {
       setError(null);
@@ -110,4 +111,7 @@ export default function UploadDropzone({ onFileSelect }) {
   );
 }
 
-UploadDropzone.propTypes = { onFileSelect: PropTypes.func.isRequired };
+UploadDropzone.propTypes = { 
+  onFileSelect: PropTypes.func.isRequired,
+  rejectGrayscale: PropTypes.bool
+};
