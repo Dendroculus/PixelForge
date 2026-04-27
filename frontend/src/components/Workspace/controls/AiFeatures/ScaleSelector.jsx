@@ -13,7 +13,7 @@ import PropTypes from 'prop-types';
  * @param {Function} props.setScale - Callback to update the selected scale multiplier.
  * @returns {JSX.Element}
  */
-export default function ActionControls({
+export default function ScaleSelector({
   jobId,
   isProcessing,
   handleCancel,
@@ -30,7 +30,6 @@ export default function ActionControls({
 
   return (
     <div className="flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto">
-
       <div className="flex items-center bg-white rounded-lg p-1 shadow-sm border border-slate-200">
         {[1, 2, 3, 4].map((mult) => (
           <button
@@ -67,7 +66,7 @@ export default function ActionControls({
   );
 }
 
-ActionControls.propTypes = {
+ScaleSelector.propTypes = {
   jobId: PropTypes.string,
   isProcessing: PropTypes.bool.isRequired,
   handleCancel: PropTypes.func.isRequired,

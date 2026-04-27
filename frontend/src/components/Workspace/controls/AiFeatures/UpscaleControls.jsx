@@ -1,15 +1,14 @@
 import PropTypes from 'prop-types';
-import { Turnstile } from '@marsidev/react-turnstile';
-import ProgressBar from '../../Common/ProgressBar';
-import ActionControls from './ActionControls';
+import BaseToolControls from './BaseToolControls';
+import ScaleSelector from './ScaleSelector';
 
 /**
- * Renders Upscale feature controls with Turnstile integration and background processing feedback.
+ * Renders a generic tool controls component with Turnstile integration and background processing feedback.
  * @param {Object} props - The component props.
  * @param {boolean} props.isProcessing - Whether the tool is actively sending or polling a job.
  * @param {boolean} props.isWaitingForToken - Whether Turnstile is actively fetching a token.
- * @param {string|null} props.resultUrl - The object URL of the completed upscaled image.
- * @param {number} props.progress - The current percentage (0-100) of the upscale job.
+ * @param {string|null} props.resultUrl - The object URL of the completed processed image.
+ * @param {number} props.progress - The current percentage (0-100) of the processing job.
  * @param {string|null} props.jobId - The current active background job ID.
  * @param {Function} props.handleCancel - Callback to cancel the job or reset the workspace.
  * @param {Function} props.handleUpscale - Callback to initiate the ESRGAN upscaling job.
@@ -33,39 +32,28 @@ export default function UpscaleControls({
   setScale,
 }) {
   return (
-    <>
-      <div style={{ position: 'absolute', left: '-99999px', top: 'auto', width: 1, height: 1, overflow: 'hidden' }}>
-        <Turnstile
-          ref={turnstileRef}
-          siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
-          onSuccess={setTurnstileToken}
-        />
-      </div>
-
-      {(isProcessing || isWaitingForToken) && (
-        <div className="w-full py-1">
-          <ProgressBar
-            progress={progress}
-            customText={isWaitingForToken ? "Verifying secure connection, don't refresh..." : undefined}
-          />
-        </div>
-      )}
-
-      {!isProcessing && !isWaitingForToken && !resultUrl && (
-        <div className="flex flex-col gap-4">
-          <ActionControls
-            jobId={jobId}
-            isProcessing={isProcessing}
-            handleCancel={handleCancel}
-            handleUpscale={handleUpscale}
-            turnstileRef={turnstileRef}
-            setTurnstileToken={setTurnstileToken}
-            scale={scale}
-            setScale={setScale}
-          />
-        </div>
-      )}
-    </>
+    <BaseToolControls
+      isProcessing={isProcessing}
+      isWaitingForToken={isWaitingForToken}
+      resultUrl={resultUrl}
+      progress={progress}
+      jobId={jobId}
+      handleCancel={handleCancel}
+      turnstileRef={turnstileRef}
+      setTurnstileToken={setTurnstileToken}
+      turnstileHidden={true}
+    >
+      <ScaleSelector
+        jobId={jobId}
+        isProcessing={isProcessing}
+        handleCancel={handleCancel}
+        handleUpscale={handleUpscale}
+        turnstileRef={turnstileRef}
+        setTurnstileToken={setTurnstileToken}
+        scale={scale}
+        setScale={setScale}
+      />
+    </BaseToolControls>
   );
 }
 
