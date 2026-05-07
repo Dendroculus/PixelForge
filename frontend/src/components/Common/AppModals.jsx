@@ -10,7 +10,7 @@ import PropTypes from 'prop-types';
  * @param {React.ReactNode} props.children - The content to display inside the modal.
  * @returns {JSX.Element}
  */
-export default function LegalModal({ isOpen, onClose, title, children }) {
+export default function AppModals({ isOpen, onClose, title, children }) {
   const dialogRef = useRef(null);
 
   useEffect(() => {
@@ -132,7 +132,7 @@ export default function LegalModal({ isOpen, onClose, title, children }) {
   );
 }
 
-LegalModal.propTypes = {
+AppModals.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   title: PropTypes.string.isRequired,

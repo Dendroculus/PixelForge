@@ -5,7 +5,7 @@ import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
 import ToolPageWrapper from '../../components/Layout/ToolPageWrapper';
 import PreviewImageBox from '../../components/Workspace/display/PreviewImageBox';
 import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErrorAlert';
-import PaletteSwatches from '../../components/Workspace/display/PaletteSwatches';
+import PaletteSwatches from '../../components/Workspace/display/PaletteSwatches/PaletteSwatches';
 import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
 import { useWorkspaceFile } from '../../hooks/workspace/useWorkspaceFile';
 import usePaletteSampling from '../../hooks/client/usePaletteSampling';

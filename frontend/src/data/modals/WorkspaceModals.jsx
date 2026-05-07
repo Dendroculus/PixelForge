@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import PropTypes from 'prop-types';
-import LegalModal from '../../components/Common/LegalModal';
+import AppModals from '../../components/Common/AppModals';
 import CountdownTimer from '../../components/Common/CountdownTimer';
 import { APP_CONFIG as config } from '../../config';
 import { makeStorageKeys } from '../../utils/storage/storageKeys';
@@ -24,7 +24,7 @@ export default function WorkspaceModals({ appAlert, setAppAlert, featureName }) 
 
   return (
     <>
-      <LegalModal
+      <AppModals
         isOpen={appAlert.show && appAlert.type === 'potato'}
         onClose={closeAndClear}
         title="Whoa, slow down! 👀"
@@ -34,9 +34,9 @@ export default function WorkspaceModals({ appAlert, setAppAlert, featureName }) 
           <p>Please wait as your image is being processed on our potato server (●'◡'●)</p>
           <p>Since this is a free, open-source project, we are trying to save costs. Refreshing the page won't speed up the AI, but it might make our server cry.</p>
         </div>
-      </LegalModal>
+      </AppModals>
 
-      <LegalModal
+      <AppModals
         isOpen={appAlert.show && appAlert.type === 'dos'}
         onClose={closeAndClear}
         title="Processing Failed ❌"
@@ -46,9 +46,9 @@ export default function WorkspaceModals({ appAlert, setAppAlert, featureName }) 
           <p>Sorry our servers are currently busy and cannot process your request at the moment.</p>
           <p>Please try again, we're really trying our best! 🥲</p>
         </div>
-      </LegalModal>
+      </AppModals>
 
-      <LegalModal
+      <AppModals
         isOpen={appAlert.show && appAlert.type === 'reserved_warning'}
         onClose={() => setAppAlert({ show: false, type: null })}
         title="Session Restored 🔄"
@@ -69,9 +69,9 @@ export default function WorkspaceModals({ appAlert, setAppAlert, featureName }) 
             </p>
           </div>
         )}
-      </LegalModal>
+      </AppModals>
 
-      <LegalModal
+      <AppModals
         isOpen={appAlert.show && appAlert.type === 'expired'}
         onClose={() => {
           setAppAlert({ show: false, type: null });
@@ -84,7 +84,7 @@ export default function WorkspaceModals({ appAlert, setAppAlert, featureName }) 
           <p>Your session timed out and your image was permanently deleted from your browser and our servers to protect your privacy.</p>
           <p>Please upload your image again if you still need to process it!</p>
         </div>
-      </LegalModal>
+      </AppModals>
     </>
   );
 }

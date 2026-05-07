@@ -2,7 +2,7 @@ import { useState } from 'react';
 import PropTypes from 'prop-types';
 import WorkspaceLayout from '../../components/Layout/WorkspaceLayout';
 import UploadDropzone from '../../components/Upload/UploadDropzone';
-import ResultViewer from '../../components/Workspace/display/ResultViewer';
+import ResultViewer from '../../components/Workspace/display/ResultViewer/ResultViewer';
 import WorkspaceModals from '../../data/modals/WorkspaceModals';
 import WorkspaceLimitCard from './cards/WorkspaceLimitCard';
 import WorkspaceMarketing from './cards/WorkspaceMarketing';
@@ -34,9 +34,9 @@ export default function AiFeatureWorkspace({
   supportsList = config.ALLOWED_EXTENSIONS,
   downloadPrefix = 'Result-',
   emptyState = null,
-  rightPanelClassName = 'flex-1 min-h-105 relative rounded-2xl border border-white/50 bg-white/30 flex items-center justify-center overflow-hidden shadow-inner',
+  rightPanelClassName = 'flex-1 min-h-105 relative rounded-2xl border border-white/50 bg-white/30 flex items-center justify-center overflow-hidden shadow-inner isolate',
   previewImageClassName = '',
-  resultContainerClassName = 'w-full h-full',
+  resultContainerClassName = 'w-full h-full rounded-2xl overflow-hidden',
   requireGrayscale = false,
 }) {
   const [isResultLoaded, setIsResultLoaded] = useState(false);

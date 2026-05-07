@@ -5,7 +5,7 @@ import Navbar from './components/Layout/NavBar';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
 import NotFound from './pages/Special/NotFound';
-import LegalModal from './components/Common/LegalModal';
+import AppModals from './components/Common/AppModals';
 import { legalModalData } from './data/modals/legalModalData';
 import FaqChatbotWidget from './pages/Special/FaqChatbotWidget';
 
@@ -183,9 +183,9 @@ export default function App() {
           <Footer openModal={openModal} />
         </div>
 
-        <LegalModal isOpen={modalState.isOpen} onClose={closeModal} title={activeModalData.title}>
+        <AppModals isOpen={modalState.isOpen} onClose={closeModal} title={activeModalData.title}>
           {activeModalData.content}
-        </LegalModal>
+        </AppModals>
       </div>
     </BrowserRouter>
   );
