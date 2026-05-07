@@ -6,7 +6,7 @@ import ToolPageWrapper from '../../components/Layout/ToolPageWrapper';
 import PreviewImageBox from '../../components/Workspace/display/PreviewImageBox';
 import WorkspaceFileSummary from '../../components/Workspace/display/WorkspaceFileSummary';
 import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErrorAlert';
-import WorkspaceResultDownload from '../../components/Workspace/display/WorkspaceResultDownload/WorkspaceResultDownload';
+import WorkspaceResultDownload from '../../components/Workspace/display/WorkspaceResultDownload';
 import WorkspaceActionRow from '../../components/Actions/WorkspaceActionRow';
 import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
 import { useWorkspaceFile } from '../../hooks/workspace/useWorkspaceFile';

@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import PropTypes from 'prop-types';
-import { bytesToMB } from '../../../../utils/file/fileUtils';
+import { bytesToMB } from '../../../utils/file/fileUtils';
 
 /**
  * Displays the final result size comparison and the download action button.
