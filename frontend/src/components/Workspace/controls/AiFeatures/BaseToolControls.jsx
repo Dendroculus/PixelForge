@@ -62,7 +62,7 @@ export default function BaseToolControls({
         <div className="w-full flex flex-col items-center justify-center">
           <ProgressBar
             progress={progress}
-            customText={isWaitingForToken ? "Verifying secure connection, don't refresh..." : progressText}
+            customText={isWaitingForToken ? "Verifying connection..." : progressText}
           />
         </div>
       )}

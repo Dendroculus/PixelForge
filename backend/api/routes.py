@@ -213,9 +213,9 @@ async def get_result(request: Request, job_id: str):
         return {"status": "processing"}
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error("Error checking result job=%s: %s", job_id, e)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Status error")
+    except Exception as error:
+        logger.error("Error checking result job=%s: %s", job_id, error)
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Status error") from error
 
 
 @router.get("/usage")

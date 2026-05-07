@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 
 function getStatusLabel(progress) {
-  if (progress === 0) return "Verifying secure connection, don't refresh...";
   if (progress < 30) return "Uploading to Cloud GPUs...";
   if (progress < 50) return "Analyzing pixel structures...";
   if (progress < 70) return "Running Real-ESRGAN model...";
@@ -15,9 +14,9 @@ export default function ProgressBar({ progress, customText }) {
 
   return (
     <div className="w-full space-y-2">
-      <div className="flex justify-between text-xs font-bold text-slate-700 px-1">
-        <span>{displayText}</span>
-        <span>{Math.round(progress)}%</span>
+      <div className="flex justify-between items-center gap-2 text-[10px] sm:text-xs font-bold text-slate-700 px-1">
+        <span className="whitespace-nowrap">{displayText}</span>
+        <span className="shrink-0">{Math.round(progress)}%</span>
       </div>
       <div className="w-full bg-white/50 rounded-full h-2.5 border border-white/40 shadow-inner">
         <div 

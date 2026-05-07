@@ -1,16 +1,17 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import FitModeToggle from '../controls/FitModeToggle';
-import Magnifier, { ZoomButton } from '../controls/Magnifier';
+import FitModeToggle from '../../controls/FitModeToggle';
+import Magnifier, { ZoomButton } from '../../controls/Magnifier';
 
 /**
  * Inner content logic for the interactive before/after image comparison slider.
- * @param {Object} props - The component props.
+ * * @param {Object} props
  * @param {string} props.originalImage - Object URL of the baseline image.
  * @param {string} props.processedImage - Object URL of the output image.
  * @param {Function} [props.onImageLoad] - Callback when the processed image finishes rendering.
  * @param {string} [props.originalLabel='Original'] - Text badge for the left side.
  * @param {string} [props.resultLabel='Result'] - Text badge for the right side.
+ * @param {boolean} [props.isHighRes=false] - Flag confirming if the image is high-resolution.
  * @returns {JSX.Element}
  */
 function ResultViewerContent({
@@ -19,6 +20,7 @@ function ResultViewerContent({
   onImageLoad,
   originalLabel = 'Original',
   resultLabel = 'Result',
+  isHighRes = false,
 }) {
   const [sliderPosition, setSliderPosition] = useState(50);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -27,11 +29,24 @@ function ResultViewerContent({
 
   useEffect(() => {
     if (isLoaded) return undefined;
-    const timeout = setTimeout(() => {
-      setLoadingText('High-resolution file detected. Almost there...');
+    
+    const initialTimeout = setTimeout(() => {
+      setLoadingText(
+        isHighRes 
+          ? 'High-resolution file detected. Almost there...' 
+          : 'Wrapping things up. Almost ready...'
+      );
     }, 3000);
-    return () => clearTimeout(timeout);
-  }, [isLoaded]);
+
+    const slowNetworkTimeout = setTimeout(() => {
+      setLoadingText('Loading is taking a bit longer than usual. Thanks for your patience!');
+    }, 8000);
+    
+    return () => {
+      clearTimeout(initialTimeout);
+      clearTimeout(slowNetworkTimeout);
+    };
+  }, [isLoaded, isHighRes]); 
 
   const handleProcessedLoad = () => {
     setIsLoaded(true);
@@ -154,11 +169,12 @@ ResultViewerContent.propTypes = {
   onImageLoad: PropTypes.func,
   originalLabel: PropTypes.string,
   resultLabel: PropTypes.string,
+  isHighRes: PropTypes.bool,
 };
 
 /**
  * Wrapper for the result viewer that forces re-mounts when the processed image changes.
- * @param {Object} props - Inherits props from ResultViewerContent.
+ * * @param {Object} props - Inherits props from ResultViewerContent.
  * @returns {JSX.Element}
  */
 export default function ResultViewer(props) {
