@@ -14,7 +14,7 @@ import FabToggle from '../../components/Bot/FabToggle';
 /**
  * Renders FAQ chatbot container and routes chatbot views.
  */
-export default function FaqChatBotWidget() {
+export default function FaqChatbotWidget() {
   const {
     isOpen,
     setIsOpen,
