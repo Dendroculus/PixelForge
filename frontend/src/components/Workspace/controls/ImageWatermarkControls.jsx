@@ -5,7 +5,7 @@ import { APP_CONFIG } from '../../../config';
 /**
  * Control inputs specifically for adjusting image logo watermarks (scale and opacity).
  * @param {Object} props - The component props.
- * @param {React.MutableRefObject} props.watermarkImageRef - Ref attached to the watermark file input.
+ * @param {React.React.RefObject<HTMLDivElement>} props.watermarkImageRef - Ref attached to the watermark file input.
  * @param {Function} props.handleWatermarkImageUpload - Callback fired when a logo image is uploaded.
  * @param {Object} props.imgWm - State holding image watermark properties.
  * @param {Function} props.setImgWm - State setter for image watermark properties.

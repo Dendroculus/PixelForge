@@ -46,8 +46,8 @@ export default function FormatDropdown({
 
   useEffect(() => {
     function handleClickOutside(event) {
-      const inTrigger = triggerRef.current && triggerRef.current.contains(event.target);
-      const inMenu = menuRef.current && menuRef.current.contains(event.target);
+      const inTrigger = triggerRef.current?.contains(event.target);
+      const inMenu = menuRef.current?.contains(event.target);
       if (!inTrigger && !inMenu) setIsOpen(false);
     }
 

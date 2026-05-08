@@ -34,7 +34,7 @@ TrashIcon.propTypes = {
 /**
  * Draggable overlay layer for placing text and image watermarks on the canvas.
  * @param {Object} props - The component props.
- * @param {React.MutableRefObject} props.overlayRef - Ref for the draggable div.
+ * @param {React.React.RefObject<HTMLDivElement>} props.overlayRef - Ref for the draggable div.
  * @param {{x: number, y: number}} props.overlayPos - Coordinates for initial placement.
  * @param {string} props.activeTab - Determines whether to show 'text' or 'image' mark.
  * @param {Object} props.textWm - State object holding text styling logic.

@@ -8,7 +8,7 @@ const AcceptableImageMimeTypes = '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,ima
  * Renders a customizable upload card for file selection with validation.
  * @param {Object} props - The component props.
  * @param {string} props.inputId - HTML id attribute for the file input element.
- * @param {React.MutableRefObject} [props.inputRef] - Ref attached to the hidden file input.
+ * @param {React.React.RefObject<HTMLDivElement>} [props.inputRef] - Ref attached to the hidden file input.
  * @param {Function} [props.onChange] - Callback fired when a file is selected.
  * @param {Function} [props.onValidationError] - Callback fired if file validation fails.
  * @param {string} [props.helperText] - Text to display below the main upload instruction.
@@ -116,7 +116,7 @@ export default function UploadCard({
   return (
     <label
       htmlFor={inputId}
-      aria-label={localError ? localError : 'Upload image file'}
+      aria-label={localError || 'Upload image file'}
       className={`group relative flex w-full ${heightClass} flex-col items-center justify-center rounded-2xl border-2 border-dashed shadow-sm transition-all cursor-pointer hover:shadow-md ${cardStateClass} ${className}`}
     >
       <div className="flex flex-col items-center justify-center px-4 pt-5 pb-6 text-center">
@@ -143,7 +143,7 @@ export default function UploadCard({
         </div>
 
         <p className={`mb-1 text-sm font-semibold transition-colors ${titleClass}`}>
-          {localError ? localError : 'Click to upload image'}
+          {localError || 'Click to upload image'}
         </p>
         <p className={`text-xs font-medium ${helperClass}`}>
           {localError ? 'Please try another file' : helperText}

@@ -30,7 +30,7 @@ export default function WorkspaceLimitCard({ showLoading, showLimit, maxLimit, r
         </div>
         <h3 className="text-2xl font-bold text-slate-800 mb-2">Daily Limit Reached</h3>
         <p className="text-slate-600 font-medium mb-8 max-w-md">
-          You've used all {maxLimit} free {featureText} today. This keeps our potato server alive for everyone!
+          You&apos;ve used all {maxLimit} free {featureText} today. This keeps our potato server alive for everyone!
         </p>
         <div className="bg-white/80 px-8 py-4 rounded-2xl border border-rose-100 shadow-sm w-full max-w-sm">
           <span className="text-xs font-bold text-rose-400 uppercase tracking-widest">You can use this again in</span>

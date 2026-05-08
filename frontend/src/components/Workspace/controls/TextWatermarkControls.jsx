@@ -103,7 +103,13 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
     const start = el.selectionStart;
     const end = el.selectionEnd;
     
-    const stateKey = styleKey === 'b' ? 'isBold' : styleKey === 'i' ? 'isItalic' : 'isUnderline';
+    const styleMap = {
+      b: 'isBold',
+      i: 'isItalic',
+      u: 'isUnderline',
+    };
+
+  const stateKey = styleMap[styleKey];
     const newValue = !textWm[stateKey];
 
     if (start !== end) {

@@ -11,7 +11,7 @@ import BaseToolControls from './BaseToolControls';
  * @param {string|null} props.jobId - The current active background job ID.
  * @param {Function} props.handleCancel - Callback to cancel the job or reset the workspace.
  * @param {Function} props.handleProcess - Callback to initiate the color restoration job.
- * @param {React.MutableRefObject} props.turnstileRef - Ref attached to the Turnstile wrapper.
+ * @param {React.React.RefObject<HTMLDivElement>} props.turnstileRef - Ref attached to the Turnstile wrapper.
  * @param {Function} props.setTurnstileToken - Callback to update the Turnstile validation token.
  * @returns {JSX.Element}
  */

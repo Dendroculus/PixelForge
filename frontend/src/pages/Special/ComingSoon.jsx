@@ -22,7 +22,8 @@ export default function ComingSoon() {
             <span className="absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75 animate-ping" />
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500" />
           </span>
-          In Progress
+
+          <span>In Progress</span>
         </div>
 
         <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-slate-900 mb-3">
