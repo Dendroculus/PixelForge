@@ -84,7 +84,6 @@ export default function Magnifier({
 
   return (
     <div
-      role="presentation"
       className={`${containerClassName} ${isZoomed ? 'cursor-crosshair' : ''}`}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}

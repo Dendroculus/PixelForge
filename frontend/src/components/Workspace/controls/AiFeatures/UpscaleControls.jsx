@@ -12,7 +12,7 @@ import ScaleSelector from './ScaleSelector';
  * @param {string|null} props.jobId - The current active background job ID.
  * @param {Function} props.handleCancel - Callback to cancel the job or reset the workspace.
  * @param {Function} props.handleUpscale - Callback to initiate the ESRGAN upscaling job.
- * @param {React.MutableRefObject} props.turnstileRef - Ref attached to the Turnstile wrapper.
+ * @param {React.React.RefObject<HTMLDivElement>} props.turnstileRef - Ref attached to the Turnstile wrapper.
  * @param {Function} props.setTurnstileToken - Callback to update the Turnstile validation token.
  * @param {number} props.scale - The chosen upscale multiplier (1, 2, 3, or 4).
  * @param {Function} props.setScale - Callback to update the chosen upscale multiplier.
@@ -48,8 +48,6 @@ export default function UpscaleControls({
         isProcessing={isProcessing}
         handleCancel={handleCancel}
         handleUpscale={handleUpscale}
-        turnstileRef={turnstileRef}
-        setTurnstileToken={setTurnstileToken}
         scale={scale}
         setScale={setScale}
       />

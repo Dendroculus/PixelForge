@@ -7,7 +7,7 @@ import Footer from './components/Layout/Footer';
 import NotFound from './pages/Special/NotFound';
 import AppModals from './components/Common/AppModals';
 import { legalModalData } from './data/modals/legalModalData';
-import FaqChatbotWidget from './pages/Special/FaqChatbotWidget';
+import FaqChatBotWidget from './pages/Special/FaqChatBotWidget';
 
 function GlobalHeader() {
   const location = useLocation();
@@ -177,7 +177,7 @@ export default function App() {
           </Suspense>
         </main>
 
-        <FaqChatbotWidget />
+        <FaqChatBotWidget />
 
         <div className="mt-auto w-full relative z-50">
           <Footer openModal={openModal} />

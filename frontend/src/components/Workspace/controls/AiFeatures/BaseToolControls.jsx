@@ -12,7 +12,7 @@ import ProgressBar from '../../../Common/ProgressBar';
  * @param {string|null} props.jobId - The current active background job ID.
  * @param {Function} props.handleCancel - Callback to cancel the job or reset the workspace.
  * @param {Function} [props.handleProcess] - Callback to initiate standard tools.
- * @param {React.MutableRefObject} props.turnstileRef - Ref attached to the Turnstile wrapper.
+ * @param {React.React.RefObject<HTMLDivElement>} props.turnstileRef - Ref attached to the Turnstile wrapper.
  * @param {Function} props.setTurnstileToken - Callback to update the Turnstile validation token.
  * @param {string} [props.progressText] - Custom text for the progress bar.
  * @param {string} [props.submitText] - Text for the standard submit button.
@@ -70,9 +70,7 @@ export default function BaseToolControls({
       {!isProcessing && !resultUrl && (
         <div className="flex flex-col items-center justify-center gap-4 w-full">
           {!isWaitingForToken && (
-            children ? (
-              children
-            ) : (
+              children || (
               <div className="flex gap-2 w-full">
                 <button
                   onClick={handleCancel}

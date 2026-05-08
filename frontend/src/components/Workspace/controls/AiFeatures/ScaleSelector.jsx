@@ -7,8 +7,6 @@ import PropTypes from 'prop-types';
  * @param {boolean} props.isProcessing - Whether a job is currently actively processing.
  * @param {Function} props.handleCancel - Callback to cancel the current job or clear workspace.
  * @param {Function} props.handleUpscale - Callback to trigger the upscale process.
- * @param {React.MutableRefObject} props.turnstileRef - Ref attached to the Turnstile component.
- * @param {Function} props.setTurnstileToken - Callback to update the Turnstile security token.
  * @param {number} props.scale - The currently selected scale multiplier (1, 2, 3, or 4).
  * @param {Function} props.setScale - Callback to update the selected scale multiplier.
  * @returns {JSX.Element}
@@ -71,8 +69,6 @@ ScaleSelector.propTypes = {
   isProcessing: PropTypes.bool.isRequired,
   handleCancel: PropTypes.func.isRequired,
   handleUpscale: PropTypes.func.isRequired,
-  turnstileRef: PropTypes.object.isRequired,
-  setTurnstileToken: PropTypes.func.isRequired,
   scale: PropTypes.number.isRequired,
   setScale: PropTypes.func.isRequired,
 };

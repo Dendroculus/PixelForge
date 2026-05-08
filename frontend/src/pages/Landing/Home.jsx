@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
+import PropTypes from 'prop-types';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { NavLinks } from '../../data/navConfig';
@@ -93,6 +94,8 @@ const RotatingText = React.memo(() => {
   );
 });
 
+RotatingText.displayName = 'RotatingText';
+
 /**
  * Interactive card with tilt effect (disabled on mobile/reduced motion).
  */
@@ -161,6 +164,12 @@ const TiltCard = ({ children, to, itemVariants }) => {
   );
 };
 
+TiltCard.propTypes = {
+  children: PropTypes.node.isRequired,
+  to: PropTypes.string.isRequired,
+  itemVariants: PropTypes.object.isRequired,
+};
+
 /**
  * Icon component for each card.
  */
@@ -179,6 +188,11 @@ const CardIcon = ({ d, isAi }) => {
       </svg>
     </div>
   );
+};
+
+CardIcon.propTypes = {
+  d: PropTypes.string.isRequired,
+  isAi: PropTypes.bool,
 };
 
 /**

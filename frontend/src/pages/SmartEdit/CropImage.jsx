@@ -75,6 +75,10 @@ export default function CropImage() {
         />
       );
     }
+  
+    const handleToggleFitMode = () => {
+      setFitMode(prev => prev === 'fit' ? 'scroll' : 'fit');
+    }
 
     return (
       <div 
@@ -119,7 +123,7 @@ export default function CropImage() {
               <div className="absolute bottom-6 right-6 z-50 flex gap-2">
                 <FitModeToggle
                   isFitMode={fitMode === 'fit'}
-                  onToggle={() => setFitMode(prev => prev === 'fit' ? 'scroll' : 'fit')}
+                  onToggle={handleToggleFitMode}
                   className="p-2.5 bg-slate-800/90 backdrop-blur rounded-lg border border-slate-700 shadow-lg text-slate-300 hover:text-white hover:bg-slate-700 hover:border-slate-500 transition-all"
                   fitTitle="Fit to Screen"
                   fillTitle="Switch to Scroll Mode for tall images"
