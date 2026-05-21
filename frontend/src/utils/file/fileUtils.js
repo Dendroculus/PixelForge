@@ -26,3 +26,33 @@ export const generateSafeFilename = (originalName, suffix, extension) => {
     
   return `${safeBase}_${suffix}.${extension}`;
 };
+
+/**
+ * Safely extracts and normalizes the file extension from a filename.
+ * @param {string} filename - The name of the file.
+ * @returns {string} The lowercase file extension, or an empty string if none.
+ */
+export const getFileExtension = (filename) => {
+  if (!filename || typeof filename !== 'string') return '';
+  const lastDotIndex = filename.lastIndexOf('.');
+  
+  // If there is no dot, or the dot is the first character (e.g., '.gitignore'), return empty
+  if (lastDotIndex <= 0) return '';
+  
+  return filename.slice(lastDotIndex + 1).toLowerCase();
+};
+
+/**
+ * Checks if a filename's extension matches a target extension.
+ * @param {string} filename - The name of the file.
+ * @param {string} targetExtension - The target extension to compare against.
+ * @returns {boolean} True if extensions match (case-insensitive).
+ */
+export const isSameExtension = (filename, targetExtension) => {
+  if (!filename || !targetExtension) return false;
+  
+  const fileExt = getFileExtension(filename);
+  const targetExt = targetExtension.toLowerCase();
+  
+  return fileExt === targetExt;
+};

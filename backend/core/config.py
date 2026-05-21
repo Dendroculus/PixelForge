@@ -35,7 +35,7 @@ FORMAT_MAP = {
     "jpeg": "jpg",
     "jpg": "jpg",
     "png": "png",
-    "webp": "webp"
+    "webp": "webp",
 }
 
 ALLOWED_EXTENSIONS: FrozenSet[str] = frozenset(FORMAT_MAP.keys())
