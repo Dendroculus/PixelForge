@@ -10,9 +10,10 @@ import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErr
 import WorkspaceActionRow from '../../components/Actions/WorkspaceActionRow';
 import FormatDropdown from '../../components/Workspace/controls/FormatDropdown';
 import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
+import AppModals from '../../components/Common/AppModals'; 
 import { useWorkspaceFile } from '../../hooks/workspace/useWorkspaceFile';
 import useImageConversion from '../../hooks/client/useImageConversion';
-import { bytesToMB, generateSafeFilename } from '../../utils/file/fileUtils';
+import { bytesToMB, generateSafeFilename, isSameExtension } from '../../utils/file/fileUtils';
 
 /**
  * React component for converting image formats on the client side.
@@ -23,6 +24,7 @@ export default function ConvertFormat() {
 
   const [targetFormat, setTargetFormat] = useState('png');
   const [quality, setQuality] = useState(0.92);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const {
     file,
@@ -51,6 +53,17 @@ export default function ConvertFormat() {
     setResultUrl,
     setError,
   });
+
+  const handleConvertClick = useCallback(() => {
+    if (!file) return;
+
+    if (isSameExtension(file.name, targetFormat)) {
+      setIsModalOpen(true);
+      return;
+    }
+
+    convertImage();
+  }, [file, targetFormat, convertImage]);
 
   const handleReset = useCallback(() => {
     resetAll();
@@ -114,7 +127,7 @@ export default function ConvertFormat() {
           <WorkspaceActionRow
             primaryLabel={isConverting ? 'Converting...' : 'Convert Image'}
             secondaryLabel="Reset"
-            onPrimaryClick={convertImage}
+            onPrimaryClick={handleConvertClick}
             onSecondaryClick={handleReset}
             primaryDisabled={!canConvert}
           />
@@ -146,6 +159,14 @@ export default function ConvertFormat() {
           </div>
         }
       />
+
+      <AppModals 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        title="Invalid Conversion"
+      >
+        <p>You already uploaded a file with this extension. Converting to the same format is not allowed.</p>
+      </AppModals>
     </ToolPageWrapper>
   );
 }
