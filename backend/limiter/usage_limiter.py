@@ -61,7 +61,7 @@ async def increment_daily_limit(ip_address: str, feature: str = "upscale") -> No
         logger.exception("Database error during usage increment for ip=%s", feature_ip)
 
 
-async def get_usage_status(ip_address: str, limit_24h: int = LC.DAILY_USAGE_LIMIT, feature: str = "upscale") -> dict:
+async def get_usage_status(ip_address: str, limit_24h: int = LC.UPSCALE_DAILY_USAGE_LIMIT, feature: str = "upscale") -> dict:
     """Return remaining uses and reset timestamp (epoch milliseconds)."""
     if limit_24h <= 0:
         return {"uses_remaining": 0, "reset_timestamp": None}

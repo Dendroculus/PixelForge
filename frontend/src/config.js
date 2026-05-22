@@ -41,8 +41,8 @@ export const IMAGES = {
 export const FEATURE_LIMITS = {
   default: 3,
   upscale: 3,
-  rembg: 10,
-  colorrestore: 10,
+  rembg: 5,
+  colorrestore: 5,
 };
 
 export const RESULT_LABELS = {

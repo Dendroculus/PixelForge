@@ -9,7 +9,7 @@ from fastapi import APIRouter, BackgroundTasks, HTTPException, status, Request
 from limiter.rate_limiter import limiter, get_real_client_ip
 from limiter.usage_limiter import check_daily_limit, increment_daily_limit, get_usage_status
 from services.storage import StorageService
-from services.esrgan import ai_upscaler
+from backend.services.upscale_esrgan import ai_upscaler
 from services.bg_remover import bg_remover
 from services.color_restorer import color_restorer
 from api.dependencies import verify_turnstile
@@ -154,7 +154,7 @@ async def _handle_start_check(job_id: str):
 @router.post("/upscale/init")
 @limiter.limit(LC.UPLOAD_RATE_LIMIT)
 async def init_upscale(request: Request, payload: InitRequest):
-    return await _handle_init(request, payload, "upscale", LC.DAILY_USAGE_LIMIT)
+    return await _handle_init(request, payload, "upscale", LC.UPSCALE_DAILY_USAGE_LIMIT)
 
 
 @router.post("/upscale/start", status_code=status.HTTP_202_ACCEPTED)
@@ -223,11 +223,11 @@ async def get_result(request: Request, job_id: str):
 async def get_usage(request: Request, feature: str = "upscale"):
     client_ip = get_real_client_ip(request)
     if feature == "upscale":
-        limit = LC.DAILY_USAGE_LIMIT
+        limit = LC.UPSCALE_DAILY_USAGE_LIMIT
     elif feature == "rembg":
         limit = LC.REMBG_DAILY_USAGE_LIMIT
     elif feature == "colorrestore":
         limit = LC.COLOR_RESTORE_DAILY_USAGE_LIMIT
     else:
-        limit = LC.DAILY_USAGE_LIMIT
+        limit = LC.UPSCALE_DAILY_USAGE_LIMIT
     return await get_usage_status(client_ip, limit_24h=limit, feature=feature)

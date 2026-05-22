@@ -55,9 +55,9 @@ class LimitConfig:
     UPLOAD_RATE_LIMIT: str = "5/minute"
     POLL_RATE_LIMIT: str = "60/minute"
     SAS_EXPIRATION_MINUTES: int = 11
-    DAILY_USAGE_LIMIT: int = 3
-    REMBG_DAILY_USAGE_LIMIT: int = 10  
-    COLOR_RESTORE_DAILY_USAGE_LIMIT: int = 10
+    UPSCALE_DAILY_USAGE_LIMIT: int = 3
+    REMBG_DAILY_USAGE_LIMIT: int = 5 
+    COLOR_RESTORE_DAILY_USAGE_LIMIT: int = 5
 
 class DatabaseConfig:
     POOL_MIN_SIZE = 1
