@@ -219,28 +219,18 @@ export const apiService = {
     return { job_id };
   },
 
-  async pollResult(jobId) {
-    try {
-      const res = await fetch(`${apiUrl}/result/${jobId}`);
+async pollResult(jobId) {
+  try {
+    const res = await fetch(`${apiUrl}/result/${jobId}`);
+    if (!res.ok) return { success: false, error: true, status: res.status };
 
-      if (res.status === 429) {
-        return { success: false, error: false, rateLimited: true };
-      }
-
-      if (!res.ok) {
-        return { success: false, error: true, status: res.status };
-      }
-
-      const data = await res.json();
-
-      if (data.status === 'ready') return { success: true, data };
-      if (data.status === 'processing') return { success: false, error: false };
-      if (data.status === 'failed') return { success: false, error: true };
-
-      return { success: false, error: true };
-    } catch (err) {
-      console.error('Polling failed:', err);
-      return { success: false, error: true };
-    }
-  },
+    const data = await res.json();
+    
+    if (data.status === 'ready') return { success: true, data };
+    if (data.status === 'failed') return { success: false, failed: true, message: data.message };
+    return { success: false, processing: true };
+  } catch {
+    return { success: false, error: true };
+  }
+}
 };

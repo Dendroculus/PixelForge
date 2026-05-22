@@ -53,7 +53,26 @@ def _is_manual_bypass_allowed() -> bool:
     allow_bypass = os.getenv("ALLOW_TURNSTILE_TEST_BYPASS", "false").lower() in {"1", "true", "yes", "on"}
     return env in {"local", "dev", "development"} and allow_bypass
 
-
+async def _enforce_daily_limit(client_ip: str, feature: str):
+    """
+    Centralized limit check to prevent code duplication across start routes.
+    """
+    # Map features to their config limits
+    limit_map = {
+        "upscale": LC.UPSCALE_DAILY_USAGE_LIMIT,
+        "rembg": LC.REMBG_DAILY_USAGE_LIMIT,
+        "colorrestore": LC.COLOR_RESTORE_DAILY_USAGE_LIMIT
+    }
+    
+    limit = limit_map.get(feature, LC.UPSCALE_DAILY_USAGE_LIMIT)
+    is_allowed = await check_daily_limit(client_ip, limit_24h=limit, feature=feature)
+    
+    if not is_allowed:
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS, 
+            detail="LIMIT_REACHED"
+        )
+        
 async def process_upscale_task(job_id: str, safe_filename: str, model_type: str, scale: int, client_ip: str) -> None:
     global _pending_jobs
     try:
@@ -69,6 +88,7 @@ async def process_upscale_task(job_id: str, safe_filename: str, model_type: str,
         else:
             await StorageService.mark_job_failed(job_id)
     except Exception as e:
+        logger.info("Job failed", extra={"job_id": job_id, "reason": "decoder_error", "ip": client_ip})
         logger.error("Upscale Task error job=%s: %s", job_id, e)
         await StorageService.mark_job_failed(job_id)
         await StorageService.delete_azure_blob(StorageService.UPLOAD_CONTAINER, safe_filename)
@@ -160,8 +180,9 @@ async def init_upscale(request: Request, payload: InitRequest):
 @router.post("/upscale/start", status_code=status.HTTP_202_ACCEPTED)
 @limiter.limit(LC.UPLOAD_RATE_LIMIT)
 async def start_upscale(request: Request, payload: StartUpscaleRequest, background_tasks: BackgroundTasks):
-    await _handle_start_check(payload.job_id)
     client_ip = get_real_client_ip(request)
+    await _enforce_daily_limit(client_ip, "upscale") 
+    await _handle_start_check(payload.job_id)
     background_tasks.add_task(process_upscale_task, payload.job_id, payload.safe_filename, "general", payload.scale, client_ip)
     return {"message": "Upscale started", "job_id": payload.job_id}
 
@@ -175,8 +196,9 @@ async def init_rembg(request: Request, payload: InitRequest):
 @router.post("/rembg/start", status_code=status.HTTP_202_ACCEPTED)
 @limiter.limit(LC.UPLOAD_RATE_LIMIT)
 async def start_rembg(request: Request, payload: StartRembgRequest, background_tasks: BackgroundTasks):
-    await _handle_start_check(payload.job_id)
     client_ip = get_real_client_ip(request)
+    await _enforce_daily_limit(client_ip, "rembg")
+    await _handle_start_check(payload.job_id)
     background_tasks.add_task(process_rembg_task, payload.job_id, payload.safe_filename, client_ip)
     return {"message": "RemBG started", "job_id": payload.job_id}
 
@@ -184,17 +206,16 @@ async def start_rembg(request: Request, payload: StartRembgRequest, background_t
 @router.post("/colorrestore/init")
 @limiter.limit(LC.UPLOAD_RATE_LIMIT)
 async def init_colorrestore(request: Request, payload: InitRequest):
-    return await _handle_init(request, payload, "colorrestore", LC.REMBG_DAILY_USAGE_LIMIT)
-
+    return await _handle_init(request, payload, "colorrestore", LC.COLOR_RESTORE_DAILY_USAGE_LIMIT)
 
 @router.post("/colorrestore/start", status_code=status.HTTP_202_ACCEPTED)
 @limiter.limit(LC.UPLOAD_RATE_LIMIT)
 async def start_colorrestore(request: Request, payload: StartColorRestoreRequest, background_tasks: BackgroundTasks):
-    await _handle_start_check(payload.job_id)
     client_ip = get_real_client_ip(request)
+    await _enforce_daily_limit(client_ip, "colorrestore")
+    await _handle_start_check(payload.job_id)
     background_tasks.add_task(process_colorrestore_task, payload.job_id, payload.safe_filename, client_ip)
     return {"message": "ColorRestore started", "job_id": payload.job_id}
-
 
 @router.get("/result/{job_id}")
 @limiter.limit(LC.POLL_RATE_LIMIT)

@@ -66,6 +66,12 @@ export function useActions({
       try {
         const result = await apiService.pollResult(id);
 
+        if (result.failed) {
+          console.error("Processing failed:", result.message);
+              await handleFailure(); 
+              return;
+        }
+
         if (result.success) {
           localStorage.removeItem(storageKeys.JOB_ID);
           localStorage.removeItem(storageKeys.PROGRESS);
