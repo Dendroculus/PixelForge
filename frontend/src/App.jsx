@@ -1,12 +1,13 @@
 import { useState, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { legalModalData } from './data/modals/legalModalData';
+import { NotificationProvider } from './context/ShowNotification';
 import routes from './routes';
 import Navbar from './components/Layout/NavBar';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
 import NotFound from './pages/Special/NotFound';
 import AppModals from './components/Common/AppModals';
-import { legalModalData } from './data/modals/legalModalData';
 import FaqChatbotWidget from './pages/Special/FaqChatbotWidget';
 
 function GlobalHeader() {
@@ -136,6 +137,7 @@ export default function App() {
   const activeModalData = legalModalData[modalState.type];
 
   return (
+    <NotificationProvider>
     <BrowserRouter>
       <div className="min-h-screen bg-linear-to-br from-[#EEAECA] to-[#94BBE9] text-slate-800 flex flex-col overflow-x-hidden selection:bg-white/40">
         <Navbar />
@@ -188,5 +190,6 @@ export default function App() {
         </AppModals>
       </div>
     </BrowserRouter>
+    </NotificationProvider>
   );
 }
