@@ -60,10 +60,10 @@ def _process_image_cpu(file_bytes: bytes) -> Tuple[str, str, bytes]:
     except HTTPException:
         raise
     except UnidentifiedImageError as e:
-        logger.warning("Unidentified image format. Possible malicious polyglot attempt.")
+        logger.warning("Invalid file uploaded.")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid image data."
+            detail="FILE INVALID."
         ) from e
     except Exception as e:
         logger.error(f"Image processing failed: {e}", exc_info=True)
