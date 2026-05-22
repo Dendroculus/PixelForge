@@ -3,13 +3,13 @@ import re
 import os
 import asyncio
 import uuid
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from fastapi import APIRouter, BackgroundTasks, HTTPException, status, Request
 
 from limiter.rate_limiter import limiter, get_real_client_ip
 from limiter.usage_limiter import check_daily_limit, increment_daily_limit, get_usage_status
 from services.storage import StorageService
-from backend.services.upscale_esrgan import ai_upscaler
+from services.upscale_esrgan import ai_upscaler
 from services.bg_remover import bg_remover
 from services.color_restorer import color_restorer
 from api.dependencies import verify_turnstile
@@ -35,7 +35,7 @@ class InitRequest(BaseModel):
 class StartUpscaleRequest(BaseModel):
     job_id: str
     safe_filename: str
-    scale: int = 2
+    scale: int = Field(default=2, ge=1, le=4)
 
 
 class StartRembgRequest(BaseModel):
