@@ -1,28 +1,43 @@
 import os
 from typing import List, FrozenSet
 from dotenv import load_dotenv
+from helper.error import MissingEnvironmentVariableError
 
 load_dotenv()
 
 ENVIRONMENT = os.getenv("ENVIRONMENT", "development").strip().lower()
 STRICT_ENV_VALIDATION = os.getenv("STRICT_ENV_VALIDATION", "true").strip().lower() in {"1", "true", "yes", "on"}
 
-DATABASE_URL = os.getenv("DATABASE_URL")
-if not DATABASE_URL and STRICT_ENV_VALIDATION:
-    raise ValueError("CRITICAL: DATABASE_URL environment variable is missing.")
 
-AZURE_CONNECTION_STRING: str | None = os.getenv("AZURE_CONNECTION_STRING")
-if not AZURE_CONNECTION_STRING and STRICT_ENV_VALIDATION:
-    raise ValueError("CRITICAL: AZURE_CONNECTION_STRING environment variable is missing.")
+def get_required_env(variable_name: str) -> str:
+    """
+    Fetches the value of an environment variable and raises an error if it's missing when strict validation is enabled.
+    
+    Args:
+        variable_name (str): The name of the environment variable to fetch.
+    Returns:
+        str: The value of the environment variable, or an empty string if it's missing and strict validation is disabled.
+    Raises:
+        Exception: If the environment variable is missing and strict validation is enabled.
+    """
+    value = os.getenv(variable_name)
+    if not value and STRICT_ENV_VALIDATION:
+        raise MissingEnvironmentVariableError(f"CRITICAL: {variable_name} environment variable is missing.")
+    return value or ""
 
-CLOUDFLARE_TURNSTILE_SECRET_KEY: str | None = os.getenv("CLOUDFLARE_TURNSTILE_SECRET_KEY")
-if not CLOUDFLARE_TURNSTILE_SECRET_KEY and STRICT_ENV_VALIDATION:
-    raise ValueError("CRITICAL: CLOUDFLARE_TURNSTILE_SECRET_KEY environment variable is missing.")
 
-ALLOWED_ORIGINS_RAW: str | None = os.getenv("ALLOWED_ORIGINS")
-if not ALLOWED_ORIGINS_RAW and STRICT_ENV_VALIDATION:
-    raise ValueError("CRITICAL: ALLOWED_ORIGINS environment variable is missing.")
-ALLOWED_ORIGINS: List[str] = [origin.strip() for origin in (ALLOWED_ORIGINS_RAW or "").split(",") if origin.strip()]
+DATABASE_URL = get_required_env("DATABASE_URL")
+AZURE_CONNECTION_STRING = get_required_env("AZURE_CONNECTION_STRING")
+CLOUDFLARE_TURNSTILE_SECRET_KEY = get_required_env("CLOUDFLARE_TURNSTILE_SECRET_KEY")
+DISCORD_WEBHOOK_URL = get_required_env("DISCORD_WEBHOOK_URL")
+REPLICATE_API_TOKEN = get_required_env("REPLICATE_API_TOKEN")
+
+ALLOWED_ORIGINS_RAW = get_required_env("ALLOWED_ORIGINS")
+ALLOWED_ORIGINS: List[str] = [
+    origin.strip() for origin in (ALLOWED_ORIGINS_RAW or "").split(",") if origin.strip()
+]
+
+
 
 MAX_FILE_SIZE_MB: int = 10
 MAX_FILE_SIZE_BYTES: int = MAX_FILE_SIZE_MB * 1024 * 1024
@@ -58,6 +73,8 @@ class LimitConfig:
     UPSCALE_DAILY_USAGE_LIMIT: int = 3
     REMBG_DAILY_USAGE_LIMIT: int = 5 
     COLOR_RESTORE_DAILY_USAGE_LIMIT: int = 5
+    FEEDBACK_RATE_LIMIT: str = "3/hour"
+    FEEDBACK_DAILY_USAGE_LIMIT: int = 5
 
 class DatabaseConfig:
     POOL_MIN_SIZE = 1
@@ -72,3 +89,10 @@ class DatabaseConfig:
     USAGE_RETENTION_HOURS = 48
     AZURE_SWEEP_INTERVAL_SECONDS = 300   # 5 minutes
     DB_SWEEP_INTERVAL_SECONDS = 43200    # 12 hours
+    
+FEATURE_LIMITS = {
+    "upscale": LimitConfig.UPSCALE_DAILY_USAGE_LIMIT,
+    "rembg": LimitConfig.REMBG_DAILY_USAGE_LIMIT,
+    "colorrestore": LimitConfig.COLOR_RESTORE_DAILY_USAGE_LIMIT,
+    "feedback": LimitConfig.FEEDBACK_DAILY_USAGE_LIMIT,
+}
