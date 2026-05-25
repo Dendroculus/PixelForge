@@ -1,6 +1,8 @@
 """
 Custom exceptions for handling errors related to the Replicate API. This module defines specific error classes to represent different failure scenarios when interacting with the Replicate API, such as rate limits, timeouts, and unknown errors. These exceptions can be used to provide more informative error handling in the application. These errors are made to avoid generic error messages and to provide more context about the nature of the failure when interacting with the Replicate API.
 """
+class MissingEnvironmentVariableError(Exception):
+    """Raised when a required environment variable is missing."""
 
 class ReplicateError(Exception):
     """Base error for replicate failures."""

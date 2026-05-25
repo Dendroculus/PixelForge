@@ -3,9 +3,10 @@ import re
 import os
 import asyncio
 import uuid
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, EmailStr, Field
 from fastapi import APIRouter, BackgroundTasks, HTTPException, status, Request
 
+from helper.discord_webhooks import send_discord_message
 from limiter.rate_limiter import limiter, get_real_client_ip
 from limiter.usage_limiter import check_daily_limit, increment_daily_limit, get_usage_status
 from services.storage import StorageService
@@ -13,7 +14,7 @@ from services.upscale_esrgan import ai_upscaler
 from services.bg_remover import bg_remover
 from services.color_restorer import color_restorer
 from api.dependencies import verify_turnstile
-from core.config import LimitConfig as LC
+from core.config import LimitConfig as LC, FEATURE_LIMITS
 from helper.utils import get_result_filename
 
 logger = logging.getLogger(__name__)
@@ -47,24 +48,32 @@ class StartColorRestoreRequest(BaseModel):
     job_id: str
     safe_filename: str
 
+class FeedbackRequest(BaseModel):
+    name: str
+    email: EmailStr
+    message: str
+    cf_turnstile_response: str
 
 def _is_manual_bypass_allowed() -> bool:
     env = os.getenv("ENVIRONMENT", "").lower()
     allow_bypass = os.getenv("ALLOW_TURNSTILE_TEST_BYPASS", "false").lower() in {"1", "true", "yes", "on"}
     return env in {"local", "dev", "development"} and allow_bypass
 
-async def _enforce_daily_limit(client_ip: str, feature: str):
+async def _enforce_daily_limit(client_ip: str, feature: str) -> None:
     """
     Centralized limit check to prevent code duplication across start routes.
-    """
-    # Map features to their config limits
-    limit_map = {
-        "upscale": LC.UPSCALE_DAILY_USAGE_LIMIT,
-        "rembg": LC.REMBG_DAILY_USAGE_LIMIT,
-        "colorrestore": LC.COLOR_RESTORE_DAILY_USAGE_LIMIT
-    }
     
-    limit = limit_map.get(feature, LC.UPSCALE_DAILY_USAGE_LIMIT)
+    Args:
+        client_ip: The IP address of the client making the request.
+        feature: The feature being accessed (e.g., "upscale", "rembg", "colorrestore").
+        
+    Raises:
+        HTTPException: If the client has reached their daily limit for the specified feature.
+        
+    Returns:
+        None if the client is within limits, otherwise raises an exception.
+    """
+    limit = FEATURE_LIMITS.get(feature, LC.UPSCALE_DAILY_USAGE_LIMIT)
     is_allowed = await check_daily_limit(client_ip, limit_24h=limit, feature=feature)
     
     if not is_allowed:
@@ -170,6 +179,18 @@ async def _handle_start_check(job_id: str):
         _pending_jobs += 1
     _active_jobs.add(job_id)
 
+@router.post("/feedback")
+@limiter.limit(LC.FEEDBACK_RATE_LIMIT)
+async def submit_feedback(request: Request, payload: FeedbackRequest, background_tasks: BackgroundTasks):
+    await verify_turnstile(payload.cf_turnstile_response)
+    background_tasks.add_task(
+        send_discord_message, 
+        name=payload.name, 
+        email=payload.email, 
+        message=payload.message
+    )
+    return {"message": "Feedback submitted successfully"}
+
 
 @router.post("/upscale/init")
 @limiter.limit(LC.UPLOAD_RATE_LIMIT)
@@ -243,12 +264,6 @@ async def get_result(request: Request, job_id: str):
 @limiter.limit(LC.POLL_RATE_LIMIT)
 async def get_usage(request: Request, feature: str = "upscale"):
     client_ip = get_real_client_ip(request)
-    if feature == "upscale":
-        limit = LC.UPSCALE_DAILY_USAGE_LIMIT
-    elif feature == "rembg":
-        limit = LC.REMBG_DAILY_USAGE_LIMIT
-    elif feature == "colorrestore":
-        limit = LC.COLOR_RESTORE_DAILY_USAGE_LIMIT
-    else:
-        limit = LC.UPSCALE_DAILY_USAGE_LIMIT
+    limit = FEATURE_LIMITS.get(feature, LC.UPSCALE_DAILY_USAGE_LIMIT)
+    
     return await get_usage_status(client_ip, limit_24h=limit, feature=feature)

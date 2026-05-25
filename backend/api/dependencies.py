@@ -52,6 +52,6 @@ async def verify_turnstile(cf_turnstile_response: str = Form(...)) -> str:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Bot verification service unreachable."
-        )
+        ) from e
 
     return cf_turnstile_response
