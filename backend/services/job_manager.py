@@ -4,19 +4,19 @@ import asyncio
 import uuid
 from fastapi import HTTPException, status
 
-from limiter.usage_limiter import check_daily_limit, increment_daily_limit
+from limiter.usage_limiter import check_daily_limit, increment_daily_limit, decrement_daily_limit
 from services.features.storage import StorageService
 from services.features.upscale_esrgan import ai_upscaler
 from services.features.bg_remover import bg_remover
 from services.features.color_restorer import color_restorer
 from api.dependencies import verify_turnstile
-from core.config import LimitConfig as LC, FEATURE_LIMITS
+from core.config import LimitConfig as LC, FEATURE_LIMITS, MAX_FILE_SIZE_BYTES
 
 logger = logging.getLogger(__name__)
 
 MAX_PENDING_JOBS = int(os.getenv("MAX_PENDING_JOBS", "100"))
 _pending_jobs = 0
-_pending_jobs_lock = asyncio.Lock()
+_pending_jobs_lock = None
 _active_jobs = set()
 
 class JobManager:
@@ -50,19 +50,18 @@ class JobManager:
         }
 
     @classmethod
-    async def check_and_register_job(cls, job_id: str, client_ip: str, feature: str):
-        """Validates rate limits and concurrency locks before queuing."""
-        global _pending_jobs
+    async def check_register_and_reserve(cls, job_id: str, client_ip: str, feature: str):
+        """
+        Validates concurrency constraints AND reserves the daily limit slot BEFORE execution
+        to completely eliminate parallel race-condition billing exploits.
+        """
+        global _pending_jobs, _pending_jobs_lock
 
-        # 1. Enforce Daily Limits
-        limit = FEATURE_LIMITS.get(feature, LC.UPSCALE_DAILY_USAGE_LIMIT)
-        is_allowed = await check_daily_limit(client_ip, limit_24h=limit, feature=feature)
-        if not is_allowed:
-            raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="LIMIT_REACHED")
-
-        # 2. Check Concurrency
         if job_id in _active_jobs:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Job already processing.")
+
+        if _pending_jobs_lock is None:
+            _pending_jobs_lock = asyncio.Lock()
 
         async with _pending_jobs_lock:
             if _pending_jobs >= MAX_PENDING_JOBS:
@@ -71,60 +70,82 @@ class JobManager:
             
         _active_jobs.add(job_id)
 
+        limit = FEATURE_LIMITS.get(feature, LC.UPSCALE_DAILY_USAGE_LIMIT)
+        is_allowed = await check_daily_limit(client_ip, limit_24h=limit, feature=feature)
+        
+        if not is_allowed:
+            await cls._cleanup_queue_state(job_id)
+            raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="LIMIT_REACHED")
+        
+        await increment_daily_limit(client_ip, feature=feature)
+
     @classmethod
-    async def _cleanup_job(cls, job_id: str):
-        """Helper to manage internal queue state safely."""
-        global _pending_jobs
+    async def _cleanup_queue_state(cls, job_id: str):
+        """
+        Removes the job from active set and decrements pending count.
+        Should be called in a finally block to ensure cleanup happens regardless of success or failure.
+        Lazily initializes the lock to avoid unnecessary overhead when not processing jobs.
+        """
+        global _pending_jobs, _pending_jobs_lock
+        
         _active_jobs.discard(job_id)
+        
+        if _pending_jobs_lock is None:
+            _pending_jobs_lock = asyncio.Lock()
+            
         async with _pending_jobs_lock:
             _pending_jobs = max(0, _pending_jobs - 1)
 
-    # --- Task Runners ---
+    @classmethod
+    async def _handle_job_failure(cls, job_id: str, safe_filename: str, client_ip: str, feature: str):
+        """Centralized failure and refund management."""
+        logger.warning("Job %s failed for feature %s. Initializing cleanup and client limit refund.", job_id, feature)
+        await StorageService.mark_job_failed(job_id)
+        
+        await decrement_daily_limit(client_ip, feature=feature)
+
+    @classmethod
+    async def _process_feature(cls, job_id: str, safe_filename: str, client_ip: str, feature: str, task_runner):
+        """
+        Unified task runner for all AI features. 
+        Handles max size validation, execution, cleanup, and centralized error/refund management.
+        """
+        try:
+            max_bytes = MAX_FILE_SIZE_BYTES
+            blob_size = await StorageService.get_blob_size(StorageService.UPLOAD_CONTAINER, safe_filename)
+            
+            if blob_size > max_bytes:
+                logger.warning("Oversized upload detected: Job %s (%s bytes). Aborting.", job_id, blob_size)
+                await cls._handle_job_failure(job_id, safe_filename, client_ip, feature)
+                return
+
+            success = await task_runner()
+            
+            await StorageService.delete_azure_blob(StorageService.UPLOAD_CONTAINER, safe_filename)
+            
+            if not success:
+                await cls._handle_job_failure(job_id, safe_filename, client_ip, feature)
+
+        except Exception as e:
+            logger.error("%s Task critical failure job=%s: %s", feature.capitalize(), job_id, e)
+            await cls._handle_job_failure(job_id, safe_filename, client_ip, feature)
+        finally:
+            await cls._cleanup_queue_state(job_id)
 
     @classmethod
     async def process_upscale(cls, job_id: str, safe_filename: str, model_type: str, scale: int, client_ip: str):
-        try:
-            success = await ai_upscaler.run_upscale(safe_filename=safe_filename, job_id=job_id, model_type=model_type, scale=scale)
-            await StorageService.delete_azure_blob(StorageService.UPLOAD_CONTAINER, safe_filename)
-            if success:
-                await increment_daily_limit(client_ip, feature="upscale")
-            else:
-                await StorageService.mark_job_failed(job_id)
-        except Exception as e:
-            logger.error("Upscale Task error job=%s: %s", job_id, e)
-            await StorageService.mark_job_failed(job_id)
-            await StorageService.delete_azure_blob(StorageService.UPLOAD_CONTAINER, safe_filename)
-        finally:
-            await cls._cleanup_job(job_id)
+        async def _run():
+            return await ai_upscaler.run_upscale(safe_filename=safe_filename, job_id=job_id, model_type=model_type, scale=scale)
+        await cls._process_feature(job_id, safe_filename, client_ip, "upscale", _run)
 
     @classmethod
     async def process_rembg(cls, job_id: str, safe_filename: str, client_ip: str):
-        try:
-            success = await bg_remover.run_removal(safe_filename=safe_filename, job_id=job_id)
-            await StorageService.delete_azure_blob(StorageService.UPLOAD_CONTAINER, safe_filename)
-            if success:
-                await increment_daily_limit(client_ip, feature="rembg")
-            else:
-                await StorageService.mark_job_failed(job_id)
-        except Exception as e:
-            logger.error("RemBG Task error job=%s: %s", job_id, e)
-            await StorageService.mark_job_failed(job_id)
-            await StorageService.delete_azure_blob(StorageService.UPLOAD_CONTAINER, safe_filename)
-        finally:
-            await cls._cleanup_job(job_id)
+        async def _run():
+            return await bg_remover.run_removal(safe_filename=safe_filename, job_id=job_id)
+        await cls._process_feature(job_id, safe_filename, client_ip, "rembg", _run)
 
     @classmethod
     async def process_colorrestore(cls, job_id: str, safe_filename: str, client_ip: str):
-        try:
-            success = await color_restorer.run_restore(safe_filename=safe_filename, job_id=job_id)
-            await StorageService.delete_azure_blob(StorageService.UPLOAD_CONTAINER, safe_filename)
-            if success:
-                await increment_daily_limit(client_ip, feature="colorrestore")
-            else:
-                await StorageService.mark_job_failed(job_id)
-        except Exception as e:
-            logger.error("ColorRestore Task error job=%s: %s", job_id, e)
-            await StorageService.mark_job_failed(job_id)
-            await StorageService.delete_azure_blob(StorageService.UPLOAD_CONTAINER, safe_filename)
-        finally:
-            await cls._cleanup_job(job_id)
+        async def _run():
+            return await color_restorer.run_restore(safe_filename=safe_filename, job_id=job_id)
+        await cls._process_feature(job_id, safe_filename, client_ip, "colorrestore", _run)

@@ -17,10 +17,12 @@ from limiter.rate_limiter import limiter
 from core.database import init_db_pool, close_db_pool, run_database_cleanup
 from services.features.storage import StorageService
 
+if not ALLOWED_ORIGINS:
+    raise ValueError("CRITICAL: ALLOWED_ORIGINS must be defined in the environment.")
 if "*" in ALLOWED_ORIGINS:
-    raise ValueError("Wildcard '*' is not allowed when credentials are enabled.")
+    raise ValueError("CRITICAL: Wildcard '*' is not allowed in ALLOWED_ORIGINS for production.")
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("main")
 
 LOG_DIR = Path(os.path.dirname(__file__)) / "logs"
 LOG_DIR.mkdir(parents=True, exist_ok=True)
@@ -42,14 +44,15 @@ logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(l
 
 async def database_janitor_loop():
     """
-    Periodically clean up expired storage results and database usage records.
+    Background task to clean up expired Azure Blob results and database usage records.
+    Runs continuously while the application is alive.
     """
     db_cleanup_counter = 0
     loop_ratio = max(1, DC.DB_SWEEP_INTERVAL_SECONDS // DC.AZURE_SWEEP_INTERVAL_SECONDS)
 
     while True:
         try:
-            logger.info("💓 Janitor Heartbeat: Checking Azure for expired files...")
+            logger.info("Janitor Heartbeat: Sweeping expired files and records...")
             await StorageService.cleanup_expired_results(
                 expiration_minutes=LC.SAS_EXPIRATION_MINUTES
             )
@@ -66,12 +69,10 @@ async def database_janitor_loop():
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
-    Manage application startup and shutdown lifecycle.
-
-    Initializes database pool and background janitor task on startup,
-    and gracefully shuts them down on application termination.
-
-    :param app: FastAPI application instance
+    Manages application startup and shutdown events:
+    - Establishes PostgreSQL connection pool.
+    - Starts background janitor tasks.
+    - Gracefully closes connections on shutdown.
     """
     await init_db_pool()
     janitor_task = asyncio.create_task(database_janitor_loop())
@@ -86,8 +87,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     root_path="/api",
-    title="AI Image Upscaler API",
-    description="Production-ready FastAPI backend for Real-ESRGAN",
+    title="PixelForge API",
+    description="Production backend for PixelForge Image Studio",
     version="1.1.0",
     lifespan=lifespan
 )
@@ -106,14 +107,12 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 @app.get("/", tags=["Health Check"])
 async def root():
     """
-    Health check endpoint.
-
-    :return: API status and documentation path
+    Root endpoint for load balancer health checks.
     """
     return {
         "status": "online",
-        "message": "AI Upscaler API is running",
-        "docs": "/docs"
+        "message": "PixelForge API is running",
+        "docs": "/api/docs"
     }
 
 app.include_router(api_router)

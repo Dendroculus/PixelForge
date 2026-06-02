@@ -41,7 +41,7 @@ async def init_upscale(request: Request, payload: InitRequest):
 @limiter.limit(LC.UPLOAD_RATE_LIMIT)
 async def start_upscale(request: Request, payload: StartUpscaleRequest, background_tasks: BackgroundTasks):
     client_ip = get_real_client_ip(request)
-    await JobManager.check_and_register_job(payload.job_id, client_ip, "upscale")
+    await JobManager.check_register_and_reserve(payload.job_id, client_ip, "upscale")
     background_tasks.add_task(JobManager.process_upscale, payload.job_id, payload.safe_filename, "general", payload.scale, client_ip)
     return {"message": "Upscale started", "job_id": payload.job_id}
 
@@ -56,7 +56,7 @@ async def init_rembg(request: Request, payload: InitRequest):
 @limiter.limit(LC.UPLOAD_RATE_LIMIT)
 async def start_rembg(request: Request, payload: StartRembgRequest, background_tasks: BackgroundTasks):
     client_ip = get_real_client_ip(request)
-    await JobManager.check_and_register_job(payload.job_id, client_ip, "rembg")
+    await JobManager.check_register_and_reserve(payload.job_id, client_ip, "rembg")
     background_tasks.add_task(JobManager.process_rembg, payload.job_id, payload.safe_filename, client_ip)
     return {"message": "RemBG started", "job_id": payload.job_id}
 
@@ -71,7 +71,7 @@ async def init_colorrestore(request: Request, payload: InitRequest):
 @limiter.limit(LC.UPLOAD_RATE_LIMIT)
 async def start_colorrestore(request: Request, payload: StartColorRestoreRequest, background_tasks: BackgroundTasks):
     client_ip = get_real_client_ip(request)
-    await JobManager.check_and_register_job(payload.job_id, client_ip, "colorrestore")
+    await JobManager.check_register_and_reserve(payload.job_id, client_ip, "colorrestore")
     background_tasks.add_task(JobManager.process_colorrestore, payload.job_id, payload.safe_filename, client_ip)
     return {"message": "ColorRestore started", "job_id": payload.job_id}
 

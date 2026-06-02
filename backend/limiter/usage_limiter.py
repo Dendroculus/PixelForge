@@ -59,6 +59,30 @@ async def increment_daily_limit(ip_address: str, feature: str = "upscale") -> No
             await conn.execute(upsert_sql, feature_ip)
     except Exception:
         logger.exception("Database error during usage increment for ip=%s", feature_ip)
+        
+async def decrement_daily_limit(ip_address: str, feature: str = "upscale") -> None:
+    """
+    Refunds 1 usage credit if a background job fails or is rejected.
+    Prevents users from losing their daily limit due to server errors.
+    """
+    pool = get_db_pool()
+    if pool is None:
+        return
+
+    feature_ip = _get_feature_key(ip_address, feature)
+
+    # Use GREATEST to ensure we never accidentally create negative usage counts
+    refund_sql = """
+    UPDATE ip_usage_hourly 
+    SET usage_count = GREATEST(usage_count - 1, 0)
+    WHERE ip_address = $1 AND bucket_start = date_trunc('hour', NOW());
+    """
+
+    try:
+        async with pool.acquire() as conn:
+            await conn.execute(refund_sql, feature_ip)
+    except Exception:
+        logger.exception("Database error during usage refund for ip=%s", feature_ip)
 
 
 async def get_usage_status(ip_address: str, limit_24h: int = LC.UPSCALE_DAILY_USAGE_LIMIT, feature: str = "upscale") -> dict:
