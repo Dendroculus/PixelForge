@@ -15,7 +15,7 @@ from api.routes import router as api_router
 from core.config import ALLOWED_ORIGINS, LimitConfig as LC, DatabaseConfig as DC
 from limiter.rate_limiter import limiter
 from core.database import init_db_pool, close_db_pool, run_database_cleanup
-from services.storage import StorageService
+from services.features.storage import StorageService
 
 if "*" in ALLOWED_ORIGINS:
     raise ValueError("Wildcard '*' is not allowed when credentials are enabled.")

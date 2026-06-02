@@ -4,7 +4,7 @@ import io
 import logging
 import urllib.parse
 import time
-from services.storage import StorageService
+from services.features.storage import StorageService
 from core.config import MAX_FILE_SIZE_BYTES, MAX_CONCURENT_JOBS
 from helper.utils import get_result_filename
 from core.model_registry import ModelRegistry
