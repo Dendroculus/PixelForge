@@ -82,7 +82,7 @@ class StorageService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail="Failed to generate secure upload URL."
-            )
+            ) from e
 
     @classmethod
     async def save_upload(cls, image_stream: io.BytesIO, safe_filename: str) -> str:
@@ -98,7 +98,7 @@ class StorageService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail="Failed to save file to cloud storage."
-            )
+            ) from e
 
     @classmethod
     async def get_upload_bytes(cls, safe_filename: str) -> bytes:
@@ -113,7 +113,7 @@ class StorageService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail="Failed to retrieve file from cloud storage."
-            )
+            ) from e
 
     @classmethod
     async def save_result(cls, image_bytes: bytes, result_filename: str) -> str:
@@ -128,8 +128,8 @@ class StorageService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail="Failed to save processed result to cloud storage."
-            )
-
+            ) from e
+ 
     @classmethod
     async def check_result_exists(cls, result_filename: str) -> bool:
         secure_name = os.path.basename(result_filename)
@@ -142,7 +142,7 @@ class StorageService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail="Failed to check result status."
-            )
+            ) from e
 
     @classmethod
     def get_result_url(cls, result_filename: str) -> str:
@@ -173,7 +173,7 @@ class StorageService:
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
                 detail="Failed to generate secure access URL."
-            )
+            ) from e
 
     @classmethod
     async def delete_azure_blob(cls, container_name: str, blob_name: str) -> bool:
@@ -232,3 +232,18 @@ class StorageService:
         except Exception as e:
             logger.error("Failed to check failure marker for job %s in Azure: %s", secure_job_id, e)
             return False
+        
+    @classmethod
+    async def get_blob_size(cls, container_name: str, blob_name: str) -> int:
+        """
+        Retrieves the size of a blob in bytes directly from Azure metadata.
+        Returns 0 if the blob cannot be found (e.g., deleted or missing).
+        """
+        secure_name = os.path.basename(blob_name)
+        try:
+            async with cls._get_blob_client(container_name, secure_name) as blob_client:
+                props = await blob_client.get_blob_properties()
+                return props.size
+        except Exception as e:
+            logger.warning("Failed to retrieve size for blob %s: %s", secure_name, e)
+            return 0
