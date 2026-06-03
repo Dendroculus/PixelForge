@@ -81,7 +81,8 @@ export const QUICK_ACTIONS = [
   'How do I upscale an image?',
   'How do I remove background?',
   'Which formats are supported?',
-  'What is the max upload size?'
+  'What is the max upload size?',
+  'Feedback & Support',
 ];
 
 export const CAT_ACCENT = {

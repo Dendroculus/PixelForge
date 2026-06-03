@@ -3,6 +3,7 @@ import { FAQ_DATA } from '../../data/bot/chatBotdata';
 
 /**
  * Manages state and interaction flow for the FAQ chatbot widget.
+ * @returns {Object} Chatbot state and control functions.
  */
 export function useFaqChatBot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -50,6 +51,7 @@ export function useFaqChatBot() {
 
   /**
    * Starts answer animation flow for the selected question.
+   * @param {Object} qa - The question and answer object.
    */
   const startAnswerFlow = (qa) => {
     setActiveQuestion(qa);
@@ -68,7 +70,8 @@ export function useFaqChatBot() {
   };
 
   /**
-   * Opens a category view.
+   * Opens a specific FAQ category view.
+   * @param {Object} category - The selected category object.
    */
   const openCategory = (category) => {
     setActiveCategory(category);
@@ -76,7 +79,8 @@ export function useFaqChatBot() {
   };
 
   /**
-   * Opens an answer from a quick action text.
+   * Opens an answer flow directly from a quick action text match.
+   * @param {string} text - The question string to match.
    */
   const openFromQuickAction = (text) => {
     const found = allQuestions.find((q) => q.q.toLowerCase() === text.toLowerCase());
@@ -86,7 +90,7 @@ export function useFaqChatBot() {
   };
 
   /**
-   * Handles back navigation across chatbot views.
+   * Handles back navigation across all chatbot views.
    */
   const handleBack = () => {
     if (typingTimerRef.current) {
@@ -102,12 +106,12 @@ export function useFaqChatBot() {
       } else if (activeCategory) {
         setView('category');
       } else {
-        setView('home'); // <-- FIX: Routes to home if opened from Quick Action
+        setView('home');
       }
       return;
     }
 
-    if (view === 'category' || view === 'search') {
+    if (view === 'category' || view === 'search' || view === 'feedback') {
       setView('home');
     }
   };
