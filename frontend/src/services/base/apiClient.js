@@ -24,7 +24,13 @@ const handleApiResponse = async (response, defaultErrorMsg) => {
     let detail = defaultErrorMsg;
     try {
       const errData = await response.json();
-      detail = errData?.detail || detail;
+      
+      if (Array.isArray(errData?.detail)) {
+        detail = errData.detail[0].msg; 
+      } 
+      else if (errData?.detail) {
+        detail = errData.detail;
+      }
     } catch (e) {
       console.warn(`[API Error] Failed to parse error JSON (Status: ${response.status}):`, e);
     }

@@ -2,7 +2,7 @@ import re
 from fastapi import APIRouter, BackgroundTasks, HTTPException, status, Request
 
 # Local Imports
-from helper.discord_webhooks import send_discord_message
+from helper.discord_webhooks import build_feedback_payload, send_discord_message
 from limiter.rate_limiter import limiter, get_real_client_ip
 from limiter.usage_limiter import get_usage_status
 from services.features.storage import StorageService
@@ -24,10 +24,26 @@ router = APIRouter(tags=["ai_services"])
 JOB_ID_RE = re.compile(r"^[a-f0-9]{32}$")
 
 @router.post("/feedback")
-@limiter.limit(LC.FEEDBACK_RATE_LIMIT)
-async def submit_feedback(request: Request, payload: FeedbackRequest, background_tasks: BackgroundTasks):
+@limiter.limit(f"{LC.FEEDBACK_DAILY_USAGE_LIMIT}/day") # <-- ONLY the daily limit
+async def submit_feedback(
+    request: Request,
+    payload: FeedbackRequest,
+    background_tasks: BackgroundTasks
+):
     await verify_turnstile(payload.cf_turnstile_response)
-    background_tasks.add_task(send_discord_message, name=payload.name, email=payload.email, message=payload.message)
+
+    discord_payload = build_feedback_payload(
+        name=payload.name,
+        email=payload.email,
+        message=payload.message,
+    )
+
+    background_tasks.add_task(
+        send_discord_message,
+        discord_payload,
+        payload.email,
+    )
+
     return {"message": "Feedback submitted successfully"}
 
 @router.post("/upscale/init")

@@ -25,7 +25,8 @@ export const STORAGE_KEYS = {
   RESULT_TIMESTAMP: 'pf_result_timestamp',
   ALERT: 'pf_alert',
   UPSCALE_HISTORY: 'pf_upscale_history',
-  UPLOAD_TIMESTAMP: 'pf_upload_timestamp'
+  UPLOAD_TIMESTAMP: 'pf_upload_timestamp',
+  FEEDBACK_LIMIT: 'pf_feedback_limit'
 };
 
 export const IMAGES = {
@@ -43,6 +44,7 @@ export const FEATURE_LIMITS = {
   upscale: 3,
   rembg: 5,
   colorrestore: 5,
+  feedback: 3,
 };
 
 export const RESULT_LABELS = {
