@@ -24,7 +24,7 @@ router = APIRouter(tags=["ai_services"])
 JOB_ID_RE = re.compile(r"^[a-f0-9]{32}$")
 
 @router.post("/feedback")
-@limiter.limit(f"{LC.FEEDBACK_DAILY_USAGE_LIMIT}/day") # <-- ONLY the daily limit
+@limiter.limit(f"{LC.FEEDBACK_RATE_LIMIT};{LC.FEEDBACK_DAILY_USAGE_LIMIT}/day")
 async def submit_feedback(
     request: Request,
     payload: FeedbackRequest,
