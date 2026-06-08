@@ -1,28 +1,57 @@
 import { useState, useRef } from 'react';
 import { apiService } from '../../services/apiService';
 import { Turnstile } from '@marsidev/react-turnstile';
+import { STORAGE_KEYS, APP_CONFIG } from '../../config';
 
 /**
- * Renders the feedback form with Turnstile verification.
+ * FeedbackForm Component
+ * * Renders a contact form allowing users to send feedback directly to Discord.
+ * Includes Cloudflare Turnstile for bot protection and implements a client-side 
+ * rate-limiting check (backed by local storage) to prevent cascading API requests 
+ * if the user has already hit their daily submission limit.
+ *
+ * @returns {JSX.Element} The rendered form, success state, or rate-limited state.
  */
 export default function FeedbackForm() {
+  
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [turnstileToken, setTurnstileToken] = useState('');
-  const [status, setStatus] = useState('idle');
+  const [status, setStatus] = useState('idle'); // 'idle' | 'loading' | 'success' | 'error'
   const [errorMsg, setErrorMsg] = useState('');
   
   const turnstileRef = useRef(null);
 
+  /**
+   * Lazy Initialized Rate Limit State
+   * By passing a function to useState, we evaluate local storage synchronously 
+   * during the initial render. This completely avoids the React "Cascading Render" 
+   * warning that happens when using useEffect to update state on mount.
+   */
+  const [isRateLimited, setIsRateLimited] = useState(() => {
+    const limitHitTime = localStorage.getItem(STORAGE_KEYS.FEEDBACK_LIMIT);
+    
+    if (!limitHitTime) return false;
+
+    const timePassed = Date.now() - parseInt(limitHitTime, 10);
+    if (timePassed < APP_CONFIG.DAY_MS) {
+      return true; // Still locked out
+    } else {
+      localStorage.removeItem(STORAGE_KEYS.FEEDBACK_LIMIT); // Lock expired
+      return false; // Unlock them
+    }
+  });
+
+
+  /**
+   * Handles form submission, triggers the API call, and handles specific
+   * rate-limit errors thrown by the backend.
+   * * @param {React.FormEvent} e - The form submission event.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
-
-    if (!turnstileToken) {
-      setErrorMsg('Please complete the security verification.');
-      return;
-    }
-
     setStatus('loading');
+
     try {
       await apiService.submitFeedback(
         formData.name, 
@@ -32,12 +61,33 @@ export default function FeedbackForm() {
       );
       setStatus('success');
     } catch (err) {
+      if (err.message === 'LIMIT_REACHED' || err.message.includes('Rate limit')) {
+        localStorage.setItem(STORAGE_KEYS.FEEDBACK_LIMIT, Date.now().toString());
+        setIsRateLimited(true);
+        return; // Exit early to render the locked UI immediately
+      }
+
       setStatus('error');
-      setErrorMsg(err.message === 'LIMIT_REACHED' ? 'You have reached your daily feedback limit.' : err.message);
+      setErrorMsg(err.message);
+      
       if (turnstileRef.current) turnstileRef.current.reset();
       setTurnstileToken('');
     }
   };
+
+  if (isRateLimited) {
+    return (
+      <div className="p-5 bg-white/60 border border-white/80 rounded-2xl shadow-sm text-center animate-fade-in">
+        <div className="w-12 h-12 bg-red-100 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+          </svg>
+        </div>
+        <p className="font-bold text-slate-800 text-base mb-1">Limit Reached</p>
+        <p className="text-sm text-slate-600">You have reached your daily feedback limit. Please try again tomorrow!</p>
+      </div>
+    );
+  }
 
   if (status === 'success') {
     return (
