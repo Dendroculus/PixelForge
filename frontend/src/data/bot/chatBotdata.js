@@ -78,11 +78,11 @@ export const FAQ_DATA = [
 ];
 
 export const QUICK_ACTIONS = [
-  'How do I upscale an image?',
-  'How do I remove background?',
-  'Which formats are supported?',
-  'What is the max upload size?',
-  'Feedback & Support',
+  { id: 'qa-upscale', text: 'How do I upscale an image?', type: 'faq' },
+  { id: 'qa-rembg', text: 'How do I remove background?', type: 'faq' },
+  { id: 'qa-formats', text: 'Which formats are supported?', type: 'faq' },
+  { id: 'qa-size', text: 'What is the max upload size?', type: 'faq' },
+  { id: 'action-feedback', text: 'Feedback & Support', type: 'view', target: 'feedback' },
 ];
 
 export const CAT_ACCENT = {

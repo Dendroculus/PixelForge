@@ -9,6 +9,7 @@ import HomeView from '../../components/Bot/HomeView';
 import CategoryView from '../../components/Bot/CategoryView';
 import SearchView from '../../components/Bot/SearchView';
 import AnswerView from '../../components/Bot/AnswerView';
+import FeedbackView from '../../components/Bot/FeedbackView';
 import FabToggle from '../../components/Bot/FabToggle';
 
 /**
@@ -42,15 +43,27 @@ export default function FaqChatbotWidget() {
     if (bodyRef.current) bodyRef.current.scrollTop = 0;
   }, [view, isTyping, showAnswer]);
 
+  /**
+   * Intercepts quick actions to route to specific views before falling back to FAQ search.
+   * @param {Object} action - The clicked quick action object.
+   */
+  const handleQuickActionClick = (action) => {
+    if (action.type === 'view') {
+      setView(action.target);
+    } else {
+      openFromQuickAction(action.text);
+    }
+  };
+
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: WIDGET_STYLES }} />
       <div
-      className="fixed right-4 sm:right-5 flex flex-col items-end z-999 fw text-slate-800"
-      style={{
-        bottom: 'calc(var(--footer-safe-offset, 16px) + env(safe-area-inset-bottom))',
-      }}
-    >
+        className="fixed right-4 sm:right-5 flex flex-col items-end z-999 fw text-slate-800"
+        style={{
+          bottom: 'calc(var(--footer-safe-offset, 16px) + env(safe-area-inset-bottom))',
+        }}
+      >
         <AnimatePresence>
           {isOpen && (
             <motion.div
@@ -77,7 +90,7 @@ export default function FaqChatbotWidget() {
                     FAQ_DATA={FAQ_DATA}
                     QUICK_ACTIONS={QUICK_ACTIONS}
                     CAT_ACCENT={CAT_ACCENT}
-                    openFromQuickAction={openFromQuickAction}
+                    openFromQuickAction={handleQuickActionClick}
                     openCategory={openCategory}
                   />
                 )}
@@ -106,6 +119,9 @@ export default function FaqChatbotWidget() {
                     showAnswer={showAnswer}
                     handleBack={handleBack}
                   />
+                )}
+                {view === 'feedback' && (
+                  <FeedbackView handleBack={handleBack} />
                 )}
               </div>
 

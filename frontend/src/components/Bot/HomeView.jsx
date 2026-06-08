@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
  * Renders chatbot home view.
  * @param {Object} props - The component props.
  * @param {Array<Object>} props.FAQ_DATA - Array containing FAQ categories and questions.
- * @param {Array<string>} props.QUICK_ACTIONS - Array of quick action strings to render as tags.
+ * @param {Array<Object>} props.QUICK_ACTIONS - Array of quick action objects containing id, text, and type.
  * @param {Object} props.CAT_ACCENT - Mapping of category IDs to their specific styling configuration.
  * @param {Function} props.openFromQuickAction - Callback executed when a quick action is clicked.
  * @param {Function} props.openCategory - Callback executed when an FAQ category is clicked.
@@ -36,16 +36,29 @@ export default function HomeView({ FAQ_DATA, QUICK_ACTIONS, CAT_ACCENT, openFrom
         <div className="flex flex-wrap gap-2">
           {QUICK_ACTIONS.map((action) => (
             <button
-              key={action}
+              key={action.id}
               onClick={() => openFromQuickAction(action)}
-              className="text-[11px] font-medium px-3 py-1.5 rounded-full transition-all"
+              className="
+                text-[11px]
+                font-medium
+                text-left
+                px-3
+                py-1.5
+                rounded-full
+                transition-all
+                duration-200
+                hover:scale-105
+                hover:shadow-sm
+                hover:opacity-80
+                active:scale-95
+              "
               style={{
                 color: '#5b21b6',
                 background: 'rgba(124,58,237,0.12)',
                 border: '1px solid rgba(124,58,237,0.28)',
               }}
             >
-              {action}
+              {action.text}
             </button>
           ))}
         </div>
@@ -61,7 +74,7 @@ export default function HomeView({ FAQ_DATA, QUICK_ACTIONS, CAT_ACCENT, openFrom
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.055, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full p-3 rounded-2xl text-left transition-all"
+              className="w-full p-3 rounded-2xl text-left transition-all hover:opacity-90 active:scale-[0.98]"
               style={{ background: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.6)' }}
             >
               <div className="flex items-center gap-3">
@@ -93,7 +106,14 @@ HomeView.propTypes = {
       icon: PropTypes.string.isRequired,
     })
   ).isRequired,
-  QUICK_ACTIONS: PropTypes.arrayOf(PropTypes.string).isRequired,
+  QUICK_ACTIONS: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string.isRequired,
+      text: PropTypes.string.isRequired,
+      type: PropTypes.string.isRequired,
+      target: PropTypes.string,
+    })
+  ).isRequired,
   CAT_ACCENT: PropTypes.objectOf(
     PropTypes.shape({
       bg: PropTypes.string.isRequired,
