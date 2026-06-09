@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import replicate
-from helper.error import (ReplicateRateLimitError, ReplicateTimeoutError, ReplicateUnknownError)
+from utils.error import (ReplicateRateLimitError, ReplicateTimeoutError, ReplicateUnknownError)
 logger = logging.getLogger(__name__)
 
 async def smart_replicate_run(model_id: str, params: dict, max_retries: int = 4):
