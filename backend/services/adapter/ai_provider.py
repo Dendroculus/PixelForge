@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from helper.replicate_wrapper import smart_replicate_run
+from utils.replicate_wrapper import smart_replicate_run
 
 class BaseAIProvider(ABC):
     """

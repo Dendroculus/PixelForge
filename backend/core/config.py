@@ -1,7 +1,7 @@
 import os
 from typing import List, FrozenSet
 from dotenv import load_dotenv
-from helper.error import MissingEnvironmentVariableError
+from utils.error import MissingEnvironmentVariableError
 
 load_dotenv()
 
@@ -90,9 +90,15 @@ class DatabaseConfig:
     AZURE_SWEEP_INTERVAL_SECONDS = 300   # 5 minutes
     DB_SWEEP_INTERVAL_SECONDS = 43200    # 12 hours
     
+class ColorValidationConfig:
+    COLOR_DIFF_THRESHOLD = 35
+    COLOR_PIXEL_RATIO_THRESHOLD = 0.05
+    ALPHA_THRESHOLD = 20
+    
 FEATURE_LIMITS = {
     "upscale": LimitConfig.UPSCALE_DAILY_USAGE_LIMIT,
     "rembg": LimitConfig.REMBG_DAILY_USAGE_LIMIT,
     "colorrestore": LimitConfig.COLOR_RESTORE_DAILY_USAGE_LIMIT,
     "feedback": LimitConfig.FEEDBACK_DAILY_USAGE_LIMIT,
 }
+

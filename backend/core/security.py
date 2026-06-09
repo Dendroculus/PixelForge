@@ -17,7 +17,7 @@ from core.config import (
     MAX_PIXELS,
     ALLOWED_MIME_TYPES,
 )
-from helper.utils import get_upload_filename
+from utils.storage_utils import get_upload_filename
 
 Image.MAX_IMAGE_PIXELS = MAX_PIXELS
 

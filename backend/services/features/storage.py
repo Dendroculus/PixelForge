@@ -16,7 +16,7 @@ from azure.storage.blob.aio import BlobServiceClient
 from datetime import timedelta, timezone, datetime
 from azure.storage.blob import generate_blob_sas, BlobSasPermissions
 from core.config import AZURE_CONNECTION_STRING, ContainerNames as CN, LimitConfig as LC
-from helper.utils import get_marker_filename, parse_azure_credentials
+from utils.storage_utils import get_marker_filename, parse_azure_credentials
 
 logger = logging.getLogger(__name__)
 

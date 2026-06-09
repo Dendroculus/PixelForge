@@ -2,14 +2,14 @@ import re
 from fastapi import APIRouter, BackgroundTasks, HTTPException, status, Request
 
 # Local Imports
-from helper.discord_webhooks import build_feedback_payload, send_discord_message
+from utils.discord_webhooks import build_feedback_payload, send_discord_message
 from limiter.rate_limiter import limiter, get_real_client_ip
 from limiter.usage_limiter import get_usage_status
 from services.features.storage import StorageService
 from services.job_manager import JobManager
 from api.dependencies import verify_turnstile
 from core.config import LimitConfig as LC, FEATURE_LIMITS
-from helper.utils import get_result_filename
+from utils.storage_utils import get_result_filename
 
 # Pydantic Model Imports
 from api.schemas import (

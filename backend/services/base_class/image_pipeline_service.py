@@ -6,7 +6,7 @@ import urllib.parse
 import time
 from services.features.storage import StorageService
 from core.config import MAX_FILE_SIZE_BYTES, MAX_CONCURENT_JOBS
-from helper.utils import get_result_filename
+from utils.storage_utils import get_result_filename
 from core.model_registry import ModelRegistry
 from services.adapter.ai_provider import BaseAIProvider, ReplicateProvider
 
