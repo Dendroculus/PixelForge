@@ -1,6 +1,6 @@
 <div align="center">
 
-  EN | [中文](./docs/READMEcn.md)
+  EN | [中文](./docs/translation/README_CN.md) | [ID](./docs/translation/README_ID.md)
 </div>
 
 <p align="center">

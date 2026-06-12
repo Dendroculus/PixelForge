@@ -1,6 +1,6 @@
 <div align="center">
 
-  [EN](../README.md) | 中文
+  [EN](../../README.md) | 中文 | [ID](./README_ID.md)
 </div>
 
 <p align="center">
