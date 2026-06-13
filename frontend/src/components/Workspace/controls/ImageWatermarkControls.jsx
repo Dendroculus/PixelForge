@@ -23,10 +23,11 @@ export default function ImageWatermarkControls({
         inputId="wm-logo-input"
         inputRef={watermarkImageRef}
         onChange={handleWatermarkImageUpload}
-        helperText={imgWm.url ? 'Replace logo image' : 'Upload logo image (.png, .jpg, .webp)'}
+        helperText="Upload logo image (.png, .jpg, .webp)"
         accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
         maxSizeMB={APP_CONFIG.MAX_FILE_SIZE_MB}
         heightClass="h-28"
+        hasActiveFile={Boolean(imgWm.url)}
       />
 
       <div className="grid grid-cols-2 gap-4">

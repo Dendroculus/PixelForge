@@ -315,6 +315,7 @@ export default function ResizeImage() {
                 inputRef={fileInputRef}
                 onChange={onFileChange}
                 helperText={`Any format up to ${APP_CONFIG.MAX_FILE_SIZE_MB}MB`}
+                hasActiveFile={Boolean(file)}
               />
             ) : (
               <WorkspaceFileSummary file={file} />
@@ -418,7 +419,7 @@ export default function ResizeImage() {
         leftFooter={
           <WorkspaceActionRow
             primaryLabel={isProcessing ? 'Resizing...' : 'Apply Resize'}
-            secondaryLabel="Reset"
+            secondaryLabel="Upload Other Image"
             onPrimaryClick={applyResize}
             onSecondaryClick={handleReset}
             primaryDisabled={!canProcess}

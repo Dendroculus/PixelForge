@@ -303,6 +303,7 @@ export default function ColorPalette() {
                   onChange={onFileChange}
                   helperText="Any format up to 10MB"
                   maxSizeMB={10}
+                  hasActiveFile={Boolean(file)}
                 />
               </div>
             )}
