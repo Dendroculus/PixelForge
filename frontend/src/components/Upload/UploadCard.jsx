@@ -1,14 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
 import PropTypes from 'prop-types';
-import { validateImageUpload } from '../../utils/file/fileValidation';
-import { useImagePaste } from '../../hooks/client/useImagePaste';
-
-const AcceptableImageMimeTypes = '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp';
+import { useFileUpload } from '../../hooks/client/useFileUpload';
+import { AcceptableImageMimeTypes } from '../../utils/file/fileUtils';
 
 /**
  * Renders a customizable upload card for file selection with validation.
  * Supports click-to-upload, drag-and-drop, and global clipboard pasting.
- * * @param {Object} props - The component props.
+ * 
+ * @param {Object} props - The component props.
  * @param {string} props.inputId - HTML id attribute for the file input element.
  * @param {React.RefObject<HTMLInputElement>|Function} [props.inputRef] - Ref attached to the hidden file input.
  * @param {Function} [props.onChange] - Callback fired when a file is successfully validated and selected.
@@ -24,7 +22,7 @@ const AcceptableImageMimeTypes = '.jpg,.jpeg,.png,.webp,image/jpeg,image/png,ima
  */
 export default function UploadCard({
   inputId,
-  inputRef,
+  inputRef: externalRef,
   onChange,
   onValidationError,
   helperText,
@@ -35,107 +33,30 @@ export default function UploadCard({
   clearErrorAfterMs = 5000,
   maxSizeMB,
 }) {
-  const [localError, setLocalError] = useState('');
-  const [isDragging, setIsDragging] = useState(false);
-  const timeoutRef = useRef(null);
+  // Delegate all business logic to the custom hook
+  const { isDragging, error, inputRef, handlers } = useFileUpload({
+    externalInputRef: externalRef,
+    validate,
+    maxSizeMB,
+    clearErrorAfterMs,
+    onValidationError,
+    // Preserve backward compatibility for the synthetic event payload
+    onFileSelect: (file) => onChange?.({ target: { files: [file] } }),
+  });
 
-  const clearLocalError = useCallback(() => {
-    setLocalError('');
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-      timeoutRef.current = null;
-    }
-  }, []);
-
-  const setErrorWithTimer = useCallback(
-    (message) => {
-      setLocalError(message);
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-      if (clearErrorAfterMs > 0) {
-        timeoutRef.current = setTimeout(() => {
-          setLocalError('');
-          timeoutRef.current = null;
-        }, clearErrorAfterMs);
-      }
-    },
-    [clearErrorAfterMs]
-  );
-
-  useEffect(() => {
-    return () => {
-      if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    };
-  }, []);
-
-  const processFile = useCallback(
-    async (file) => {
-      if (!file) return;
-      clearLocalError();
-
-      if (!validate) {
-        onChange?.({ target: { files: [file] } });
-        return;
-      }
-
-      const result = await validateImageUpload(file, maxSizeMB);
-
-      if (!result.isValid) {
-        const msg = result.error || 'Invalid file.';
-        setErrorWithTimer(msg);
-        onValidationError?.(msg);
-        if (inputRef?.current) inputRef.current.value = '';
-        return;
-      }
-
-      onChange?.({
-        target: { files: [result.file || file] },
-      });
-    },
-    [validate, onChange, onValidationError, inputRef, clearLocalError, setErrorWithTimer, maxSizeMB]
-  );
-
-  const handleDragOver = useCallback((e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  }, []);
-
-  const handleDragLeave = useCallback((e) => {
-    e.preventDefault();
-    setIsDragging(false);
-  }, []);
-
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      processFile(file);
-    }
-  }, [processFile]);
-
-  const handleChange = useCallback(
-    (event) => {
-      const file = event.target.files?.[0];
-      processFile(file);
-    },
-    [processFile]
-  );
-
-  useImagePaste(processFile);
-
+  // Presentation State Definitions
   let cardStateClass = 'border-indigo-200 bg-white/40 hover:bg-white/70 hover:border-indigo-400';
   let iconWrapClass = 'bg-white border-white/50 text-indigo-500';
   let titleClass = 'text-slate-700 group-hover:text-indigo-600';
   let helperClass = 'text-slate-500';
   let uploadStatusText = 'Click, drop, drag or paste';
 
-  if (localError) {
+  if (error) {
     cardStateClass = 'border-rose-300 bg-rose-50/50 hover:border-rose-400 hover:bg-rose-50/60';
     iconWrapClass = 'bg-rose-100 border-rose-200 text-rose-600';
     titleClass = 'text-rose-600 group-hover:text-rose-600';
     helperClass = 'text-rose-500';
-    uploadStatusText = localError;
+    uploadStatusText = error;
   } else if (isDragging) {
     cardStateClass = 'border-indigo-500 bg-indigo-50/80 scale-[1.02]';
     uploadStatusText = 'Drop to upload';
@@ -144,15 +65,15 @@ export default function UploadCard({
   return (
     <label
       htmlFor={inputId}
-      aria-label={localError || 'Upload image file'}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
+      aria-label={error || 'Upload image file'}
+      onDragOver={handlers.onDragOver}
+      onDragLeave={handlers.onDragLeave}
+      onDrop={handlers.onDrop}
       className={`group relative flex w-full ${heightClass} flex-col items-center justify-center rounded-2xl border-2 border-dashed shadow-sm transition-all cursor-pointer hover:shadow-md ${cardStateClass} ${className}`}
     >
       <div className="flex flex-col items-center justify-center px-4 pt-5 pb-6 text-center pointer-events-none">
         <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl border transition-colors ${iconWrapClass}`}>
-          {localError ? (
+          {error ? (
             <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -172,7 +93,7 @@ export default function UploadCard({
           {uploadStatusText}
         </p>
         <p className={`text-xs font-medium ${helperClass}`}>
-          {localError ? 'Please try another file' : helperText}
+          {error ? 'Please try another file' : helperText}
         </p>
       </div>
 
@@ -181,7 +102,7 @@ export default function UploadCard({
         ref={inputRef}
         type="file"
         accept={accept}
-        onChange={handleChange}
+        onChange={handlers.onChange}
         onClick={(e) => e.stopPropagation()}
         className="hidden"
       />

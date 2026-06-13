@@ -1,13 +1,13 @@
-import { useState, useRef, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { validateImageUpload } from '../../utils/file/fileValidation';
 import { APP_CONFIG as config } from '../../config';
-import { useImagePaste } from '../../hooks/client/useImagePaste';
+import { useFileUpload } from '../../hooks/client/useFileUpload';
+import { AcceptableImageMimeTypes } from '../../utils/file/fileUtils';
 
 const AllowedFormatsText = config.ALLOWED_EXTENSIONS.map(e => e.toUpperCase()).join(', ');
 
 /**
  * Image upload dropzone component supporting click, drag & drop, and clipboard paste.
+ * Enforces allowed file types via native OS file picker and internal validation hook.
  *
  * @param {Object} props
  * @param {(file: File) => void} props.onFileSelect - Callback executed when a valid image file is selected.
@@ -15,61 +15,15 @@ const AllowedFormatsText = config.ALLOWED_EXTENSIONS.map(e => e.toUpperCase()).j
  * @returns {JSX.Element}
  */
 export default function UploadDropzone({ onFileSelect, requireGrayscale = false }) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [error, setError] = useState(null);
-  const fileInputRef = useRef(null);
-
-  const processFile = useCallback(async (file) => {
-    const result = await validateImageUpload(file, null, requireGrayscale);
-
-    if (result.isValid) {
-      setError(null);
-      onFileSelect(result.file);
-    } else {
-      setError(result.error);
-      setTimeout(() => setError(null), 5000);
-    }
-
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  }, [onFileSelect, requireGrayscale]);
-
-  useImagePaste(processFile);
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-    if (error) setError(null);
-  };
-
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setIsDragging(false);
-
-    if (e.dataTransfer.files?.length > 0) {
-      processFile(e.dataTransfer.files[0]);
-    }
-  };
-
-  const handleClick = () => {
-    if (error) setError(null);
-    fileInputRef.current.click();
-  };
-
-  const handleChange = (e) => {
-    if (e.target.files?.length > 0) {
-      processFile(e.target.files[0]);
-    }
-  };
+  const { isDragging, error, inputRef, handlers } = useFileUpload({
+    onFileSelect,
+    requireGrayscale,
+    clearErrorAfterMs: 5000,
+  });
 
   const getDropzoneStateClasses = () => {
     if (isDragging) return 'border-slate-800 bg-white/60 scale-[1.02]';
     if (error) return 'border-rose-400 bg-rose-50/50 hover:bg-rose-50';
-
     return 'border-white/60 bg-white/30 hover:border-white hover:bg-white/50';
   };
 
@@ -78,16 +32,17 @@ export default function UploadDropzone({ onFileSelect, requireGrayscale = false 
       type="button"
       aria-label="Upload image file"
       className={`w-full border-2 border-dashed rounded-xl p-10 sm:p-16 text-center cursor-pointer transition-all duration-300 ease-in-out ${getDropzoneStateClasses()}`}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-      onClick={handleClick}
+      onDragOver={handlers.onDragOver}
+      onDragLeave={handlers.onDragLeave}
+      onDrop={handlers.onDrop}
+      onClick={handlers.onClick}
     >
       <input
         type="file"
         className="hidden"
-        ref={fileInputRef}
-        onChange={handleChange}
+        ref={inputRef}
+        accept={AcceptableImageMimeTypes}
+        onChange={handlers.onChange}
         onClick={(e) => e.stopPropagation()}
       />
 
@@ -135,5 +90,5 @@ export default function UploadDropzone({ onFileSelect, requireGrayscale = false 
 
 UploadDropzone.propTypes = {
   onFileSelect: PropTypes.func.isRequired,
-  requireGrayscale: PropTypes.bool
+  requireGrayscale: PropTypes.bool,
 };
