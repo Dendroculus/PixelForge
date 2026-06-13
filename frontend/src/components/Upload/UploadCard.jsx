@@ -2,24 +2,6 @@ import PropTypes from 'prop-types';
 import { useFileUpload } from '../../hooks/client/useFileUpload';
 import { AcceptableImageMimeTypes } from '../../utils/file/fileUtils';
 
-/**
- * Renders a customizable upload card for file selection with validation.
- * Supports click-to-upload, drag-and-drop, and global clipboard pasting.
- * 
- * @param {Object} props - The component props.
- * @param {string} props.inputId - HTML id attribute for the file input element.
- * @param {React.RefObject<HTMLInputElement>|Function} [props.inputRef] - Ref attached to the hidden file input.
- * @param {Function} [props.onChange] - Callback fired when a file is successfully validated and selected.
- * @param {Function} [props.onValidationError] - Callback fired if file validation fails.
- * @param {string} [props.helperText] - Text to display below the main upload instruction.
- * @param {string} [props.accept='.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp'] - Accepted file mime types.
- * @param {string} [props.className=''] - Additional CSS classes for the card container.
- * @param {string} [props.heightClass='h-36'] - CSS class to control the card's height.
- * @param {boolean} [props.validate=true] - Whether to validate the file before triggering onChange.
- * @param {number} [props.clearErrorAfterMs=5000] - Time in ms to clear validation error messages.
- * @param {number} [props.maxSizeMB] - Maximum allowed file size in MB.
- * @returns {JSX.Element}
- */
 export default function UploadCard({
   inputId,
   inputRef: externalRef,
@@ -32,24 +14,24 @@ export default function UploadCard({
   validate = true,
   clearErrorAfterMs = 5000,
   maxSizeMB,
+  hasActiveFile = false,
 }) {
-  // Delegate all business logic to the custom hook
   const { isDragging, error, inputRef, handlers } = useFileUpload({
     externalInputRef: externalRef,
     validate,
     maxSizeMB,
     clearErrorAfterMs,
     onValidationError,
-    // Preserve backward compatibility for the synthetic event payload
     onFileSelect: (file) => onChange?.({ target: { files: [file] } }),
   });
 
-  // Presentation State Definitions
   let cardStateClass = 'border-indigo-200 bg-white/40 hover:bg-white/70 hover:border-indigo-400';
   let iconWrapClass = 'bg-white border-white/50 text-indigo-500';
   let titleClass = 'text-slate-700 group-hover:text-indigo-600';
   let helperClass = 'text-slate-500';
-  let uploadStatusText = 'Click, drop, drag or paste';
+  
+  let uploadStatusText = hasActiveFile ? 'Replace image' : 'Click, drop, drag or paste';
+  let displayHelperText = hasActiveFile ? 'Drop a new file here' : helperText;
 
   if (error) {
     cardStateClass = 'border-rose-300 bg-rose-50/50 hover:border-rose-400 hover:bg-rose-50/60';
@@ -57,10 +39,45 @@ export default function UploadCard({
     titleClass = 'text-rose-600 group-hover:text-rose-600';
     helperClass = 'text-rose-500';
     uploadStatusText = error;
+    displayHelperText = 'Please try another file';
   } else if (isDragging) {
     cardStateClass = 'border-indigo-500 bg-indigo-50/80 scale-[1.02]';
     uploadStatusText = 'Drop to upload';
   }
+
+  const renderIcon = () => {
+    if (error) {
+      return (
+        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+      );
+    }
+    
+    if (hasActiveFile) {
+      return (
+        <svg 
+          className={`h-5 w-5 transition-transform ${isDragging ? '-rotate-180 text-indigo-600' : 'group-hover:-rotate-180'} duration-500`} 
+          fill="none" 
+          viewBox="0 0 24 24" 
+          stroke="currentColor"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+      );
+    }
+    
+    return (
+      <svg
+        className={`h-6 w-6 transition-transform ${isDragging ? 'scale-110 text-indigo-600' : 'group-hover:scale-110'}`}
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+      </svg>
+    );
+  };
 
   return (
     <label
@@ -73,27 +90,14 @@ export default function UploadCard({
     >
       <div className="flex flex-col items-center justify-center px-4 pt-5 pb-6 text-center pointer-events-none">
         <div className={`mb-3 flex h-10 w-10 items-center justify-center rounded-xl border transition-colors ${iconWrapClass}`}>
-          {error ? (
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          ) : (
-            <svg
-              className={`h-6 w-6 transition-transform ${isDragging ? 'scale-110 text-indigo-600' : 'group-hover:scale-110'}`}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-            </svg>
-          )}
+          {renderIcon()}
         </div>
 
         <p className={`mb-1 text-sm font-semibold transition-colors ${titleClass}`}>
           {uploadStatusText}
         </p>
         <p className={`text-xs font-medium ${helperClass}`}>
-          {error ? 'Please try another file' : helperText}
+          {displayHelperText}
         </p>
       </div>
 
@@ -125,4 +129,5 @@ UploadCard.propTypes = {
   validate: PropTypes.bool,
   clearErrorAfterMs: PropTypes.number,
   maxSizeMB: PropTypes.number,
+  hasActiveFile: PropTypes.bool,
 };

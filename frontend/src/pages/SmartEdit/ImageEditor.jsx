@@ -190,6 +190,7 @@ export default function ImageEditor() {
                 inputRef={fileInputRef}
                 onChange={onFileChange}
                 helperText={`Any format up to ${APP_CONFIG.MAX_FILE_SIZE_MB}MB`}
+                hasActiveFile={Boolean(file)}
               />
             ) : (
               <WorkspaceFileSummary file={file} />

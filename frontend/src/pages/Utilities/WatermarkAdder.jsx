@@ -396,6 +396,7 @@ export default function WatermarkAdder() {
                 inputRef={fileInputRef}
                 onChange={onFileChange}
                 helperText={`Any format up to ${APP_CONFIG.MAX_FILE_SIZE_MB}MB`}
+                hasActiveFile={false}
               />
             ) : (
               <WorkspaceFileSummary file={file} />

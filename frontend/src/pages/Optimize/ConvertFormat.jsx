@@ -10,20 +10,35 @@ import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErr
 import WorkspaceActionRow from '../../components/Actions/WorkspaceActionRow';
 import FormatDropdown from '../../components/Workspace/controls/FormatDropdown';
 import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
-import AppModals from '../../components/Common/AppModals'; 
+import AppModals from '../../components/Common/AppModals';
 import { useWorkspaceFile } from '../../hooks/workspace/useWorkspaceFile';
 import useImageConversion from '../../hooks/client/useImageConversion';
 import { bytesToMB, generateSafeFilename, isSameExtension } from '../../utils/file/fileUtils';
 
+/** @constant {string} DEFAULT_FORMAT - Default target format on mount and after reset. */
+const DEFAULT_FORMAT = 'png';
+
+/** @constant {number} DEFAULT_QUALITY - Default quality value (0–1 scale) on mount and after reset. */
+const DEFAULT_QUALITY = 0.92;
+
 /**
- * React component for converting image formats on the client side.
- * @returns {JSX.Element} The ConvertFormat component.
+ * Page component for converting image formats entirely on the client side.
+ *
+ * Allows users to upload an image, select a target format, adjust output
+ * quality, and download the converted result. Resetting clears only the
+ * conversion output and control settings — the uploaded file is preserved
+ * so the user can convert to a different format without re-uploading.
+ *
+ * Attempting to convert a file to the same format it was uploaded in opens
+ * a confirmation modal rather than proceeding with a no-op conversion.
+ *
+ * @returns {JSX.Element}
  */
 export default function ConvertFormat() {
   const fileInputRef = useRef(null);
 
-  const [targetFormat, setTargetFormat] = useState('png');
-  const [quality, setQuality] = useState(0.92);
+  const [targetFormat, setTargetFormat] = useState(DEFAULT_FORMAT);
+  const [quality, setQuality] = useState(DEFAULT_QUALITY);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const {
@@ -36,7 +51,6 @@ export default function ConvertFormat() {
     error,
     setError,
     onFileChange,
-    resetAll,
     cleanupResult,
   } = useWorkspaceFile(fileInputRef);
 
@@ -54,6 +68,11 @@ export default function ConvertFormat() {
     setError,
   });
 
+  /**
+   * Handles the convert button click. Opens a warning modal if the selected
+   * target format matches the uploaded file's current extension, otherwise
+   * proceeds with the conversion.
+   */
   const handleConvertClick = useCallback(() => {
     if (!file) return;
 
@@ -65,10 +84,21 @@ export default function ConvertFormat() {
     convertImage();
   }, [file, targetFormat, convertImage]);
 
+  /**
+   * Resets the conversion output, format selection, and quality slider back
+   * to their defaults. The uploaded file and its preview are intentionally
+   * preserved so the user can adjust settings and re-convert without
+   * re-uploading.
+   */
   const handleReset = useCallback(() => {
-    resetAll();
+    cleanupResult();
+    setResultBlob(null);
+    setResultUrl(null);
+    setError(null);
+    setTargetFormat(DEFAULT_FORMAT);
+    setQuality(DEFAULT_QUALITY);
     setIsConverting(false);
-  }, [resetAll, setIsConverting]);
+  }, [cleanupResult, setResultBlob, setResultUrl, setError, setIsConverting]);
 
   const canConvert = useMemo(() => Boolean(file) && !isConverting, [file, isConverting]);
   const downloadName = useMemo(() => generateSafeFilename(file?.name, 'converted', targetFormat), [file?.name, targetFormat]);
@@ -86,6 +116,7 @@ export default function ConvertFormat() {
                 inputRef={fileInputRef}
                 onChange={onFileChange}
                 helperText={`Any format up to ${APP_CONFIG.MAX_FILE_SIZE_MB}MB`}
+                hasActiveFile={Boolean(file)}
               />
               <WorkspaceFileSummary file={file} />
             </div>
@@ -160,9 +191,9 @@ export default function ConvertFormat() {
         }
       />
 
-      <AppModals 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      <AppModals
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
         title="Invalid Conversion"
       >
         <p>You already uploaded a file with this extension. Converting to the same format is not allowed.</p>

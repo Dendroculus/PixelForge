@@ -146,6 +146,7 @@ export default function RotateFlip() {
                 inputRef={fileInputRef}
                 onChange={onFileChange}
                 helperText={`Any format up to ${APP_CONFIG.MAX_FILE_SIZE_MB}MB`}
+                hasActiveFile={Boolean(file)}
               />
             ) : (
               <WorkspaceFileSummary file={file} />
@@ -211,7 +212,7 @@ export default function RotateFlip() {
         leftFooter={
           <WorkspaceActionRow
             primaryLabel={isProcessing ? 'Processing...' : 'Apply Transform'}
-            secondaryLabel="Reset"
+            secondaryLabel="Upload Other Image"
             onPrimaryClick={applyTransform}
             onSecondaryClick={handleReset}
             primaryDisabled={!canProcess}
