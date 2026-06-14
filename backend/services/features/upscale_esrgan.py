@@ -5,6 +5,7 @@ from core.config import DEFAULT_SCALE, OPTIMIZATION_TARGET_PIXELS, MAX_CONCURENT
 from core.model_registry import ModelRegistry
 from services.base_class.image_pipeline_service import ImagePipelineService
 from services.adapter.ai_provider import BaseAIProvider
+from utils.image_utils import smart_downscale
 
 
 class AIUpscaler(ImagePipelineService):
@@ -67,6 +68,13 @@ class AIUpscaler(ImagePipelineService):
     def _optimize_image_sync(self, raw_bytes: bytes, job_id: str) -> io.BytesIO:
         """
         Optimizes an image via CPU-bound PIL transformations.
+
+        Args:
+            raw_bytes (bytes): The raw image payload.
+            job_id (str): The unique job identifier.
+
+        Returns:
+            io.BytesIO: The prepared image stream for the remote AI model.
         """
         with io.BytesIO(raw_bytes) as img_stream:
             with Image.open(img_stream) as img:
@@ -74,22 +82,16 @@ class AIUpscaler(ImagePipelineService):
 
         with io.BytesIO(raw_bytes) as img_stream:
             with Image.open(img_stream) as img:
-                width, height = img.size
-                total_pixels = width * height
-
-                output_stream = io.BytesIO()
                 save_format = img.format or "JPEG"
-
-                if total_pixels > OPTIMIZATION_TARGET_PIXELS:
-                    ratio = (OPTIMIZATION_TARGET_PIXELS / total_pixels) ** 0.5
-                    new_width = max(1, int(width * ratio))
-                    new_height = max(1, int(height * ratio))
-                    img = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                
+                img = smart_downscale(img, OPTIMIZATION_TARGET_PIXELS)
 
                 if img.mode in ("RGBA", "P") and save_format != "PNG":
                     img = img.convert("RGB")
 
+                output_stream = io.BytesIO()
                 save_kwargs = {"format": save_format}
+                
                 if save_format.upper() in ("JPEG", "JPG"):
                     save_kwargs.update({"quality": 95, "optimize": True})
 
@@ -100,6 +102,12 @@ class AIUpscaler(ImagePipelineService):
     def _compress_output_sync(self, raw_bytes: bytes) -> bytes:
         """
         Compresses image output via CPU-bound PIL transformations.
+
+        Args:
+            raw_bytes (bytes): The output image bytes returned by the AI provider.
+
+        Returns:
+            bytes: The compressed PNG bytes.
         """
         max_dimension = 4096
 

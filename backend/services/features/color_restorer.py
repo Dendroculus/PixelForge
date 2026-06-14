@@ -1,3 +1,4 @@
+import asyncio
 import io
 from services.base_class.image_pipeline_service import ImagePipelineService
 from services.adapter.ai_provider import BaseAIProvider
@@ -30,7 +31,9 @@ class ColorRestorer(ImagePipelineService):
         Returns:
             io.BytesIO: A byte stream of the validated grayscale image ready for AI processing.
         """
-        is_valid_grayscale = validate_grayscale_image(raw_bytes)
+        loop = asyncio.get_running_loop()
+        is_valid_grayscale = await loop.run_in_executor(None, validate_grayscale_image, raw_bytes)
+        
         
         if not is_valid_grayscale:
             raise ValueError("Validation Failed: Image already contains color.")
