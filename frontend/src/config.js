@@ -61,3 +61,21 @@ export const CROP_ASPECT_RATIOS = [
   { label: 'Classic (4:3)', value: 4 / 3 },
   { label: 'Story (3:4)', value: 3 / 4 },
 ];
+
+export const SHOWCASES = {
+    upscale: {
+      label: "AI Upscaler",
+      before: "/demo/upscale_before.jpg",
+      after: "/demo/upscale_after.png"
+    },
+    rembg: {
+      label: "Background Remover",
+      before: "/demo/rem_bg_before.jpg",
+      after: "/demo/rem_bg_after.png"
+    },
+    color: {
+      label: "Color Restorer",
+      before: "/demo/res_color_before.jpg",
+      after: "/demo/res_color_after.png"
+    }
+};

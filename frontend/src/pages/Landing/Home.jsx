@@ -1,208 +1,26 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import PropTypes from 'prop-types';
-import { Link } from 'react-router-dom';
-import { motion, AnimatePresence, useReducedMotion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import React, { useState, useMemo } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { NavLinks } from '../../data/navConfig';
+import { SHOWCASES } from '../../config';
+
+import AmbientBackground from '../../components/Landing/AmbientBackground';
+import RotatingText from '../../components/Landing/RotatingText';
+import TiltCard from '../../components/Common/TiltCard';
+import CardIcon from '../../components/Common/CardIcon';
+import BeforeAfterSlider from '../../components/Common/BeforeAfterSlider';
 
 /**
- * Animated background using lightweight gradients.
- * Falls back to static layout on mobile or reduced motion.
- */
-const AmbientBackground = () => {
-  const shouldReduceMotion = useReducedMotion();
-  
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return window.matchMedia('(max-width: 768px)').matches;
-  });
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const mediaQuery = window.matchMedia('(max-width: 768px)');
-    const handleChange = (e) => setIsMobile(e.matches);
-    
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, []);
-
-  const indigoGradient = 'radial-gradient(circle, rgba(129,140,248,0.25) 0%, rgba(129,140,248,0) 65%)';
-  const pinkGradient = 'radial-gradient(circle, rgba(238,174,202,0.25) 0%, rgba(238,174,202,0) 65%)';
-
-  if (shouldReduceMotion || isMobile) {
-    return (
-      <div className="absolute inset-0 overflow-hidden -z-10 pointer-events-none">
-        <div 
-          className="absolute top-10 left-1/2 -translate-x-1/2 w-150 h-150 rounded-full" 
-          style={{ background: indigoGradient }}
-        />
-        <div 
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 w-150 h-150 rounded-full" 
-          style={{ background: pinkGradient }}
-        />
-      </div>
-    );
-  }
-
-  return (
-    <div className="absolute inset-0 overflow-hidden -z-10 pointer-events-none">
-      <motion.div
-        animate={{ x: [0, 40, -40, 0], y: [0, -40, 40, 0], scale: [1, 1.06, 0.96, 1] }}
-        transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
-        style={{ background: indigoGradient, willChange: 'transform' }}
-        className="absolute -top-20 left-1/4 w-175 h-175 rounded-full"
-      />
-      <motion.div
-        animate={{ x: [0, -45, 45, 0], y: [0, 45, -45, 0], scale: [1, 0.96, 1.06, 1] }}
-        transition={{ duration: 22, repeat: Infinity, ease: 'linear' }}
-        style={{ background: pinkGradient, willChange: 'transform' }}
-        className="absolute -bottom-20 right-1/4 w-175 h-175 rounded-full"
-      />
-    </div>
-  );
-};
-
-/**
- * Rotating animated text used in the hero title.
- */
-const RotatingText = React.memo(() => {
-  const words = useMemo(() => ['create.', 'enhance.', 'transform.', 'optimize.'], []);
-  const [index, setIndex] = useState(0);
-  const shouldReduceMotion = useReducedMotion();
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setIndex((prev) => (prev + 1) % words.length);
-    }, 2500);
-    return () => clearInterval(id);
-  }, [words.length]);
-
-  return (
-    <span className="inline-grid place-items-center min-w-[11ch] leading-[1.2] align-middle">
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.span
-          key={index}
-          initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 6 }}
-          animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, y: 0 }}
-          exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -6 }}
-          transition={{ duration: 0.22, ease: 'easeOut' }}
-          className="block whitespace-nowrap text-transparent bg-clip-text bg-linear-to-r from-indigo-500 to-purple-500 pb-[0.08em]"
-        >
-          {words[index]}
-        </motion.span>
-      </AnimatePresence>
-    </span>
-  );
-});
-
-RotatingText.displayName = 'RotatingText';
-
-/**
- * Interactive card with tilt effect (disabled on mobile/reduced motion).
- */
-const TiltCard = ({ children, to, itemVariants }) => {
-  const ref = useRef(null);
-  const rectRef = useRef(null);
-  const shouldReduceMotion = useReducedMotion();
-
-  const [isTouchDevice] = useState(() => {
-      if (typeof window === 'undefined') return false;
-      return window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 768;
-    });
-
-  const disableTilt = shouldReduceMotion || isTouchDevice;
-
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-
-  const mouseXSpring = useSpring(x, { stiffness: 140, damping: 22, mass: 0.4 });
-  const mouseYSpring = useSpring(y, { stiffness: 140, damping: 22, mass: 0.4 });
-
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], ['3deg', '-3deg']);
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], ['-3deg', '3deg']);
-
-  const handleMouseEnter = () => {
-    if (disableTilt) return;
-    if (ref.current) rectRef.current = ref.current.getBoundingClientRect();
-  };
-
-  const handleMouseMove = (e) => {
-    if (!rectRef.current || disableTilt) return;
-    const mouseX = e.clientX - rectRef.current.left;
-    const mouseY = e.clientY - rectRef.current.top;
-    x.set(mouseX / rectRef.current.width - 0.5);
-    y.set(mouseY / rectRef.current.height - 0.5);
-  };
-
-  const handleMouseLeave = () => {
-    x.set(0);
-    y.set(0);
-    rectRef.current = null;
-  };
-
-  return (
-    <motion.div
-      variants={itemVariants}
-      ref={ref}
-      onMouseEnter={handleMouseEnter}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-      style={{
-        transformStyle: disableTilt ? 'flat' : 'preserve-3d',
-        rotateX: disableTilt ? 0 : rotateX,
-        rotateY: disableTilt ? 0 : rotateY,
-        willChange: disableTilt ? 'auto' : 'transform'
-      }}
-    >
-      <Link
-        to={to}
-        className="group block relative p-5 sm:p-6 bg-white/80 md:bg-white/50 backdrop-blur-md md:backdrop-blur-xl border border-white/60 rounded-3xl transition-all duration-300 hover:bg-white/90 md:hover:bg-white/80 hover:border-white shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 transform-gpu"
-        style={{ transform: disableTilt ? 'none' : 'translateZ(16px)' }}
-      >
-        {children}
-      </Link>
-    </motion.div>
-  );
-};
-
-TiltCard.propTypes = {
-  children: PropTypes.node.isRequired,
-  to: PropTypes.string.isRequired,
-  itemVariants: PropTypes.object.isRequired,
-};
-
-/**
- * Icon component for each card.
- */
-const CardIcon = ({ d, isAi }) => {
-  const bgClass = isAi
-    ? 'bg-gradient-to-br from-indigo-500 to-purple-500 shadow-md shadow-indigo-500/20'
-    : 'bg-white/80 border border-slate-200/60 shadow-sm';
-  const colorClass = isAi ? 'text-white' : 'text-slate-700';
-
-  return (
-    <div
-      className={`w-14 h-14 min-w-14 rounded-2xl flex items-center justify-center ${bgClass} ${colorClass} group-hover:scale-110 group-hover:-rotate-3 transition-transform duration-300`}
-    >
-      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={d} />
-      </svg>
-    </div>
-  );
-};
-
-CardIcon.propTypes = {
-  d: PropTypes.string.isRequired,
-  isAi: PropTypes.bool,
-};
-
-/**
- * Main homepage hub showing categorized tools.
+ * Main landing page component displaying image tools, showcases, and navigation categories.
+ *
+ * @returns {JSX.Element} Home hub interface.
  */
 export default function HomeHub() {
   const categoryKeys = useMemo(() => Object.keys(NavLinks), []);
   const [activeTab, setActiveTab] = useState(categoryKeys[0]);
   const currentCategory = NavLinks[activeTab];
   const shouldReduceMotion = useReducedMotion();
+
+  const showcases = SHOWCASES;
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -244,10 +62,33 @@ export default function HomeHub() {
           </p>
         </div>
 
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="w-full max-w-5xl mx-auto mb-16 relative z-10"
+        >
+          <div className="flex md:grid md:grid-cols-3 gap-4 sm:gap-6 overflow-x-auto md:overflow-visible snap-x snap-mandatory px-4 md:px-0 pb-4 md:pb-0 hide-scrollbar [scrollbar-width:none] [-ms-overflow-style:none]">
+            {Object.entries(showcases).map(([key, data]) => (
+              <div key={key} className="min-w-[85%] sm:min-w-[60%] md:min-w-0 snap-center flex flex-col items-center">
+                <div className="mb-3 px-3 py-1 rounded-full bg-white/60 backdrop-blur border border-white shadow-sm flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
+                  <span className="text-xs font-bold text-slate-700">{data.label}</span>
+                </div>
+
+                <div className="w-full p-1.5 bg-white/40 backdrop-blur-md border border-white/60 rounded-2xl shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
+                  <BeforeAfterSlider beforeImage={data.before} afterImage={data.after} altText={`${data.label} comparison`} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+
         <div className="flex justify-center mb-8 sm:mb-10 relative z-10">
-          <div className="flex items-center p-1.5 bg-white/70 md:bg-white/40 md:backdrop-blur-xl border border-white/60 rounded-full shadow-sm overflow-x-auto max-w-full hide-scrollbar [scrollbar-width:none] [-ms-overflow-style:none]">
+          <div className="flex items-center p-1.5 bg-white/70 md:bg-white/40 md:backdrop-blur-xl border border-white/60 rounded-full shadow-sm overflow-x-auto max-w-full hide-scrollbar">
             {categoryKeys.map((key) => {
               const isActive = activeTab === key;
+
               return (
                 <button
                   key={key}
@@ -286,39 +127,18 @@ export default function HomeHub() {
                     <CardIcon d={item.icon} isAi={item.isAi} />
 
                     <div className="flex flex-col text-left">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
-                          {item.label}
-                        </h3>
+                      <h3 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
+                        {item.label}
+                      </h3>
 
-                        {item.isAi && (
-                          <div className="relative overflow-hidden rounded-full border border-indigo-200">
-                            {!shouldReduceMotion && (
-                              <motion.div
-                                animate={{ x: ['-120%', '220%'] }}
-                                transition={{ duration: 2.2, repeat: Infinity, ease: 'linear', repeatDelay: 1.2 }}
-                                className="absolute inset-0 z-10 bg-linaer-to-r from-transparent via-white/60 to-transparent skew-x-12"
-                              />
-                            )}
-                            <span className="relative block text-[9px] bg-indigo-100 text-indigo-700 px-2 py-0.5 font-black tracking-wider uppercase">
-                              AI
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed max-w-md mt-0.5 sm:mt-0">
-                      {item.desc}
-                    </p>
+                      <p className="text-xs sm:text-sm text-slate-500 font-medium leading-relaxed max-w-md mt-0.5 sm:mt-0">
+                        {item.desc}
+                      </p>
                     </div>
                   </div>
 
                   <div className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-slate-50 group-hover:bg-indigo-50 text-slate-400 group-hover:text-indigo-500 transition-colors shrink-0">
-                    <svg
-                      className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
+                    <svg className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
                     </svg>
                   </div>
