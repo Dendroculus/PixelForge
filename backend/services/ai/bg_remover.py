@@ -4,7 +4,7 @@ import logging
 from PIL import Image
 from services.ai.image_pipeline_service import ImagePipelineService
 from services.ai.ai_provider import BaseAIProvider
-from core.config import MAX_CONCURENT_JOBS, MAX_PIXELS
+from core.config import settings
 from utils.image_utils import smart_downscale
 
 logger = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ class BackgroundRemover(ImagePipelineService):
     Service for removing backgrounds using the shared image pipeline.
     """
 
-    def __init__(self, provider: BaseAIProvider = None, max_concurrent_remote_jobs: int = MAX_CONCURENT_JOBS):
+    def __init__(self, provider: BaseAIProvider = None, max_concurrent_remote_jobs: int = settings.MAX_CONCURRENT_JOBS):
         super().__init__(
             model_type="rembg",
             provider=provider,
@@ -35,7 +35,7 @@ class BackgroundRemover(ImagePipelineService):
             io.BytesIO: The prepared image stream.
         """
         with Image.open(io.BytesIO(raw_bytes)) as img:
-            img = smart_downscale(img, MAX_PIXELS)
+            img = smart_downscale(img, settings.MAX_PIXELS)
             out_stream = io.BytesIO()
             img.save(out_stream, format=img.format or "JPEG")
             out_stream.seek(0)

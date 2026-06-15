@@ -1,3 +1,11 @@
+"""
+Core Security Module
+
+Provides robust defenses against malicious file uploads, including chunked
+streaming limits, magic number MIME type validation, and strict CPU concurrency 
+controls for image processing.
+"""
+
 import io
 import uuid
 import logging
@@ -9,7 +17,7 @@ from typing import Tuple
 from fastapi import HTTPException, UploadFile, status
 from PIL import UnidentifiedImageError
 
-from core.config import MAX_FILE_SIZE_MB, MAX_FILE_SIZE_BYTES, ALLOWED_MIME_TYPES
+from core.config import settings, ALLOWED_MIME_TYPES
 from utils.storage_utils import get_upload_filename
 from utils.image_utils import (
     load_and_validate_structure,
@@ -26,8 +34,22 @@ _sanitize_semaphore = asyncio.Semaphore(max(1, _SANITIZE_CPU_CONCURRENCY))
 
 async def _read_file_with_limit(file: UploadFile) -> bytes:
     """
-    Streams file in chunks. Defends against memory spikes and oversized payloads.
-    Also acts as the first line of defense by checking MIME types via magic numbers.
+    Streams an uploaded file into memory in discrete chunks.
+    
+    Acts as the first line of defense by immediately checking file magic numbers 
+    (MIME types) and enforcing strict byte limits to prevent Out-Of-Memory (OOM) attacks.
+
+    Args:
+        file: The FastAPI UploadFile object.
+
+    Raises:
+        HTTPException:
+            - 400 error if the file is completely empty.
+            - 415 error if the actual file signature doesn't match allowed image types.
+            - 413 error if the streamed bytes exceed the configured maximum.
+
+    Returns:
+        bytes: The fully validated raw byte string.
     """
     file_bytes = bytearray()
     chunk_size = 1024 * 1024
@@ -51,11 +73,11 @@ async def _read_file_with_limit(file: UploadFile) -> bytes:
 
         file_bytes.extend(chunk)
 
-        if len(file_bytes) > MAX_FILE_SIZE_BYTES:
-            logger.warning("Upload aborted: File exceeded %sMB limit during streaming.", MAX_FILE_SIZE_MB)
+        if len(file_bytes) > settings.MAX_FILE_SIZE_BYTES:
+            logger.warning("Upload aborted: File exceeded %sMB limit.", settings.MAX_FILE_SIZE_MB)
             raise HTTPException(
                 status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                detail=f"File exceeds the {MAX_FILE_SIZE_MB}MB limit."
+                detail=f"File exceeds the {settings.MAX_FILE_SIZE_MB}MB limit."
             )
 
     return bytes(file_bytes)
@@ -63,7 +85,17 @@ async def _read_file_with_limit(file: UploadFile) -> bytes:
 
 def _process_image_cpu(file_bytes: bytes) -> Tuple[str, str, bytes]:
     """
-    Synchronous pipeline delegating to pure utility functions.
+    Synchronous, CPU-bound pipeline that delegates heavy lifting to image utilities.
+    Handles structure validation, resolution checks, and encoding.
+
+    Args:
+        file_bytes: The raw byte string of the image.
+
+    Raises:
+        HTTPException: 400 or 422 error if the image data is corrupted or invalid.
+
+    Returns:
+        Tuple[str, str, bytes]: The generated Job ID, the secure filename, and the clean image bytes.
     """
     try:
         img, ext = load_and_validate_structure(file_bytes)
@@ -91,7 +123,17 @@ def _process_image_cpu(file_bytes: bytes) -> Tuple[str, str, bytes]:
 
 async def process_and_sanitize_image(file: UploadFile) -> Tuple[str, str, io.BytesIO]:
     """
-    Asynchronous entry point. Limits CPU-bound processing concurrency to prevent thread starvation.
+    Asynchronous entry point for legacy/direct image sanitization.
+    
+    Orchestrates chunked reading and safely offloads the CPU-bound Pillow 
+    operations to a background thread, throttled by a strict semaphore to 
+    prevent thread starvation on the async event loop.
+
+    Args:
+        file: The FastAPI UploadFile object.
+
+    Returns:
+        Tuple[str, str, io.BytesIO]: The Job ID, secure filename, and encoded memory stream.
     """
     try:
         file_bytes = await _read_file_with_limit(file)

@@ -1,6 +1,6 @@
 import httpx
 import logging
-from core.config import DISCORD_WEBHOOK_URL
+from core.config import settings
 from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
@@ -50,14 +50,14 @@ def build_feedback_payload(name: str, email: str, message: str) -> dict:
     }
     
 async def send_discord_message(payload: dict, email: str) -> None:
-    if not DISCORD_WEBHOOK_URL:
+    if not settings.DISCORD_WEBHOOK_URL:
         logger.warning("DISCORD_WEBHOOK_URL is missing. Skipping Discord notification.")
         return
 
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(
-                DISCORD_WEBHOOK_URL,
+                settings.DISCORD_WEBHOOK_URL,
                 json=payload,
                 timeout=10.0,
             )

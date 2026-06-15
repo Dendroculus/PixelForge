@@ -1,5 +1,5 @@
 from typing import Dict, List
-from core.config import DEFAULT_SCALE
+from core.config import settings
 
 class ModelRegistry:
     """
@@ -9,7 +9,7 @@ class ModelRegistry:
     _MODELS = {
         "general": {
             "replicate_id": "nightmareai/real-esrgan:42fed1c4974146d4d2414e2be2c5277c7fcf05fcc3a73abf41610695738c1d7b",
-            "default_scale": DEFAULT_SCALE,
+            "default_scale": settings.DEFAULT_SCALE,
             "face_enhance": True,
         },
         "rembg": {
@@ -28,7 +28,7 @@ class ModelRegistry:
         return cls._MODELS[model_type]["replicate_id"]
 
     @classmethod
-    def get_params(cls, model_type: str, scale: int = DEFAULT_SCALE) -> Dict:
+    def get_params(cls, model_type: str, scale: int = settings.DEFAULT_SCALE) -> Dict:
         if model_type not in cls._MODELS:
             raise ValueError(f"Model type '{model_type}' is not registered.")
 

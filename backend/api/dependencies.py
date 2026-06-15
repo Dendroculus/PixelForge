@@ -2,7 +2,7 @@ import os
 import httpx
 import logging
 from fastapi import HTTPException
-from core.config import CLOUDFLARE_TURNSTILE_SECRET_KEY
+from core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -18,7 +18,7 @@ async def verify_turnstile(token: str) -> None:
         logger.info("🛡️ Turnstile bypass engaged for local testing.")
         return
 
-    if not CLOUDFLARE_TURNSTILE_SECRET_KEY:
+    if not settings.CLOUDFLARE_TURNSTILE_SECRET_KEY:
         logger.warning("Turnstile secret key missing. Bypassing check (NOT RECOMMENDED FOR PROD).")
         return
 
@@ -27,7 +27,7 @@ async def verify_turnstile(token: str) -> None:
             verify_response = await client.post(
                 "https://challenges.cloudflare.com/turnstile/v0/siteverify",
                 data={
-                    "secret": CLOUDFLARE_TURNSTILE_SECRET_KEY,
+                    "secret": settings.CLOUDFLARE_TURNSTILE_SECRET_KEY,
                     "response": token
                 },
                 timeout=5.0

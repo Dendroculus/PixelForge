@@ -1,7 +1,7 @@
 import asyncio
 import io
 from PIL import Image
-from core.config import DEFAULT_SCALE, OPTIMIZATION_TARGET_PIXELS, MAX_CONCURENT_JOBS
+from core.config import settings
 from core.model_registry import ModelRegistry
 from services.ai.image_pipeline_service import ImagePipelineService
 from services.ai.ai_provider import BaseAIProvider
@@ -16,8 +16,8 @@ class AIUpscaler(ImagePipelineService):
     def __init__(
         self,
         provider: BaseAIProvider = None,
-        max_concurrent_remote_jobs: int = MAX_CONCURENT_JOBS,
-        max_concurrent_cpu_jobs: int = 4,
+        max_concurrent_remote_jobs: int = settings.MAX_CONCURRENT_JOBS,
+        max_concurrent_cpu_jobs: int = settings.MAX_CONCURRENT_CPU_JOBS,
     ):
         super().__init__(
             model_type="general",
@@ -40,12 +40,12 @@ class AIUpscaler(ImagePipelineService):
 
     def build_model_params(self, **kwargs) -> dict:
         model_type = kwargs.get("model_type", "general")
-        scale = kwargs.get("scale", DEFAULT_SCALE)
+        scale = kwargs.get("scale", settings.DEFAULT_SCALE)
 
         try:
             return ModelRegistry.get_params(model_type, scale=scale)
         except ValueError:
-            return ModelRegistry.get_params("general", scale=DEFAULT_SCALE)
+            return ModelRegistry.get_params("general", scale=settings.DEFAULT_SCALE)
 
     async def _process_with_ai(self, image_stream: io.BytesIO, **kwargs) -> str:
         model_type = kwargs.get("model_type", "general")
@@ -84,7 +84,7 @@ class AIUpscaler(ImagePipelineService):
             with Image.open(img_stream) as img:
                 save_format = img.format or "JPEG"
                 
-                img = smart_downscale(img, OPTIMIZATION_TARGET_PIXELS)
+                img = smart_downscale(img, settings.OPTIMIZATION_TARGET_PIXELS)
 
                 if img.mode in ("RGBA", "P") and save_format != "PNG":
                     img = img.convert("RGB")

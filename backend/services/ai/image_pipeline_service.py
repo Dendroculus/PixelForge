@@ -5,7 +5,7 @@ import logging
 import urllib.parse
 import time
 from services.storage import StorageService
-from core.config import MAX_FILE_SIZE_BYTES, MAX_CONCURENT_JOBS
+from core.config import settings
 from utils.storage_utils import get_result_filename
 from core.model_registry import ModelRegistry
 from services.ai.ai_provider import BaseAIProvider, ReplicateProvider
@@ -22,8 +22,8 @@ class ImagePipelineService:
         self,
         model_type: str,
         provider: BaseAIProvider = None,
-        max_concurrent_remote_jobs: int = MAX_CONCURENT_JOBS,
-        max_file_size_bytes: int = MAX_FILE_SIZE_BYTES,
+        max_concurrent_remote_jobs: int = settings.MAX_CONCURRENT_JOBS,
+        max_file_size_bytes: int = settings.MAX_FILE_SIZE_BYTES,
     ):
         self.model_type = model_type
         self.provider = provider or ReplicateProvider()
