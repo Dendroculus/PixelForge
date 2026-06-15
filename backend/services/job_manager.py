@@ -12,37 +12,45 @@ from services.ai.bg_remover import bg_remover
 from services.ai.color_restorer import color_restorer
 
 from api.dependencies import verify_turnstile
-from core.config import LimitConfig as LC, FEATURE_LIMITS, MAX_FILE_SIZE_BYTES
+from core.config import settings
 
 logger = logging.getLogger(__name__)
 
 
 class JobManager:
     """
-    Orchestrates AI processing workflows, usage limits, queue management,
-    and storage operations.
+    Central service responsible for managing AI processing jobs.
+
+    Responsibilities:
+    - Validate Turnstile verification before job creation.
+    - Check and enforce daily usage limits.
+    - Generate safe filenames and upload URLs.
+    - Reserve and release queue slots.
+    - Handle AI feature execution lifecycle.
+    - Cleanup failed jobs and refund usage limits when needed.
+
+    Supported features:
+    - upscale
+    - rembg (background removal)
+    - colorrestore
     """
 
     @staticmethod
     def is_manual_bypass_allowed() -> bool:
         """
-        Checks whether the Turnstile manual bypass feature is allowed.
+        Check whether manual Turnstile bypass is allowed.
 
         Manual bypass is only enabled when:
-        - The application environment is local/development.
+        - Application environment is development/local.
         - ALLOW_TURNSTILE_TEST_BYPASS is explicitly enabled.
 
-        This prevents test bypass behavior from being available in production.
-
         Returns:
-            bool: True if manual bypass is allowed, otherwise False.
+            bool: True if manual testing bypass is allowed.
         """
-        env = os.getenv("ENVIRONMENT", "").lower()
+        env = settings.ENVIRONMENT.lower()
+
         allow_bypass = os.getenv("ALLOW_TURNSTILE_TEST_BYPASS", "false").lower() in {
-            "1",
-            "true",
-            "yes",
-            "on",
+            "1", "true", "yes", "on",
         }
 
         return env in {"local", "dev", "development"} and allow_bypass
@@ -54,37 +62,44 @@ class JobManager:
         filename: str,
         feature: str,
         limit_24h: int,
-        client_ip: str,
+        client_ip: str
     ) -> dict:
         """
-        Initializes a new AI processing job.
+        Initialize a new processing job.
 
-        Handles:
-        - Turnstile verification.
+        Performs:
+        - Turnstile validation.
         - Daily usage limit validation.
         - Job ID generation.
-        - Secure filename creation.
+        - Safe filename generation.
         - Upload URL generation.
 
         Args:
             cf_turnstile_response:
-                Client-provided Turnstile verification response.
-            filename:
-                Original uploaded filename used to determine extension.
-            feature:
-                Requested AI feature.
-            limit_24h:
-                Maximum allowed usage count for the feature.
-            client_ip:
-                Client IP address used for usage tracking.
+                Cloudflare Turnstile verification response.
 
-        Raises:
-            HTTPException:
-                429 error when the daily limit has been reached.
+            filename:
+                Original uploaded filename.
+
+            feature:
+                AI feature being requested.
+
+            limit_24h:
+                Maximum allowed usage within 24 hours.
+
+            client_ip:
+                Client IP used for rate limiting.
 
         Returns:
             dict:
-                Contains job ID, safe filename, and upload URL.
+                Contains job metadata:
+                - job_id
+                - safe_filename
+                - upload_url
+
+        Raises:
+            HTTPException:
+                If verification or usage limit validation fails.
         """
         if not (
             cf_turnstile_response == "manual_test_bypass"
@@ -95,13 +110,13 @@ class JobManager:
         is_allowed = await UsageService.check_daily_limit(
             client_ip,
             limit_24h=limit_24h,
-            feature=feature,
+            feature=feature
         )
 
         if not is_allowed:
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="LIMIT_REACHED",
+                detail="LIMIT_REACHED"
             )
 
         job_id = uuid.uuid4().hex
@@ -122,42 +137,42 @@ class JobManager:
         cls,
         job_id: str,
         client_ip: str,
-        feature: str,
+        feature: str
     ) -> None:
         """
-        Reserves processing resources and registers client usage.
+        Register a job into the queue and reserve processing capacity.
 
-        Workflow:
-        - Reserve queue slot.
-        - Validate daily usage limit.
-        - Increment usage counter.
-
-        If the usage limit is exceeded after reserving a slot,
-        the queue slot is released immediately.
+        Flow:
+        1. Reserve queue slot.
+        2. Validate feature usage limit.
+        3. Refund queue slot if limit validation fails.
+        4. Increment daily usage counter.
 
         Args:
             job_id:
-                Unique identifier used for queue tracking.
+                Unique identifier for the job.
+
             client_ip:
-                Client IP address used for usage tracking.
+                Client IP address.
+
             feature:
                 AI feature being processed.
 
         Raises:
             HTTPException:
-                429 error when usage limit is reached.
-
-        Returns:
-            None.
+                When daily usage limit is exceeded.
         """
         await QueueService.reserve_slot(job_id)
 
-        limit = FEATURE_LIMITS.get(feature, LC.UPSCALE_DAILY_USAGE_LIMIT)
+        limit = settings.FEATURE_LIMITS.get(
+            feature,
+            settings.UPSCALE_DAILY_USAGE_LIMIT
+        )
 
         is_allowed = await UsageService.check_daily_limit(
             client_ip,
             limit_24h=limit,
-            feature=feature,
+            feature=feature
         )
 
         if not is_allowed:
@@ -165,12 +180,12 @@ class JobManager:
 
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="LIMIT_REACHED",
+                detail="LIMIT_REACHED"
             )
 
         await UsageService.increment_daily_limit(
             client_ip,
-            feature=feature,
+            feature=feature
         )
 
     @classmethod
@@ -179,39 +194,39 @@ class JobManager:
         job_id: str,
         safe_filename: str,
         client_ip: str,
-        feature: str,
+        feature: str
     ) -> None:
         """
-        Handles failed job cleanup and usage refund.
+        Handle failed jobs.
 
-        Performs:
-        - Marking job status as failed.
-        - Returning consumed usage credit.
+        Actions:
+        - Mark job as failed in storage.
+        - Refund user usage quota.
 
         Args:
             job_id:
                 Failed job identifier.
-            safe_filename:
-                Uploaded file associated with the job.
-            client_ip:
-                Client IP address used for usage rollback.
-            feature:
-                AI feature that failed.
 
-        Returns:
-            None.
+            safe_filename:
+                Stored uploaded filename.
+
+            client_ip:
+                Client identifier for usage tracking.
+
+            feature:
+                Failed AI feature.
         """
         logger.warning(
             "Job %s failed for feature %s. Initializing cleanup and client limit refund.",
             job_id,
-            feature,
+            feature
         )
 
         await StorageService.mark_job_failed(job_id)
 
         await UsageService.decrement_daily_limit(
             client_ip,
-            feature=feature,
+            feature=feature
         )
 
     @classmethod
@@ -221,51 +236,52 @@ class JobManager:
         safe_filename: str,
         client_ip: str,
         feature: str,
-        task_runner,
+        task_runner
     ) -> None:
         """
-        Executes shared AI processing workflow.
+        Execute an AI processing task with shared lifecycle handling.
 
         Handles:
         - File size validation.
         - AI task execution.
-        - Temporary upload cleanup.
+        - Uploaded file cleanup.
         - Failure handling.
-        - Queue release.
+        - Queue slot release.
 
         Args:
             job_id:
-                Unique identifier of the processing job.
-            safe_filename:
-                Secure uploaded filename.
-            client_ip:
-                Client IP address used for usage tracking.
-            feature:
-                AI feature being executed.
-            task_runner:
-                Async callback that executes the AI process.
+                Current job identifier.
 
-        Returns:
-            None.
+            safe_filename:
+                Uploaded file stored name.
+
+            client_ip:
+                Client identifier for usage tracking.
+
+            feature:
+                AI feature name.
+
+            task_runner:
+                Async callable that performs the AI operation.
         """
         try:
             blob_size = await StorageService.get_blob_size(
-                StorageService.UPLOAD_CONTAINER,
-                safe_filename,
+                settings.UPLOAD_CONTAINER,
+                safe_filename
             )
 
-            if blob_size > MAX_FILE_SIZE_BYTES:
+            if blob_size > settings.MAX_FILE_SIZE_BYTES:
                 logger.warning(
                     "Oversized upload detected: Job %s (%s bytes). Aborting.",
                     job_id,
-                    blob_size,
+                    blob_size
                 )
 
                 await cls._handle_job_failure(
                     job_id,
                     safe_filename,
                     client_ip,
-                    feature,
+                    feature
                 )
 
                 return
@@ -273,8 +289,8 @@ class JobManager:
             success = await task_runner()
 
             await StorageService.delete_azure_blob(
-                StorageService.UPLOAD_CONTAINER,
-                safe_filename,
+                settings.UPLOAD_CONTAINER,
+                safe_filename
             )
 
             if not success:
@@ -282,7 +298,7 @@ class JobManager:
                     job_id,
                     safe_filename,
                     client_ip,
-                    feature,
+                    feature
                 )
 
         except Exception as e:
@@ -290,14 +306,14 @@ class JobManager:
                 "%s task critical failure job=%s: %s",
                 feature.capitalize(),
                 job_id,
-                e,
+                e
             )
 
             await cls._handle_job_failure(
                 job_id,
                 safe_filename,
                 client_ip,
-                feature,
+                feature
             )
 
         finally:
@@ -310,33 +326,33 @@ class JobManager:
         safe_filename: str,
         model_type: str,
         scale: int,
-        client_ip: str,
+        client_ip: str
     ) -> None:
         """
-        Processes image upscaling.
+        Execute image upscaling process.
 
         Args:
             job_id:
-                Unique identifier of the job.
+                Current job identifier.
+
             safe_filename:
                 Uploaded image filename.
+
             model_type:
                 Selected AI upscaling model.
+
             scale:
                 Upscaling multiplier.
+
             client_ip:
-                Client IP address used for usage tracking.
-
-        Returns:
-            None.
+                Client identifier.
         """
-
         async def _run():
             return await ai_upscaler.run_upscale(
                 safe_filename=safe_filename,
                 job_id=job_id,
                 model_type=model_type,
-                scale=scale,
+                scale=scale
             )
 
         await cls._process_feature(
@@ -344,7 +360,7 @@ class JobManager:
             safe_filename,
             client_ip,
             "upscale",
-            _run,
+            _run
         )
 
     @classmethod
@@ -352,27 +368,25 @@ class JobManager:
         cls,
         job_id: str,
         safe_filename: str,
-        client_ip: str,
+        client_ip: str
     ) -> None:
         """
-        Processes image background removal.
+        Execute background removal process.
 
         Args:
             job_id:
-                Unique identifier of the job.
+                Current job identifier.
+
             safe_filename:
                 Uploaded image filename.
+
             client_ip:
-                Client IP address used for usage tracking.
-
-        Returns:
-            None.
+                Client identifier.
         """
-
         async def _run():
             return await bg_remover.run_removal(
                 safe_filename=safe_filename,
-                job_id=job_id,
+                job_id=job_id
             )
 
         await cls._process_feature(
@@ -380,7 +394,7 @@ class JobManager:
             safe_filename,
             client_ip,
             "rembg",
-            _run,
+            _run
         )
 
     @classmethod
@@ -388,27 +402,25 @@ class JobManager:
         cls,
         job_id: str,
         safe_filename: str,
-        client_ip: str,
+        client_ip: str
     ) -> None:
         """
-        Processes image color restoration.
+        Execute black-and-white image color restoration process.
 
         Args:
             job_id:
-                Unique identifier of the job.
+                Current job identifier.
+
             safe_filename:
                 Uploaded image filename.
+
             client_ip:
-                Client IP address used for usage tracking.
-
-        Returns:
-            None.
+                Client identifier.
         """
-
         async def _run():
             return await color_restorer.run_restore(
                 safe_filename=safe_filename,
-                job_id=job_id,
+                job_id=job_id
             )
 
         await cls._process_feature(
@@ -416,5 +428,5 @@ class JobManager:
             safe_filename,
             client_ip,
             "colorrestore",
-            _run,
+            _run
         )

@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, status, Request
 from limiter.rate_limiter import limiter, get_real_client_ip
 from limiter.usage_service import UsageService
 from services.storage import StorageService
-from core.config import LimitConfig as LC, FEATURE_LIMITS
+from core.config import settings
 from utils.storage_utils import get_result_filename
 
 router = APIRouter(tags=["system"])
@@ -13,7 +13,7 @@ JOB_ID_RE = re.compile(r"^[a-f0-9]{32}$")
 
 
 @router.get("/result/{job_id}")
-@limiter.limit(LC.POLL_RATE_LIMIT)
+@limiter.limit(settings.POLL_RATE_LIMIT)
 async def get_result(request: Request, job_id: str):
     """
     Polls the storage service for the completion status of a specific job.
@@ -49,7 +49,7 @@ async def get_result(request: Request, job_id: str):
 
 
 @router.get("/usage")
-@limiter.limit(LC.POLL_RATE_LIMIT)
+@limiter.limit(settings.POLL_RATE_LIMIT)
 async def get_usage(request: Request, feature: str = "upscale"):
     """
     Retrieves the current 24-hour usage count for a given feature based on client IP.
@@ -62,6 +62,6 @@ async def get_usage(request: Request, feature: str = "upscale"):
         dict: The usage statistics for the specified feature.
     """
     client_ip = get_real_client_ip(request)
-    limit = FEATURE_LIMITS.get(feature, LC.UPSCALE_DAILY_USAGE_LIMIT)
+    limit = settings.FEATURE_LIMITS.get(feature, settings.UPSCALE_DAILY_USAGE_LIMIT)
     
     return await UsageService.get_usage_status(client_ip, limit_24h=limit, feature=feature)

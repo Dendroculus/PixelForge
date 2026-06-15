@@ -1,91 +1,116 @@
 import asyncio
-import os
 import logging
+
 from fastapi import HTTPException, status
+
+from core.config import settings
 
 logger = logging.getLogger(__name__)
 
-MAX_PENDING_JOBS = int(os.getenv("MAX_PENDING_JOBS", "100"))
 
+# Tracks the current number of jobs waiting or being processed.
 _pending_jobs = 0
+
+# Async lock used to protect concurrent access to queue counters.
 _pending_jobs_lock = None
+
+# Stores job IDs that are currently reserved/processing.
 _active_jobs = set()
 
 
 class QueueService:
     """
-    Manages system concurrency, active processing tasks, and server load limits.
+    Service responsible for managing application job concurrency.
 
-    This service acts as a gatekeeper, ensuring that the backend does not exceed
-    its maximum concurrent job capacity, preventing out-of-memory (OOM) crashes
-    and CPU starvation.
+    Responsibilities:
+    - Prevent duplicate job execution.
+    - Limit the number of concurrent jobs.
+    - Track active jobs.
+    - Safely increment/decrement queue counters using asyncio locks.
+
+    The queue system works by reserving a slot before processing
+    and releasing the slot when the job finishes or fails.
     """
 
     @classmethod
     async def reserve_slot(cls, job_id: str) -> None:
         """
-        Validates concurrency constraints and reserves an execution slot.
+        Reserve a processing slot for a new job.
 
-        Checks if the specific job is already running to prevent duplicate
-        processing, and ensures the total number of pending jobs does not
-        exceed the configured MAX_PENDING_JOBS limit.
+        Validation:
+        - Rejects duplicate job IDs already in processing.
+        - Rejects new jobs when the server reaches the maximum
+          concurrent job limit.
 
         Args:
-            job_id: 
-                Unique identifier for the AI processing job.
+            job_id:
+                Unique identifier of the job being registered.
 
         Raises:
             HTTPException:
-                - 400 error if the job_id is already actively processing.
-                - 503 error if the server has reached maximum concurrency capacity.
-
-        Returns:
-            None.
+                400 if the job is already processing.
+                503 if the server has reached its concurrency limit.
         """
         global _pending_jobs, _pending_jobs_lock
 
+        # Prevent the same job from being queued multiple times.
         if job_id in _active_jobs:
             raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST, 
+                status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Job already processing."
             )
 
+        # Initialize lock lazily to avoid unnecessary creation.
         if _pending_jobs_lock is None:
             _pending_jobs_lock = asyncio.Lock()
 
+        # Protect queue counter updates from race conditions.
         async with _pending_jobs_lock:
-            if _pending_jobs >= MAX_PENDING_JOBS:
-                logger.warning("Server busy. Active jobs: %s", len(_active_jobs))
+
+            if _pending_jobs >= settings.MAX_CONCURRENT_JOBS:
+                logger.warning(
+                    "Server busy. Active jobs: %s",
+                    len(_active_jobs)
+                )
+
                 raise HTTPException(
-                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE, 
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail="Server busy."
                 )
+
             _pending_jobs += 1
-            
+
+        # Register job as active after successfully reserving a slot.
         _active_jobs.add(job_id)
+
 
     @classmethod
     async def release_slot(cls, job_id: str) -> None:
         """
-        Frees up an execution slot and removes the job from the active tracking set.
+        Release a previously reserved processing slot.
 
-        This method is idempotent and safe to call even if the job was
-        never fully registered. It should typically be called inside a 
-        `finally` block within the job manager to guarantee cleanup.
+        Called after:
+        - Successful job completion.
+        - Failed job processing.
+        - Any cleanup/finalization flow.
 
         Args:
-            job_id: 
-                Unique identifier for the AI processing job.
+            job_id:
+                Unique identifier of the completed job.
 
-        Returns:
-            None.
+        Notes:
+            Uses max(0, value) to prevent the queue counter
+            from becoming negative due to unexpected release calls.
         """
         global _pending_jobs, _pending_jobs_lock
-        
+
+        # Remove job from active tracking.
         _active_jobs.discard(job_id)
-        
+
+        # Ensure lock exists before modifying shared state.
         if _pending_jobs_lock is None:
             _pending_jobs_lock = asyncio.Lock()
-            
+
+        # Safely update queue counter.
         async with _pending_jobs_lock:
             _pending_jobs = max(0, _pending_jobs - 1)

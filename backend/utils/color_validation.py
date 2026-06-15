@@ -1,7 +1,7 @@
 import io
 import numpy as np
 from PIL import Image
-from core.config import ColorValidationConfig as CVC
+from core.config import settings
 
 
 
@@ -39,7 +39,7 @@ def calculate_color_ratio(
         - np.min(rgb_int, axis=2)
     )
     colored_mask = (
-        (diff > CVC.COLOR_DIFF_THRESHOLD)
+        (diff > settings.COLOR_DIFF_THRESHOLD)
         & valid_mask
     )
 
@@ -82,7 +82,7 @@ def validate_grayscale_image(file_bytes: bytes) -> bool:
             data = np.array(img)
 
         alpha = data[:, :, 3]
-        valid_mask = alpha >= CVC.ALPHA_THRESHOLD
+        valid_mask = alpha >= settings.ALPHA_THRESHOLD
 
         rgb = data[:, :, :3]
 
@@ -90,7 +90,7 @@ def validate_grayscale_image(file_bytes: bytes) -> bool:
             rgb=rgb,
             valid_mask=valid_mask,
         )
-        return bool(color_ratio < CVC.COLOR_PIXEL_RATIO_THRESHOLD)
+        return bool(color_ratio < settings.COLOR_PIXEL_RATIO_THRESHOLD)
 
     except Exception as exc:
         print(

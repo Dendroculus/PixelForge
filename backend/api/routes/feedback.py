@@ -2,7 +2,7 @@ from fastapi import APIRouter, BackgroundTasks, Request
 
 from limiter.rate_limiter import limiter
 from api.dependencies import verify_turnstile
-from core.config import LimitConfig as LC
+from core.config import settings
 from utils.discord_webhooks import build_feedback_payload, send_discord_message
 from api.schemas import FeedbackRequest
 
@@ -10,7 +10,7 @@ router = APIRouter(tags=["feedback"])
 
 
 @router.post("/feedback")
-@limiter.limit(f"{LC.FEEDBACK_RATE_LIMIT};{LC.FEEDBACK_DAILY_USAGE_LIMIT}/day")
+@limiter.limit(f"{settings.FEEDBACK_RATE_LIMIT};{settings.FEEDBACK_DAILY_USAGE_LIMIT}/day")
 async def submit_feedback(
     request: Request,
     payload: FeedbackRequest,

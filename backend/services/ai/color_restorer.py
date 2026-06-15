@@ -2,7 +2,7 @@ import asyncio
 import io
 from services.ai.image_pipeline_service import ImagePipelineService
 from services.ai.ai_provider import BaseAIProvider
-from core.config import MAX_CONCURENT_JOBS
+from core.config import settings
 from utils.color_validation import validate_grayscale_image
 
 class ColorRestorer(ImagePipelineService):
@@ -10,7 +10,7 @@ class ColorRestorer(ImagePipelineService):
     Service for restoring image colors using the shared image pipeline.
     """
 
-    def __init__(self, provider: BaseAIProvider = None, max_concurrent_remote_jobs: int = MAX_CONCURENT_JOBS):
+    def __init__(self, provider: BaseAIProvider = None, max_concurrent_remote_jobs: int = settings.MAX_CONCURRENT_JOBS):
         super().__init__(
             model_type="colorrestore",
             provider=provider,
