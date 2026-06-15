@@ -96,32 +96,3 @@ def get_db_pool() -> asyncpg.pool.Pool | None:
     :return: Active pool instance or None if not initialized
     """
     return _pool
-
-
-async def run_database_cleanup() -> int:
-    """
-    Remove expired usage records based on retention policy.
-
-    :return: Number of rows deleted
-    """
-    global _pool
-    if _pool is None:
-        logger.warning("DB pool not ready for cleanup.")
-        return 0
-
-    sql = f"""
-    DELETE FROM ip_usage_hourly
-    WHERE bucket_start < NOW() - INTERVAL '{DC.USAGE_RETENTION_HOURS} hours';
-    """
-
-    try:
-        async with _pool.acquire() as conn:
-            result = await conn.execute(sql)
-            deleted = int(result.split()[-1])
-
-        logger.info("Usage cleanup complete: %s rows removed.", deleted)
-        return deleted
-
-    except Exception as e:
-        logger.exception("Database cleanup failed: %s", e)
-        return 0

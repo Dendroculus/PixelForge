@@ -3,8 +3,8 @@ import io
 from PIL import Image
 from core.config import DEFAULT_SCALE, OPTIMIZATION_TARGET_PIXELS, MAX_CONCURENT_JOBS
 from core.model_registry import ModelRegistry
-from services.base_class.image_pipeline_service import ImagePipelineService
-from services.adapter.ai_provider import BaseAIProvider
+from services.ai.image_pipeline_service import ImagePipelineService
+from services.ai.ai_provider import BaseAIProvider
 from utils.image_utils import smart_downscale
 
 

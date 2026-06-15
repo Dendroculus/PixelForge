@@ -2,13 +2,15 @@ import logging
 import os
 import asyncio
 import uuid
-from fastapi import HTTPException, status
 
-from limiter.usage_limiter import check_daily_limit, increment_daily_limit, decrement_daily_limit
-from services.features.storage import StorageService
-from services.features.upscale_esrgan import ai_upscaler
-from services.features.bg_remover import bg_remover
-from services.features.color_restorer import color_restorer
+from fastapi import HTTPException, status
+from limiter.usage_service import UsageService
+
+from services.storage import StorageService
+from services.ai.upscale import ai_upscaler
+from services.ai.bg_remover import bg_remover
+from services.ai.color_restorer import color_restorer
+
 from api.dependencies import verify_turnstile
 from core.config import LimitConfig as LC, FEATURE_LIMITS, MAX_FILE_SIZE_BYTES
 
@@ -34,7 +36,7 @@ class JobManager:
         if not (cf_turnstile_response == "manual_test_bypass" and cls.is_manual_bypass_allowed()):
             await verify_turnstile(cf_turnstile_response)
 
-        is_allowed = await check_daily_limit(client_ip, limit_24h=limit_24h, feature=feature)
+        is_allowed = await UsageService.check_daily_limit(client_ip, limit_24h=limit_24h, feature=feature)
         if not is_allowed:
             raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="LIMIT_REACHED")
 
@@ -71,13 +73,14 @@ class JobManager:
         _active_jobs.add(job_id)
 
         limit = FEATURE_LIMITS.get(feature, LC.UPSCALE_DAILY_USAGE_LIMIT)
-        is_allowed = await check_daily_limit(client_ip, limit_24h=limit, feature=feature)
+        
+        is_allowed = await UsageService.check_daily_limit(client_ip, limit_24h=limit, feature=feature)
         
         if not is_allowed:
             await cls._cleanup_queue_state(job_id)
             raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="LIMIT_REACHED")
         
-        await increment_daily_limit(client_ip, feature=feature)
+        await UsageService.increment_daily_limit(client_ip, feature=feature)
 
     @classmethod
     async def _cleanup_queue_state(cls, job_id: str):
@@ -102,7 +105,7 @@ class JobManager:
         logger.warning("Job %s failed for feature %s. Initializing cleanup and client limit refund.", job_id, feature)
         await StorageService.mark_job_failed(job_id)
         
-        await decrement_daily_limit(client_ip, feature=feature)
+        await UsageService.decrement_daily_limit(client_ip, feature=feature)
 
     @classmethod
     async def _process_feature(cls, job_id: str, safe_filename: str, client_ip: str, feature: str, task_runner):
