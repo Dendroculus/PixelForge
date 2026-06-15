@@ -2,8 +2,8 @@ import asyncio
 import io
 import logging
 from PIL import Image
-from services.base_class.image_pipeline_service import ImagePipelineService
-from services.adapter.ai_provider import BaseAIProvider
+from services.ai.image_pipeline_service import ImagePipelineService
+from services.ai.ai_provider import BaseAIProvider
 from core.config import MAX_CONCURENT_JOBS, MAX_PIXELS
 from utils.image_utils import smart_downscale
 

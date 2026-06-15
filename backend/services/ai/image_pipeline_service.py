@@ -4,11 +4,11 @@ import io
 import logging
 import urllib.parse
 import time
-from services.features.storage import StorageService
+from services.storage import StorageService
 from core.config import MAX_FILE_SIZE_BYTES, MAX_CONCURENT_JOBS
 from utils.storage_utils import get_result_filename
 from core.model_registry import ModelRegistry
-from services.adapter.ai_provider import BaseAIProvider, ReplicateProvider
+from services.ai.ai_provider import BaseAIProvider, ReplicateProvider
 
 logger = logging.getLogger(__name__)
 

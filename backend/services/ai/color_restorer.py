@@ -1,7 +1,7 @@
 import asyncio
 import io
-from services.base_class.image_pipeline_service import ImagePipelineService
-from services.adapter.ai_provider import BaseAIProvider
+from services.ai.image_pipeline_service import ImagePipelineService
+from services.ai.ai_provider import BaseAIProvider
 from core.config import MAX_CONCURENT_JOBS
 from utils.color_validation import validate_grayscale_image
 

@@ -2,8 +2,8 @@ import re
 from fastapi import APIRouter, HTTPException, status, Request
 
 from limiter.rate_limiter import limiter, get_real_client_ip
-from limiter.usage_limiter import get_usage_status
-from services.features.storage import StorageService
+from limiter.usage_service import UsageService
+from services.storage import StorageService
 from core.config import LimitConfig as LC, FEATURE_LIMITS
 from utils.storage_utils import get_result_filename
 
@@ -64,4 +64,4 @@ async def get_usage(request: Request, feature: str = "upscale"):
     client_ip = get_real_client_ip(request)
     limit = FEATURE_LIMITS.get(feature, LC.UPSCALE_DAILY_USAGE_LIMIT)
     
-    return await get_usage_status(client_ip, limit_24h=limit, feature=feature)
+    return await UsageService.get_usage_status(client_ip, limit_24h=limit, feature=feature)

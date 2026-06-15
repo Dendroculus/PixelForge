@@ -13,10 +13,11 @@ from slowapi.errors import RateLimitExceeded
 
 from api.routes import ai_tools, feedback, system
 
+from limiter.usage_service import UsageService
 from core.config import ALLOWED_ORIGINS, LimitConfig as LC, DatabaseConfig as DC
 from limiter.rate_limiter import limiter
-from core.database import init_db_pool, close_db_pool, run_database_cleanup
-from services.features.storage import StorageService
+from database.db_pool import init_db_pool, close_db_pool
+from services.storage import StorageService
 
 if not ALLOWED_ORIGINS:
     raise ValueError("CRITICAL: ALLOWED_ORIGINS must be defined in the environment.")
@@ -66,7 +67,7 @@ async def database_janitor_loop() -> None:
             )
 
             if db_cleanup_counter % loop_ratio == 0:
-                await run_database_cleanup()
+                await UsageService.run_database_cleanup()
 
             db_cleanup_counter += 1
         except Exception as e:
