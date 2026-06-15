@@ -1,0 +1,44 @@
+from fastapi import APIRouter, BackgroundTasks, Request
+
+from limiter.rate_limiter import limiter
+from api.dependencies import verify_turnstile
+from core.config import LimitConfig as LC
+from utils.discord_webhooks import build_feedback_payload, send_discord_message
+from api.schemas import FeedbackRequest
+
+router = APIRouter(tags=["feedback"])
+
+
+@router.post("/feedback")
+@limiter.limit(f"{LC.FEEDBACK_RATE_LIMIT};{LC.FEEDBACK_DAILY_USAGE_LIMIT}/day")
+async def submit_feedback(
+    request: Request,
+    payload: FeedbackRequest,
+    background_tasks: BackgroundTasks
+):
+    """
+    Verifies anti-bot token and dispatches user feedback to Discord asynchronously.
+    
+    Args:
+        request (Request): The incoming HTTP request.
+        payload (FeedbackRequest): The feedback data and Turnstile response.
+        background_tasks (BackgroundTasks): FastAPI background task manager.
+
+    Returns:
+        dict: Success confirmation message.
+    """
+    await verify_turnstile(payload.cf_turnstile_response)
+
+    discord_payload = build_feedback_payload(
+        name=payload.name,
+        email=payload.email,
+        message=payload.message,
+    )
+
+    background_tasks.add_task(
+        send_discord_message,
+        discord_payload,
+        payload.email,
+    )
+
+    return {"message": "Feedback submitted successfully"}

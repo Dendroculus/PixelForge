@@ -11,7 +11,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
-from api.routes import router as api_router
+from api.routes import ai_tools, feedback, system
+
 from core.config import ALLOWED_ORIGINS, LimitConfig as LC, DatabaseConfig as DC
 from limiter.rate_limiter import limiter
 from core.database import init_db_pool, close_db_pool, run_database_cleanup
@@ -42,10 +43,17 @@ logging.basicConfig(
 )
 logging.getLogger("azure.core.pipeline.policies.http_logging_policy").setLevel(logging.WARNING)
 
-async def database_janitor_loop():
+
+async def database_janitor_loop() -> None:
     """
     Background task to clean up expired Azure Blob results and database usage records.
     Runs continuously while the application is alive.
+    
+    Args:
+        None
+        
+    Returns:
+        None
     """
     db_cleanup_counter = 0
     loop_ratio = max(1, DC.DB_SWEEP_INTERVAL_SECONDS // DC.AZURE_SWEEP_INTERVAL_SECONDS)
@@ -66,6 +74,7 @@ async def database_janitor_loop():
 
         await asyncio.sleep(DC.AZURE_SWEEP_INTERVAL_SECONDS)
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -73,6 +82,12 @@ async def lifespan(app: FastAPI):
     - Establishes PostgreSQL connection pool.
     - Starts background janitor tasks.
     - Gracefully closes connections on shutdown.
+    
+    Args:
+        app (FastAPI): The active FastAPI application instance.
+        
+    Yields:
+        None
     """
     await init_db_pool()
     janitor_task = asyncio.create_task(database_janitor_loop())
@@ -84,6 +99,7 @@ async def lifespan(app: FastAPI):
         await janitor_task
 
     await close_db_pool()
+
 
 app = FastAPI(
     root_path="/api",
@@ -104,10 +120,17 @@ app.add_middleware(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+
 @app.get("/", tags=["Health Check"])
-async def root():
+async def root() -> dict:
     """
     Root endpoint for load balancer health checks.
+    
+    Args:
+        None
+        
+    Returns:
+        dict: Basic health status and documentation route.
     """
     return {
         "status": "online",
@@ -115,4 +138,6 @@ async def root():
         "docs": "/api/docs"
     }
 
-app.include_router(api_router)
+app.include_router(ai_tools.router)
+app.include_router(feedback.router)
+app.include_router(system.router)

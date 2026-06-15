@@ -63,10 +63,16 @@ DEFAULT_SCALE = 4
 MAX_CONCURENT_JOBS = 5
 
 class ContainerNames:
+    """
+    ContainerNames holds the names of Azure Blob Storage containers used for uploads and results.
+    """
     UPLOAD_CONTAINER: str = "uploads"
     RESULT_CONTAINER: str = "results"
 
 class LimitConfig:
+    """
+    LimitConfig defines the rate limits and usage limits for various features of the application.
+    """
     UPLOAD_RATE_LIMIT: str = "5/minute"
     POLL_RATE_LIMIT: str = "60/minute"
     SAS_EXPIRATION_MINUTES: int = 11
@@ -77,6 +83,9 @@ class LimitConfig:
     FEEDBACK_DAILY_USAGE_LIMIT: int = 5
 
 class DatabaseConfig:
+    """
+    DatabaseConfig defines the configuration parameters for database connection pooling and cleanup intervals.
+    """
     POOL_MIN_SIZE = 1
     POOL_MAX_SIZE = 10
     POOL_MAX_QUERIES = 50000
@@ -91,6 +100,9 @@ class DatabaseConfig:
     DB_SWEEP_INTERVAL_SECONDS = 43200    # 12 hours
     
 class ColorValidationConfig:
+    """
+    Mainly used for the ColorRestore feature, ColorValidationConfig defines thresholds for determining if an image has significant color information.
+    """
     COLOR_DIFF_THRESHOLD = 35
     COLOR_PIXEL_RATIO_THRESHOLD = 0.05
     ALPHA_THRESHOLD = 20
