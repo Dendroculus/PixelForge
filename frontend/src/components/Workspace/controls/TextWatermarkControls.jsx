@@ -3,13 +3,16 @@ import { useRef } from 'react';
 import FormatDropdown from '../../../components/Workspace/controls/FormatDropdown';
 import { useTextWatermarkEditor } from '../../../hooks/workspace/useTextWatermarkEditor';
 
-const CustomScrollbarStyle = `
+const CustomStyles = `
   .custom-textarea-scroll::-webkit-scrollbar { width: 6px; }
   .custom-textarea-scroll::-webkit-scrollbar-track { background: transparent; margin: 4px 0; }
   .custom-textarea-scroll::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.4); border-radius: 10px; }
   .custom-textarea-scroll::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.8); }
   .hide-scrollbar::-webkit-scrollbar { display: none; }
   .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .rich-text-input::selection { background: rgba(99, 102, 241, 0.25); color: transparent; }
+  .rich-text-input::-moz-selection { background: rgba(99, 102, 241, 0.25); color: transparent; }
 `;
 
 /**
@@ -42,7 +45,7 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
 
   /**
    * Renders formatted text segments based on per-character style metadata.
-   * Adjacent characters sharing the same style are grouped into a single span.
+   * Adjacent characters sharing identical formatting are grouped into a single span.
    *
    * @returns {JSX.Element[]|JSX.Element}
    */
@@ -91,7 +94,7 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
 
   return (
     <div className="space-y-3 pb-1">
-      <style>{CustomScrollbarStyle}</style>
+      <style>{CustomStyles}</style>
 
       <div>
         <label htmlFor="watermark-text" className="mb-1.5 block text-xs font-bold text-slate-700 uppercase tracking-wide">
@@ -118,7 +121,7 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
             onClick={updateActiveToggles}
             onScroll={handleScroll}
             spellCheck={false}
-            className="absolute inset-0 w-full h-full p-3 resize-none bg-transparent text-transparent caret-slate-900 outline-none custom-textarea-scroll"
+            className="rich-text-input absolute inset-0 w-full h-full p-3 resize-none bg-transparent text-transparent caret-slate-900 outline-none custom-textarea-scroll"
             style={{ lineHeight: '1.5rem', fontFamily: 'inherit' }}
           />
         </div>
@@ -186,11 +189,7 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
 
           <div
             className={`relative h-7 w-7 shrink-0 rounded-full shadow-sm transition-all flex items-center justify-center cursor-pointer ${!watermarkColors.includes(textWm.color) ? 'ring-2 ring-indigo-500 ring-offset-2' : 'hover:scale-105 border border-slate-200'}`}
-            style={{
-              background: watermarkColors.includes(textWm.color)
-                ? 'linear-gradient(to top right, #fb7185, #d946ef, #6366f1)'
-                : textWm.color,
-            }}
+            style={{ background: watermarkColors.includes(textWm.color) ? 'linear-gradient(to top right, #fb7185, #d946ef, #6366f1)' : textWm.color }}
             title="Custom color"
           >
             <input
