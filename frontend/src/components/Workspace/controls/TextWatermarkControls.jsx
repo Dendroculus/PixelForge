@@ -1,36 +1,130 @@
 import PropTypes from 'prop-types';
+import { useRef } from 'react';
 import FormatDropdown from '../../../components/Workspace/controls/FormatDropdown';
 import { useTextWatermarkEditor } from '../../../hooks/workspace/useTextWatermarkEditor';
 
-const CustomScrollbarStyle = `
+const CustomStyles = `
   .custom-textarea-scroll::-webkit-scrollbar { width: 6px; }
   .custom-textarea-scroll::-webkit-scrollbar-track { background: transparent; margin: 4px 0; }
   .custom-textarea-scroll::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.4); border-radius: 10px; }
   .custom-textarea-scroll::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.8); }
+  .hide-scrollbar::-webkit-scrollbar { display: none; }
+  .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  .rich-text-input::selection { background: rgba(99, 102, 241, 0.25); color: transparent; }
+  .rich-text-input::-moz-selection { background: rgba(99, 102, 241, 0.25); color: transparent; }
 `;
 
+/**
+ * Watermark text editor with rich-text formatting support.
+ * Uses a transparent textarea layered over a styled backdrop to provide
+ * native text editing while visually rendering bold, italic, and underline styles.
+ *
+ * @param {Object} props
+ * @param {Object} props.textWm - Current text watermark state.
+ * @param {Function} props.setTextWm - Watermark state updater.
+ * @param {string[]} props.fontFamilies - Available font family options.
+ * @param {string[]} props.watermarkColors - Available color presets.
+ * @returns {JSX.Element}
+ */
 export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies, watermarkColors }) {
   const { textareaRef, handleTextChange, updateActiveToggles, toggleStyle } = useTextWatermarkEditor(textWm, setTextWm);
+  const backdropRef = useRef(null);
+
+  /**
+   * Synchronizes backdrop scrolling with the textarea.
+   *
+   * @param {React.UIEvent<HTMLTextAreaElement>} e - Scroll event.
+   */
+  const handleScroll = (e) => {
+    if (backdropRef.current) {
+      backdropRef.current.scrollTop = e.target.scrollTop;
+      backdropRef.current.scrollLeft = e.target.scrollLeft;
+    }
+  };
+
+  /**
+   * Renders formatted text segments based on per-character style metadata.
+   * Adjacent characters sharing identical formatting are grouped into a single span.
+   *
+   * @returns {JSX.Element[]|JSX.Element}
+   */
+  const renderBackdropText = () => {
+    if (!textWm.text) {
+      return <span className="text-slate-400">Enter watermark text{'\n'}Press Enter for new line</span>;
+    }
+
+    const segments = [];
+    const chars = textWm.text;
+    const styles = textWm.charStyles || [];
+
+    let currentSegment = { text: chars[0], ...(styles[0] || {}) };
+
+    for (let i = 1; i < chars.length; i++) {
+      const char = chars[i];
+      const style = styles[i] || {};
+
+      if (
+        style.b === currentSegment.b &&
+        style.i === currentSegment.i &&
+        style.u === currentSegment.u
+      ) {
+        currentSegment.text += char;
+      } else {
+        segments.push(currentSegment);
+        currentSegment = { text: char, ...style };
+      }
+    }
+
+    segments.push(currentSegment);
+
+    return segments.map((seg, idx) => (
+      <span
+        key={idx}
+        style={{
+          fontWeight: seg.b ? 'bold' : 'normal',
+          fontStyle: seg.i ? 'italic' : 'normal',
+          textDecoration: seg.u ? 'underline' : 'none',
+        }}
+      >
+        {seg.text}
+      </span>
+    ));
+  };
 
   return (
     <div className="space-y-3 pb-1">
-      <style>{CustomScrollbarStyle}</style>
+      <style>{CustomStyles}</style>
 
       <div>
         <label htmlFor="watermark-text" className="mb-1.5 block text-xs font-bold text-slate-700 uppercase tracking-wide">
           Watermark Text
         </label>
-        <textarea
-          id="watermark-text"
-          ref={textareaRef}
-          value={textWm.text}
-          onChange={handleTextChange}
-          onSelect={updateActiveToggles}
-          onKeyUp={updateActiveToggles}
-          onClick={updateActiveToggles}
-          placeholder="Enter watermark text&#10;Press Enter for new line"
-          className="custom-textarea-scroll min-h-20 w-full resize-y rounded-lg border border-slate-200 bg-white p-3 text-sm font-semibold text-slate-700 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100"
-        />
+
+        <div className="relative w-full h-24 rounded-lg border border-slate-200 bg-white shadow-sm focus-within:border-indigo-400 focus-within:ring-2 focus-within:ring-indigo-100 text-sm font-semibold text-slate-700">
+          <div
+            ref={backdropRef}
+            aria-hidden="true"
+            className="absolute inset-0 w-full h-full p-3 whitespace-pre-wrap wrap-break-word overflow-y-auto pointer-events-none hide-scrollbar"
+            style={{ lineHeight: '1.5rem', fontFamily: 'inherit' }}
+          >
+            {renderBackdropText()}
+          </div>
+
+          <textarea
+            id="watermark-text"
+            ref={textareaRef}
+            value={textWm.text}
+            onChange={handleTextChange}
+            onSelect={updateActiveToggles}
+            onKeyUp={updateActiveToggles}
+            onClick={updateActiveToggles}
+            onScroll={handleScroll}
+            spellCheck={false}
+            className="rich-text-input absolute inset-0 w-full h-full p-3 resize-none bg-transparent text-transparent caret-slate-900 outline-none custom-textarea-scroll"
+            style={{ lineHeight: '1.5rem', fontFamily: 'inherit' }}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -51,21 +145,23 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
           <div className="grid h-9 grid-cols-3 gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
             <button
               type="button"
-              onMouseDown={(e) => { e.preventDefault(); toggleStyle('b'); }}
+              onPointerDown={(e) => { e.preventDefault(); toggleStyle('b'); }}
               className={`rounded-md text-sm font-bold transition-colors ${textWm.isBold ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
             >
               B
             </button>
+
             <button
               type="button"
-              onMouseDown={(e) => { e.preventDefault(); toggleStyle('i'); }}
+              onPointerDown={(e) => { e.preventDefault(); toggleStyle('i'); }}
               className={`rounded-md text-sm transition-colors ${textWm.isItalic ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
             >
               <span className="italic">I</span>
             </button>
+
             <button
               type="button"
-              onMouseDown={(e) => { e.preventDefault(); toggleStyle('u'); }}
+              onPointerDown={(e) => { e.preventDefault(); toggleStyle('u'); }}
               className={`rounded-md text-sm transition-colors ${textWm.isUnderline ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
             >
               <span className="underline">U</span>
@@ -75,7 +171,10 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
       </div>
 
       <div>
-        <h3 className="mb-1.5 block text-xs font-bold text-slate-700 uppercase tracking-wide">Text Color</h3>
+        <h3 className="mb-1.5 block text-xs font-bold text-slate-700 uppercase tracking-wide">
+          Text Color
+        </h3>
+
         <div className="flex flex-wrap items-center gap-2">
           {watermarkColors.map((color) => (
             <button
@@ -110,6 +209,7 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
             <span>Size</span>
             <span className="text-indigo-600">{textWm.fontSize}px</span>
           </label>
+
           <input
             id="wm-font-size"
             type="range"
@@ -120,11 +220,13 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
             className="h-1.5 w-full appearance-none rounded-lg bg-indigo-100 accent-indigo-600"
           />
         </div>
+
         <div>
           <label htmlFor="wm-text-opacity" className="mb-1.5 flex items-center justify-between text-xs font-bold text-slate-700 uppercase tracking-wide">
             <span>Opacity</span>
             <span className="text-indigo-600">{Math.round(textWm.opacity * 100)}%</span>
           </label>
+
           <input
             id="wm-text-opacity"
             type="range"
