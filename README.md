@@ -141,9 +141,7 @@ The system is designed to handle real-world constraints such as rate limits, lon
   <video src="https://github.com/user-attachments/assets/717edf23-64d5-4673-bffa-21b10fec7ca9">
 </details>
 
-13. 🖼️ **Thumbnail Maker** *(Coming Soon)*
-
-14. 🤖 **Chatbot** — Interactive FAQ assistant for quick answers and guided platform help
+13. 🤖 **Chatbot** — Interactive FAQ assistant for quick answers and guided platform help
 
 <details>
   <summary><b>🎥 Click to watch the preview </b></summary>
@@ -151,28 +149,28 @@ The system is designed to handle real-world constraints such as rate limits, lon
   <video src="https://github.com/user-attachments/assets/90083dfb-915a-43f1-a2b3-d9fbefc10bdd">
 </details>
 
-15. 📝 **Feedback System** — user input for improvements and bug reports
+14. 📝 **Feedback System** — user input for improvements and bug reports
 
 
 ### B) Platform & System Capabilities
 
-16. 🛡️ **Turnstile Verification** — bot protection layer  
-17. 📊 **Usage Limits** — per-feature daily caps  
-18. 🚦 **Rate Limiting** — controlled API flow  
-19. ⚙️ **Async Job Queue** — safe background processing  
-20. 🔄 **Status Polling** — processing / ready / failed  
-21. 💾 **Session Persistence** — IndexedDB + localStorage  
-22. 🔁 **Session Restore** — recover after refresh  
-23. ⏳ **Expiration Handling** — results & drafts lifecycle  
-24. 🧽 **Azure Cleanup** — expired result janitor  
-25. 🧹 **DB Cleanup** — usage data maintenance  
-26. 🔑 **Signed URLs** — secure upload & access  
-27. 🔍 **File Validation** — type, size, spoof detection  
-28. 🏷️ **Filename Sanitization** — safe file handling  
-29. 🧩 **Workspace System** — reusable UI shell  
-30. 📢 **Modal System** — legal & alert handling  
-31. 🆚 **Comparison Slider** — before/after preview  
-32. 🎬 **Progress UX** — staged loading feedback  
+15. 🛡️ **Turnstile Verification** — bot protection layer  
+16. 📊 **Usage Limits** — per-feature daily caps  
+17. 🚦 **Rate Limiting** — controlled API flow  
+18. ⚙️ **Async Job Queue** — safe background processing  
+19. 🔄 **Status Polling** — processing / ready / failed  
+20. 💾 **Session Persistence** — IndexedDB + localStorage  
+21. 🔁 **Session Restore** — recover after refresh  
+22. ⏳ **Expiration Handling** — results & drafts lifecycle  
+23. 🧽 **Azure Cleanup** — expired result janitor  
+24. 🧹 **DB Cleanup** — usage data maintenance  
+25. 🔑 **Signed URLs** — secure upload & access  
+26. 🔍 **File Validation** — type, size, spoof detection  
+27. 🏷️ **Filename Sanitization** — safe file handling  
+28. 🧩 **Workspace System** — reusable UI shell  
+29. 📢 **Modal System** — legal & alert handling  
+30. 🆚 **Comparison Slider** — before/after preview  
+31. 🎬 **Progress UX** — staged loading feedback  
 
 ## 🧠 Architecture Highlights
 PixelForge is designed to balance performance, cost, and reliability while working with external AI APIs that have strict rate and concurrency limits. Key architectural decisions include:
