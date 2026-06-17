@@ -79,3 +79,8 @@ export const SHOWCASES = {
       after: "/demo/res_color_after.png"
     }
 };
+
+export const FontFamilies = [
+  'Inter', 'Poppins', 'Montserrat', 'Roboto', 'Open Sans', 'Lato', 'Nunito', 'Anton', 'Caveat',
+  'Dancing Script', 'Merriweather', 'Oswald', 'Pacifico', 'Playfair Display', 'Raleway', 'Ubuntu', 'Arial', 'Georgia', 'Impact',
+];
