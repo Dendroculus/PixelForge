@@ -1,141 +1,16 @@
 import PropTypes from 'prop-types';
-import { useRef } from 'react';
 import FormatDropdown from '../../../components/Workspace/controls/FormatDropdown';
+import { useTextWatermarkEditor } from '../../../hooks/workspace/useTextWatermarkEditor';
 
 const CustomScrollbarStyle = `
-  .custom-textarea-scroll::-webkit-scrollbar {
-    width: 6px;
-  }
-  .custom-textarea-scroll::-webkit-scrollbar-track {
-    background: transparent;
-    margin: 4px 0;
-  }
-  .custom-textarea-scroll::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.4); /* slate-400 */
-    border-radius: 10px;
-  }
-  .custom-textarea-scroll::-webkit-scrollbar-thumb:hover {
-    background: rgba(99, 102, 241, 0.8); /* indigo-500 */
-  }
+  .custom-textarea-scroll::-webkit-scrollbar { width: 6px; }
+  .custom-textarea-scroll::-webkit-scrollbar-track { background: transparent; margin: 4px 0; }
+  .custom-textarea-scroll::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.4); border-radius: 10px; }
+  .custom-textarea-scroll::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.8); }
 `;
 
-/**
- * Control inputs specifically for styling and configuring text watermarks.
- * @param {Object} props - The component props.
- * @param {Object} props.textWm - State holding text watermark configuration including character styles.
- * @param {Function} props.setTextWm - State setter for text watermark properties.
- * @param {string[]} props.fontFamilies - Array of available font family strings.
- * @param {string[]} props.watermarkColors - Array of standard hex colors for quick selection.
- * @returns {JSX.Element}
- */
 export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies, watermarkColors }) {
-  const textareaRef = useRef(null);
-
-  const handleTextChange = (e) => {
-    const newText = e.target.value;
-    const oldText = textWm.text || '';
-    const newStyles = [...(textWm.charStyles || [])];
-
-    let p = 0;
-    while (p < oldText.length && p < newText.length && oldText[p] === newText[p]) p++;
-
-    let s = 0;
-    while (
-      s < oldText.length - p &&
-      s < newText.length - p &&
-      oldText[oldText.length - 1 - s] === newText[newText.length - 1 - s]
-    ) {
-      s++;
-    }
-
-    const addedLen = newText.length - p - s;
-    const removedLen = oldText.length - p - s;
-
-    const insertedStyles = Array(addedLen).fill({
-      b: textWm.isBold,
-      i: textWm.isItalic,
-      u: textWm.isUnderline,
-    });
-
-    newStyles.splice(p, removedLen, ...insertedStyles);
-
-    setTextWm((prev) => ({
-      ...prev,
-      text: newText,
-      charStyles: newStyles,
-    }));
-  };
-
-  const updateActiveToggles = () => {
-    const el = textareaRef.current;
-    if (!el) return;
-    
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-
-    if (start !== end && textWm.charStyles?.length > 0) {
-      const firstCharStyle = textWm.charStyles[start];
-      if (firstCharStyle) {
-        setTextWm((prev) => ({
-          ...prev,
-          isBold: firstCharStyle.b,
-          isItalic: firstCharStyle.i,
-          isUnderline: firstCharStyle.u,
-        }));
-      }
-    } else if (start > 0 && textWm.charStyles?.length >= start) {
-      const prevCharStyle = textWm.charStyles[start - 1];
-      if (prevCharStyle) {
-        setTextWm((prev) => ({
-          ...prev,
-          isBold: prevCharStyle.b,
-          isItalic: prevCharStyle.i,
-          isUnderline: prevCharStyle.u,
-        }));
-      }
-    }
-  };
-
-  const toggleStyle = (styleKey) => {
-    const el = textareaRef.current;
-    if (!el) return;
-
-    const start = el.selectionStart;
-    const end = el.selectionEnd;
-    
-    const styleMap = {
-      b: 'isBold',
-      i: 'isItalic',
-      u: 'isUnderline',
-    };
-
-  const stateKey = styleMap[styleKey];
-    const newValue = !textWm[stateKey];
-
-    if (start !== end) {
-      const newStyles = [...(textWm.charStyles || [])];
-      for (let i = start; i < end; i++) {
-        if (newStyles[i]) {
-          newStyles[i] = { ...newStyles[i], [styleKey]: newValue };
-        }
-      }
-      setTextWm((prev) => ({
-        ...prev,
-        charStyles: newStyles,
-        [stateKey]: newValue,
-      }));
-    } else {
-      setTextWm((prev) => ({
-        ...prev,
-        [stateKey]: newValue,
-      }));
-    }
-
-    setTimeout(() => {
-      el.focus();
-      el.setSelectionRange(start, end);
-    }, 0);
-  };
+  const { textareaRef, handleTextChange, updateActiveToggles, toggleStyle } = useTextWatermarkEditor(textWm, setTextWm);
 
   return (
     <div className="space-y-3 pb-1">
@@ -177,27 +52,21 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
             <button
               type="button"
               onMouseDown={(e) => { e.preventDefault(); toggleStyle('b'); }}
-              className={`rounded-md text-sm font-bold transition-colors ${
-                textWm.isBold ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'
-              }`}
+              className={`rounded-md text-sm font-bold transition-colors ${textWm.isBold ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
             >
               B
             </button>
             <button
               type="button"
               onMouseDown={(e) => { e.preventDefault(); toggleStyle('i'); }}
-              className={`rounded-md text-sm transition-colors ${
-                textWm.isItalic ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'
-              }`}
+              className={`rounded-md text-sm transition-colors ${textWm.isItalic ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
             >
               <span className="italic">I</span>
             </button>
             <button
               type="button"
               onMouseDown={(e) => { e.preventDefault(); toggleStyle('u'); }}
-              className={`rounded-md text-sm transition-colors ${
-                textWm.isUnderline ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'
-              }`}
+              className={`rounded-md text-sm transition-colors ${textWm.isUnderline ? 'bg-indigo-100 text-indigo-700' : 'text-slate-600 hover:bg-slate-100'}`}
             >
               <span className="underline">U</span>
             </button>
@@ -213,25 +82,15 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
               key={color}
               type="button"
               onClick={() => setTextWm((prev) => ({ ...prev, color }))}
-              className={`h-7 w-7 shrink-0 rounded-full shadow-sm transition-all ${
-                textWm.color === color ? 'ring-2 ring-indigo-500 ring-offset-2' : 'border border-slate-200 hover:scale-105'
-              }`}
+              className={`h-7 w-7 shrink-0 rounded-full shadow-sm transition-all ${textWm.color === color ? 'ring-2 ring-indigo-500 ring-offset-2' : 'border border-slate-200 hover:scale-105'}`}
               style={{ backgroundColor: color }}
               title={color}
             />
           ))}
 
           <div
-            className={`relative h-7 w-7 shrink-0 rounded-full shadow-sm transition-all flex items-center justify-center cursor-pointer ${
-              !watermarkColors.includes(textWm.color)
-                ? 'ring-2 ring-indigo-500 ring-offset-2'
-                : 'hover:scale-105 border border-slate-200'
-            }`}
-            style={{
-              background: watermarkColors.includes(textWm.color)
-                ? 'linear-gradient(to top right, #fb7185, #d946ef, #6366f1)'
-                : textWm.color,
-            }}
+            className={`relative h-7 w-7 shrink-0 rounded-full shadow-sm transition-all flex items-center justify-center cursor-pointer ${!watermarkColors.includes(textWm.color) ? 'ring-2 ring-indigo-500 ring-offset-2' : 'hover:scale-105 border border-slate-200'}`}
+            style={{ background: watermarkColors.includes(textWm.color) ? 'linear-gradient(to top right, #fb7185, #d946ef, #6366f1)' : textWm.color }}
             title="Custom color"
           >
             <input
@@ -240,7 +99,6 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
               value={textWm.color}
               onChange={(e) => setTextWm((prev) => ({ ...prev, color: e.target.value }))}
               className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
-              title="Custom color"
             />
           </div>
         </div>
@@ -284,23 +142,7 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
 }
 
 TextWatermarkControls.propTypes = {
-  textWm: PropTypes.shape({
-    text: PropTypes.string,
-    charStyles: PropTypes.arrayOf(
-      PropTypes.shape({
-        b: PropTypes.bool,
-        i: PropTypes.bool,
-        u: PropTypes.bool,
-      })
-    ),
-    fontFamily: PropTypes.string,
-    color: PropTypes.string,
-    fontSize: PropTypes.number,
-    isBold: PropTypes.bool,
-    isItalic: PropTypes.bool,
-    isUnderline: PropTypes.bool,
-    opacity: PropTypes.number,
-  }).isRequired,
+  textWm: PropTypes.object.isRequired,
   setTextWm: PropTypes.func.isRequired,
   fontFamilies: PropTypes.arrayOf(PropTypes.string).isRequired,
   watermarkColors: PropTypes.arrayOf(PropTypes.string).isRequired,
