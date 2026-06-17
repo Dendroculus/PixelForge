@@ -85,31 +85,29 @@ Sistem dirancang untuk menangani kebutuhan dunia nyata seperti batas penggunaan 
 
 12. ✂️ **Crop Gambar** — bebas atau menggunakan rasio aspek preset
 
-13. 🖼️ **Thumbnail Maker** *(Segera Hadir)*
+13. 🤖 **Chatbot** — asisten FAQ interaktif untuk membantu pengguna memahami fitur platform
 
-14. 🤖 **Chatbot** — asisten FAQ interaktif untuk membantu pengguna memahami fitur platform
-
-15. 📝 **Sistem Feedback** — masukan pengguna untuk peningkatan fitur dan pelaporan bug
+14. 📝 **Sistem Feedback** — masukan pengguna untuk peningkatan fitur dan pelaporan bug
 
 ### B) Kemampuan Platform & Sistem
 
-16. 🛡️ **Verifikasi Turnstile** — perlindungan terhadap bot
-17. 📊 **Batas Penggunaan** — kuota harian per fitur
-18. 🚦 **Rate Limiting** — kontrol aliran API
-19. ⚙️ **Antrean Job Asinkron** — pemrosesan latar belakang yang aman
-20. 🔄 **Status Polling** — monitoring status proses
-21. 💾 **Penyimpanan Sesi** — IndexedDB + localStorage
-22. 🔁 **Pemulihan Sesi** — melanjutkan sesi setelah refresh
-23. ⏳ **Manajemen Kadaluarsa** — siklus hidup hasil dan draft
-24. 🧽 **Azure Cleanup** — pembersihan hasil yang sudah kadaluarsa
-25. 🧹 **Database Cleanup** — pemeliharaan data penggunaan
-26. 🔑 **Signed URLs** — upload dan akses yang aman
-27. 🔍 **Validasi File** — tipe file, ukuran, dan deteksi spoof
-28. 🏷️ **Sanitasi Nama File** — penanganan file yang aman
-29. 🧩 **Workspace System** — UI shell yang dapat digunakan kembali
-30. 📢 **Modal System** — pengelolaan notifikasi dan legal notice
-31. 🆚 **Comparison Slider** — perbandingan sebelum dan sesudah
-32. 🎬 **Progress UX** — feedback progres bertahap
+15. 🛡️ **Verifikasi Turnstile** — perlindungan terhadap bot
+16. 📊 **Batas Penggunaan** — kuota harian per fitur
+17. 🚦 **Rate Limiting** — kontrol aliran API
+18. ⚙️ **Antrean Job Asinkron** — pemrosesan latar belakang yang aman
+19. 🔄 **Status Polling** — monitoring status proses
+20. 💾 **Penyimpanan Sesi** — IndexedDB + localStorage
+21. 🔁 **Pemulihan Sesi** — melanjutkan sesi setelah refresh
+22. ⏳ **Manajemen Kadaluarsa** — siklus hidup hasil dan draft
+23. 🧽 **Azure Cleanup** — pembersihan hasil yang sudah kadaluarsa
+24. 🧹 **Database Cleanup** — pemeliharaan data penggunaan
+25. 🔑 **Signed URLs** — upload dan akses yang aman
+26. 🔍 **Validasi File** — tipe file, ukuran, dan deteksi spoof
+27. 🏷️ **Sanitasi Nama File** — penanganan file yang aman
+28. 🧩 **Workspace System** — UI shell yang dapat digunakan kembali
+29. 📢 **Modal System** — pengelolaan notifikasi dan legal notice
+30. 🆚 **Comparison Slider** — perbandingan sebelum dan sesudah
+31. 🎬 **Progress UX** — feedback progres bertahap
 
 ## 🧠 Sorotan Arsitektur
 
