@@ -88,8 +88,9 @@ class Settings(BaseSettings):
     # --- Image Processing ---
     MAX_FILE_SIZE_MB: int = 10
     MAX_MEGAPIXELS: int = 3
-    MAX_IMAGE_DIMENSION: int = 1700
+    MAX_IMAGE_DIMENSION: int = 4000
     OPTIMIZATION_TARGET_PIXELS: int = 1_000_000
+    MAX_SAFE_PIXELS: int = 25_000_000
     DEFAULT_SCALE: int = 4
     MAX_CONCURRENT_JOBS: int = 5
     MAX_CONCURRENT_CPU_JOBS: int = 4

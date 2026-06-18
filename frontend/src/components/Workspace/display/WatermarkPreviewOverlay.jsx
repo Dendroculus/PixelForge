@@ -1,8 +1,12 @@
 import { motion } from 'framer-motion';
-import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { parseWatermarkTextLines } from '../../../utils/image/watermarkUtils';
 
+/**
+ * @param {Object} props
+ * @param {string} [props.className]
+ * @returns {JSX.Element}
+ */
 function TrashIcon({ className = 'h-4 w-4' }) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={className}>
@@ -15,8 +19,24 @@ function TrashIcon({ className = 'h-4 w-4' }) {
   );
 }
 
-TrashIcon.propTypes = { className: PropTypes.string };
+TrashIcon.propTypes = {
+  className: PropTypes.string
+};
 
+/**
+ * @param {Object} props
+ * @param {React.MutableRefObject} props.overlayRef
+ * @param {{x: number, y: number}} props.overlayPos
+ * @param {string} props.activeTab
+ * @param {Object} props.textWm
+ * @param {Object} props.imgWm
+ * @param {Object} props.dragBounds
+ * @param {Object} props.imageRect
+ * @param {boolean} props.isSelected
+ * @param {Function} props.onSelect
+ * @param {Function} props.onDelete
+ * @returns {JSX.Element}
+ */
 export default function WatermarkPreviewOverlay({
   overlayRef,
   overlayPos,
@@ -24,62 +44,55 @@ export default function WatermarkPreviewOverlay({
   textWm,
   imgWm,
   dragBounds,
+  imageRect,
   isSelected,
   onSelect,
-  onDelete,
+  onDelete
 }) {
-  const [isDragging, setIsDragging] = useState(false);
+  const showActions = isSelected;
+  const hasText = activeTab === 'text';
 
-  if (overlayPos.x === 0 && overlayPos.y === 0) return null;
-
-  const hasText = activeTab === 'text' && Boolean(textWm.text?.trim());
-  const hasImage = activeTab === 'image' && Boolean(imgWm.url);
-  if (!hasText && !hasImage) return null;
-
-  const showActions = isSelected || isDragging;
+  const maxSafeWidth = imageRect 
+    ? Math.max(50, (imageRect.left + imageRect.width) - overlayPos.x - 8) 
+    : '100%';
 
   const renderTextWatermark = () => {
-    const lines = parseWatermarkTextLines(textWm.text, textWm.charStyles, { b: textWm.isBold, i: textWm.isItalic, u: textWm.isUnderline });
-
+    const lines = parseWatermarkTextLines(textWm.text || 'Watermark Text', textWm.charStyles, { 
+      b: textWm.isBold, 
+      i: textWm.isItalic, 
+      u: textWm.isUnderline 
+    });
+    
     return (
-      <div
+      <div 
         style={{
-          fontFamily: `"${textWm.fontFamily}", sans-serif`,
-          color: textWm.color,
-          fontSize: `${textWm.fontSize}px`,
           opacity: textWm.opacity,
-          textShadow: '2px 2px 4px rgba(0,0,0,0.45)',
+          maxWidth: `${maxSafeWidth}px`,
+          wordBreak: 'break-word',
+          whiteSpace: 'pre-wrap',
+          textShadow: `calc(${textWm.fontSize}px * 0.04) calc(${textWm.fontSize}px * 0.04) calc(${textWm.fontSize}px * 0.08) rgba(0,0,0,0.45)`,
           lineHeight: 1.2,
-          whiteSpace: 'pre',
-          pointerEvents: 'none',
-          userSelect: 'none',
-          display: 'flex',
-          flexDirection: 'column',
+          fontSize: `${textWm.fontSize}px`,
+          fontFamily: `"${textWm.fontFamily}", sans-serif`,
+          color: textWm.color
         }}
       >
-        {lines.map((line, lineIndex) => {
-          if (!line.text) {
-            return <span key={lineIndex} style={{ height: `${textWm.fontSize * 1.2}px`, display: 'block' }} />;
-          }
-
-          return (
-            <div key={lineIndex}>
-              {line.segments.map((seg, segIndex) => (
-                <span
-                  key={segIndex}
-                  style={{
-                    fontWeight: seg.b ? 'bold' : 'normal',
-                    fontStyle: seg.i ? 'italic' : 'normal',
-                    textDecoration: seg.u ? 'underline' : 'none',
-                    textDecorationSkipInk: 'none',
-                  }}
-                >
-                  {seg.text}
-                </span>
-              ))}
-            </div>
-          );
-        })}
+        {lines.map((line, lIdx) => (
+          <div key={lIdx} style={{ minHeight: `${textWm.fontSize}px` }}>
+            {line.segments.map((seg, sIdx) => (
+              <span 
+                key={sIdx}
+                style={{
+                  fontWeight: seg.b ? 'bold' : 'normal',
+                  fontStyle: seg.i ? 'italic' : 'normal',
+                  textDecoration: seg.u ? 'underline' : 'none'
+                }}
+              >
+                {seg.text}
+              </span>
+            ))}
+          </div>
+        ))}
       </div>
     );
   };
@@ -89,13 +102,11 @@ export default function WatermarkPreviewOverlay({
       ref={overlayRef}
       drag
       dragMomentum={false}
-      dragElastic={0}
       dragConstraints={dragBounds}
-      initial={{ x: overlayPos.x, y: overlayPos.y }}
-      onPointerDown={(e) => { e.stopPropagation(); onSelect?.(); }}
-      onDragStart={() => { onSelect?.(); setIsDragging(true); }}
-      onDragEnd={() => setIsDragging(false)}
-      className={`absolute z-50 cursor-grab active:cursor-grabbing rounded-md border border-dashed ${isSelected ? 'border-indigo-400 bg-white/10' : 'border-transparent hover:border-indigo-300 hover:bg-white/10'}`}
+      initial={overlayPos}
+      animate={overlayPos}
+      onPointerDown={onSelect}
+      className={`absolute cursor-move z-50 ${isSelected ? 'ring-2 ring-indigo-500 bg-white/20' : 'hover:ring-1 hover:ring-slate-400 hover:bg-white/10'}`}
       style={{ padding: 0, left: 0, top: 0 }}
     >
       {showActions && (
@@ -130,13 +141,17 @@ export default function WatermarkPreviewOverlay({
 }
 
 WatermarkPreviewOverlay.propTypes = {
-  overlayRef: PropTypes.any,
-  overlayPos: PropTypes.object.isRequired,
+  overlayRef: PropTypes.object.isRequired,
+  overlayPos: PropTypes.shape({
+    x: PropTypes.number.isRequired,
+    y: PropTypes.number.isRequired
+  }).isRequired,
   activeTab: PropTypes.string.isRequired,
   textWm: PropTypes.object.isRequired,
   imgWm: PropTypes.object.isRequired,
   dragBounds: PropTypes.object.isRequired,
-  isSelected: PropTypes.bool,
-  onSelect: PropTypes.func,
-  onDelete: PropTypes.func,
+  imageRect: PropTypes.object,
+  isSelected: PropTypes.bool.isRequired,
+  onSelect: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired
 };

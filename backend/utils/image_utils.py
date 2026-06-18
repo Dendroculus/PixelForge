@@ -14,7 +14,7 @@ from fastapi import HTTPException, status
 
 from core.config import settings
 
-Image.MAX_IMAGE_PIXELS = settings.MAX_PIXELS
+Image.MAX_IMAGE_PIXELS = settings.MAX_SAFE_PIXELS
 logger = logging.getLogger(__name__)
 
 def smart_downscale(img: Image.Image, max_pixels: int) -> Image.Image:
@@ -35,7 +35,14 @@ def smart_downscale(img: Image.Image, max_pixels: int) -> Image.Image:
     if total_pixels > max_pixels:
         scale_factor = (max_pixels / total_pixels) ** 0.5
         new_width = max(1, int(width * scale_factor))
-        new_height = max(1, int(height * scale_factor))
+        new_height = max(1, int(height * scale_factor)) 
+        
+        logger.info(
+            f"📉 Image downscaled: {width}x{height} ({total_pixels:,} px) "
+            f"-> {new_width}x{new_height} ({new_width * new_height:,} px) "
+            f"to meet {max_pixels:,} px limit."
+        )
+        
         return img.resize((new_width, new_height), Image.Resampling.LANCZOS)
     
     return img

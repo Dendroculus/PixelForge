@@ -116,17 +116,18 @@ export default function WatermarkAdder() {
                     onLoad={actions.updateImageRect}
                   />
 
-                  <WatermarkPreviewOverlay
-                    overlayRef={overlayRef}
-                    overlayPos={overlayPos}
-                    activeTab={activeTab}
-                    textWm={textWm}
-                    imgWm={imgWm}
-                    dragBounds={dragBounds}
-                    isSelected={isOverlaySelected}
-                    onSelect={() => actions.setIsOverlaySelected(true)}
-                    onDelete={actions.handleDeleteSelected}
-                  />
+                <WatermarkPreviewOverlay
+                  overlayRef={overlayRef}
+                  overlayPos={overlayPos}
+                  activeTab={activeTab}
+                  textWm={textWm}
+                  imgWm={imgWm}
+                  dragBounds={dragBounds}
+                  imageRect={state.imageRect}
+                  isSelected={isOverlaySelected}
+                  onSelect={() => actions.setIsOverlaySelected(true)}
+                  onDelete={actions.handleDeleteSelected}
+                />
                 </>
               )}
             </PreviewImageBox>
