@@ -88,8 +88,9 @@ class Settings(BaseSettings):
     # --- Image Processing ---
     MAX_FILE_SIZE_MB: int = 10
     MAX_MEGAPIXELS: int = 3
-    MAX_IMAGE_DIMENSION: int = 1700
+    MAX_IMAGE_DIMENSION: int = 4000
     OPTIMIZATION_TARGET_PIXELS: int = 1_000_000
+    MAX_SAFE_PIXELS: int = 25_000_000
     DEFAULT_SCALE: int = 4
     MAX_CONCURRENT_JOBS: int = 5
     MAX_CONCURRENT_CPU_JOBS: int = 4
@@ -97,13 +98,13 @@ class Settings(BaseSettings):
     @property
     def MAX_FILE_SIZE_BYTES(self) -> int:
         """Convert MB limit into bytes."""
-        return self.MAX_FILE_SIZE_MB * 5000 * 5000
+        return self.MAX_FILE_SIZE_MB * 1024 * 1024
 
 
     @property
     def MAX_PIXELS(self) -> int:
         """Convert megapixel limit into total pixels."""
-        return self.MAX_MEGAPIXELS * 3_000_000
+        return self.MAX_MEGAPIXELS * 1_000_000
 
 
     # --- Validation Thresholds ---
