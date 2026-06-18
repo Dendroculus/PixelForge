@@ -97,13 +97,13 @@ class Settings(BaseSettings):
     @property
     def MAX_FILE_SIZE_BYTES(self) -> int:
         """Convert MB limit into bytes."""
-        return self.MAX_FILE_SIZE_MB * 1024 * 1024
+        return self.MAX_FILE_SIZE_MB * 5000 * 5000
 
 
     @property
     def MAX_PIXELS(self) -> int:
         """Convert megapixel limit into total pixels."""
-        return self.MAX_MEGAPIXELS * 1_000_000
+        return self.MAX_MEGAPIXELS * 3_000_000
 
 
     # --- Validation Thresholds ---
