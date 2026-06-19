@@ -1,15 +1,18 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { renderPreviewDataUrl, processImageEditing } from '../../../utils/image/editorUtils';
-import { generateSafeFilename } from '../../../utils/file/fileUtils';
+import {
+  renderPreviewDataUrl,
+  processImageEditing,
+} from '@/utils/image/editorUtils';
+import { generateSafeFilename } from '@/utils/file/fileUtils';
 
 export const DEFAULT_FILTERS = {
-  brightness  : 0,
-  contrast    : 0,
-  saturation  : 0,
-  temperature : 0,
-  blur        : 0,
-  vignette    : 0,
-  fade        : 0,
+  brightness: 0,
+  contrast: 0,
+  saturation: 0,
+  temperature: 0,
+  blur: 0,
+  vignette: 0,
+  fade: 0,
 };
 
 /**
@@ -19,11 +22,11 @@ export const DEFAULT_FILTERS = {
 export function useImageEditor(workspaceFile) {
   const { file, previewUrl, setError, cleanupResult, resetAll } = workspaceFile;
 
-  const [filters,        setFilters]        = useState({ ...DEFAULT_FILTERS });
-  const [isProcessing,   setIsProcessing]   = useState(false);
-  const [fitMode,        setFitMode]        = useState('contain');
+  const [filters, setFilters] = useState({ ...DEFAULT_FILTERS });
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [fitMode, setFitMode] = useState('contain');
   const [previewDataUrl, setPreviewDataUrl] = useState(null);
-  const [isPreviewing,   setIsPreviewing]   = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
 
   const debounceRef = useRef(null);
 
@@ -48,7 +51,9 @@ export function useImageEditor(workspaceFile) {
       }
     }, 80);
 
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [previewUrl, filters]);
 
   // Reset everything when a new image is loaded.
@@ -56,10 +61,13 @@ export function useImageEditor(workspaceFile) {
     setFilters({ ...DEFAULT_FILTERS });
   }, [previewUrl]);
 
-  const handleFilterChange = useCallback((key, value) => {
-    setFilters((prev) => ({ ...prev, [key]: Number(value) }));
-    cleanupResult();
-  }, [cleanupResult]);
+  const handleFilterChange = useCallback(
+    (key, value) => {
+      setFilters((prev) => ({ ...prev, [key]: Number(value) }));
+      cleanupResult();
+    },
+    [cleanupResult],
+  );
 
   const resetFilters = useCallback(() => {
     setFilters({ ...DEFAULT_FILTERS });
@@ -91,11 +99,11 @@ export function useImageEditor(workspaceFile) {
 
     try {
       const exportOpts = { mimeType: file.type || 'image/jpeg' };
-      const blob        = await processImageEditing(previewUrl, filters, exportOpts);
+      const blob = await processImageEditing(previewUrl, filters, exportOpts);
       const downloadUrl = URL.createObjectURL(blob);
-      const link        = document.createElement('a');
-      link.href         = downloadUrl;
-      link.download     = generateSafeFilename(file?.name, 'edited', 'jpg');
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.download = generateSafeFilename(file?.name, 'edited', 'jpg');
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -108,7 +116,10 @@ export function useImageEditor(workspaceFile) {
     }
   }, [file, previewUrl, filters, cleanupResult, setError]);
 
-  const canProcess = useMemo(() => Boolean(file) && !isProcessing, [file, isProcessing]);
+  const canProcess = useMemo(
+    () => Boolean(file) && !isProcessing,
+    [file, isProcessing],
+  );
 
   return {
     filters,

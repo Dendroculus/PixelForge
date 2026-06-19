@@ -1,4 +1,4 @@
-import { MaxDimension } from '../../../../hooks/workspace/Editor/useImageResize';
+import { MaxDimension } from '@/hooks/workspace/Editor/useImageResize';
 import PropTypes from 'prop-types';
 
 const RESIZE_PRESETS = [

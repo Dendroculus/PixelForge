@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import PropTypes from 'prop-types';
-import EmptyWorkspaceState from '../../Common/EmptyWorkspaceState';
+import EmptyWorkspaceState from '@/components/Common/EmptyWorkspaceState';
 
 /**
  * Standardized container for displaying active workspace images and processing states.
@@ -80,7 +80,7 @@ PreviewImageBox.propTypes = {
   isProcessing: PropTypes.bool,
   imageRef: PropTypes.oneOfType([
     PropTypes.func,
-    PropTypes.shape({ current: PropTypes.any })
+    PropTypes.shape({ current: PropTypes.any }),
   ]),
   onImageLoad: PropTypes.func,
   previewClassName: PropTypes.string,
@@ -88,7 +88,7 @@ PreviewImageBox.propTypes = {
   containerClassName: PropTypes.string,
   containerRef: PropTypes.oneOfType([
     PropTypes.func,
-    PropTypes.shape({ current: PropTypes.any })
+    PropTypes.shape({ current: PropTypes.any }),
   ]),
   children: PropTypes.node,
 };

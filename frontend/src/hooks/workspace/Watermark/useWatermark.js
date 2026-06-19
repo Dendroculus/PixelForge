@@ -1,11 +1,8 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useWorkspaceFile } from '../Core/useWorkspaceFile';
-import {
-  calculateImageRect,
-  loadImage,
-} from '../../../utils/image/watermarkMath';
-import { renderWatermarkToBlob } from '../../../utils/image/watermarkRender';
-import { WatermarkDefaultImage, WatermarkDefaulText } from '../../../config';
+import { calculateImageRect, loadImage } from '@/utils/image/watermarkMath';
+import { renderWatermarkToBlob } from '@/utils/image/watermarkRender';
+import { WatermarkDefaultImage, WatermarkDefaulText } from '@/config';
 
 /**
  * @returns {Object}

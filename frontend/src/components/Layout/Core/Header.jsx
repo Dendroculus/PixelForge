@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { IMAGES as img } from '../../../config';
+import { IMAGES as img } from '@/config';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 

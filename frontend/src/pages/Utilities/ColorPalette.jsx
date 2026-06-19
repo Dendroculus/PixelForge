@@ -1,18 +1,18 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import UploadCard from '../../components/Upload/UploadCard';
-import ToolWorkspaceShell from '../../components/Layout/Tool/ToolWorkspaceShell';
-import ToolPageWrapper from '../../components/Layout/Tool/ToolPageWrapper';
-import PreviewImageBox from '../../components/Workspace/display/PreviewImageBox';
-import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErrorAlert';
-import PaletteSwatches from '../../components/Workspace/display/PaletteSwatches';
-import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
-import ColorPaletteControls from '../../components/Workspace/controls/Palette/ColorPaletteControls';
+import UploadCard from '@/components/Upload/UploadCard';
+import ToolWorkspaceShell from '@/components/Layout/Tool/ToolWorkspaceShell';
+import ToolPageWrapper from '@/components/Layout/Tool/ToolPageWrapper';
+import PreviewImageBox from '@/components/Workspace/display/PreviewImageBox';
+import WorkspaceErrorAlert from '@/components/Workspace/display/WorkspaceErrorAlert';
+import PaletteSwatches from '@/components/Workspace/display/PaletteSwatches';
+import ClientSideHeader from '@/components/Workspace/Header/ClientSideHeader';
+import ColorPaletteControls from '@/components/Workspace/controls/Palette/ColorPaletteControls';
 
-import { useWorkspaceFile } from '../../hooks/workspace/Core/useWorkspaceFile';
-import usePaletteSampling from '../../hooks/client/usePaletteSampling';
-import { useColorPaletteEditor } from '../../hooks/workspace/Utility/useColorPaletteEditor';
+import { useWorkspaceFile } from '@/hooks/workspace/Core/useWorkspaceFile';
+import usePaletteSampling from '@/hooks/client/usePaletteSampling';
+import { useColorPaletteEditor } from '@/hooks/workspace/Utility/useColorPaletteEditor';
 
 /**
  * Interactive color palette extraction tool.

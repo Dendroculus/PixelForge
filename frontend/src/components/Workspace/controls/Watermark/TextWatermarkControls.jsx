@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import FormatDropdown from '../Convert/FormatDropdown';
-import { useTextWatermarkEditor } from '../../../../hooks/workspace/Watermark/useTextWatermarkEditor';
+import { useTextWatermarkEditor } from '@/hooks/workspace/Watermark/useTextWatermarkEditor';
 import RichTextWatermarkInput from './RichTextWatermarkInput';
 import TextStyleToggles from '../Common/TextStyleToggles';
 import ColorSwatches from '../Common/ColorSwatches';

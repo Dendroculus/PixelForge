@@ -1,21 +1,21 @@
 import { useRef } from 'react';
-import { AppConfig } from '../../config';
+import { AppConfig } from '@/config';
 
-import UploadCard from '../../components/Upload/UploadCard';
-import ToolWorkspaceShell from '../../components/Layout/Tool/ToolWorkspaceShell';
-import ToolPageWrapper from '../../components/Layout/Tool/ToolPageWrapper';
-import PreviewImageBox from '../../components/Workspace/display/PreviewImageBox';
-import WorkspaceFileSummary from '../../components/Workspace/display/WorkspaceFileSummary';
-import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErrorAlert';
-import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
-import FitModeToggle from '../../components/Workspace/controls/Editor/FitModeToggle';
+import UploadCard from '@/components/Upload/UploadCard';
+import ToolWorkspaceShell from '@/components/Layout/Tool/ToolWorkspaceShell';
+import ToolPageWrapper from '@/components/Layout/Tool/ToolPageWrapper';
+import PreviewImageBox from '@/components/Workspace/display/PreviewImageBox';
+import WorkspaceFileSummary from '@/components/Workspace/display/WorkspaceFileSummary';
+import WorkspaceErrorAlert from '@/components/Workspace/display/WorkspaceErrorAlert';
+import ClientSideHeader from '@/components/Workspace/Header/ClientSideHeader';
+import FitModeToggle from '@/components/Workspace/controls/Editor/FitModeToggle';
 import Magnifier, {
   ZoomButton,
-} from '../../components/Workspace/controls/Editor/Magnifier';
-import ImageEditorFilters from '../../components/Workspace/controls/Editor/ImageEditorFilters';
+} from '@/components/Workspace/controls/Editor/Magnifier';
+import ImageEditorFilters from '@/components/Workspace/controls/Editor/ImageEditorFilters';
 
-import { useWorkspaceFile } from '../../hooks/workspace/Core/useWorkspaceFile';
-import { useImageEditor } from '../../hooks/workspace/Editor/useImageEditor';
+import { useWorkspaceFile } from '@/hooks/workspace/Core/useWorkspaceFile';
+import { useImageEditor } from '@/hooks/workspace/Editor/useImageEditor';
 
 export default function ImageEditor() {
   const fileInputRef = useRef(null);

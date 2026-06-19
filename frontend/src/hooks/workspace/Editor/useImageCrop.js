@@ -1,6 +1,9 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
-import { buildDefaultCrop, generateCroppedImageBlob } from '../../../utils/image/cropUtils';
-import { generateSafeFilename } from '../../../utils/file/fileUtils';
+import {
+  buildDefaultCrop,
+  generateCroppedImageBlob,
+} from '@/utils/image/cropUtils';
+import { generateSafeFilename } from '@/utils/file/fileUtils';
 
 /**
  * Hook to manage react-image-crop state and canvas processing logic.
@@ -13,7 +16,7 @@ export function useImageCrop({
   setResultBlob,
   setResultUrl,
   setError,
-  resetAll
+  resetAll,
 }) {
   const imgRef = useRef(null);
 
@@ -26,9 +29,9 @@ export function useImageCrop({
 
   const onImageLoad = useCallback((e) => {
     const img = e.currentTarget;
-    setImageSize({ 
-      width: img.naturalWidth || 0, 
-      height: img.naturalHeight || 0 
+    setImageSize({
+      width: img.naturalWidth || 0,
+      height: img.naturalHeight || 0,
     });
   }, []);
 
@@ -38,19 +41,26 @@ export function useImageCrop({
         if (!imgRef.current) return;
         const displayWidth = imgRef.current.width || 0;
         const displayHeight = imgRef.current.height || 0;
-        
-        const defaultCrop = buildDefaultCrop(displayWidth, displayHeight, aspect);
+
+        const defaultCrop = buildDefaultCrop(
+          displayWidth,
+          displayHeight,
+          aspect,
+        );
         setCrop(defaultCrop);
         setCompletedCrop(defaultCrop);
-      }, 50); 
+      }, 50);
       return () => clearTimeout(timer);
     }
   }, [imageSize, aspect]);
 
-  const applyAspect = useCallback((nextAspect) => {
-    setAspect(nextAspect);
-    cleanupResult();
-  }, [cleanupResult]);
+  const applyAspect = useCallback(
+    (nextAspect) => {
+      setAspect(nextAspect);
+      cleanupResult();
+    },
+    [cleanupResult],
+  );
 
   const applyCrop = useCallback(async () => {
     if (!completedCrop || !imgRef.current || !file) return;
@@ -61,9 +71,9 @@ export function useImageCrop({
 
     try {
       const blob = await generateCroppedImageBlob(
-        imgRef.current, 
-        completedCrop, 
-        file.type || 'image/jpeg'
+        imgRef.current,
+        completedCrop,
+        file.type || 'image/jpeg',
       );
       setResultBlob(blob);
       setResultUrl(URL.createObjectURL(blob));
@@ -73,7 +83,14 @@ export function useImageCrop({
     } finally {
       setIsProcessing(false);
     }
-  }, [completedCrop, file, cleanupResult, setResultBlob, setResultUrl, setError]);
+  }, [
+    completedCrop,
+    file,
+    cleanupResult,
+    setResultBlob,
+    setResultUrl,
+    setError,
+  ]);
 
   const handleReset = useCallback(() => {
     resetAll();
@@ -82,7 +99,7 @@ export function useImageCrop({
     setAspect(null);
     setImageSize({ width: 0, height: 0 });
     setIsProcessing(false);
-    setFitMode('fit'); 
+    setFitMode('fit');
   }, [resetAll]);
 
   const hasValidCrop = useMemo(() => {
@@ -96,21 +113,28 @@ export function useImageCrop({
 
   const cropSizeLabel = useMemo(() => {
     if (!completedCrop || !imgRef.current) return null;
-    const w = Math.max(1, Math.round((completedCrop.width * imgRef.current.naturalWidth) / 100));
-    const h = Math.max(1, Math.round((completedCrop.height * imgRef.current.naturalHeight) / 100));
+    const w = Math.max(
+      1,
+      Math.round((completedCrop.width * imgRef.current.naturalWidth) / 100),
+    );
+    const h = Math.max(
+      1,
+      Math.round((completedCrop.height * imgRef.current.naturalHeight) / 100),
+    );
     return `${w} × ${h}px`;
   }, [completedCrop]);
 
   const downloadName = useMemo(
     () => generateSafeFilename(file?.name, 'cropped', 'jpg'),
-    [file?.name]
+    [file?.name],
   );
 
   const isFocusMode = Boolean(file && !error && !isProcessing && !resultUrl);
 
-  const imageAspect = imageSize.width > 0 && imageSize.height > 0
-    ? imageSize.width / imageSize.height
-    : 1;
+  const imageAspect =
+    imageSize.width > 0 && imageSize.height > 0
+      ? imageSize.width / imageSize.height
+      : 1;
 
   return {
     imgRef,
@@ -131,6 +155,6 @@ export function useImageCrop({
     cropSizeLabel,
     downloadName,
     isFocusMode,
-    imageAspect
+    imageAspect,
   };
 }

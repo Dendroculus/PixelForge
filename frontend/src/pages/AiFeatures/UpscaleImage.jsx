@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import AiFeatureWorkspace from '../../components/Workspace/AiFeatureWorkspace';
-import UpscaleControls from '../../components/Workspace/controls/AiFeatures/UpscaleControls';
-import { useUpscalePipeline } from '../../hooks/pipeline/useUpscalePipeline';
-import { useSimulatedProgress } from '../../hooks/workspace/Core/useSimulatedProgress';
-import { marketingProps } from '../../data/feature/upscaleMarketing';
+import AiFeatureWorkspace from '@/components/Workspace/AiFeatureWorkspace';
+import UpscaleControls from '@/components/Workspace/controls/AiFeatures/UpscaleControls';
+import { useUpscalePipeline } from '@/hooks/pipeline/useUpscalePipeline';
+import { useSimulatedProgress } from '@/hooks/workspace/Core/useSimulatedProgress';
+import { marketingProps } from '@/data/feature/upscaleMarketing';
 
 export default function UpscaleWorkspace() {
   const [progress, setProgress] = useState(0);

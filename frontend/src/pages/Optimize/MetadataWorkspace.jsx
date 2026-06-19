@@ -1,7 +1,7 @@
-import { useMetadataProcessor } from '../../hooks/workspace/Utility/useMetadataProcessor';
-import { useObjectUrlCleanup } from '../../hooks/workspace/Core/useObjectUrlCleanup';
+import { useMetadataProcessor } from '@/hooks/workspace/Utility/useMetadataProcessor';
+import { useObjectUrlCleanup } from '@/hooks/workspace/Core/useObjectUrlCleanup';
 import { useMemo } from 'react';
-import ToolStateWrapper from '../../components/Layout/Tool/ToolStateWrapper';
+import ToolStateWrapper from '@/components/Layout/Tool/ToolStateWrapper';
 
 const formatKey = (key) =>
   key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());

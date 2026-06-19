@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { processImageWithCanvas } from '../../../utils/image/imageUtils';
+import { processImageWithCanvas } from '@/utils/image/imageUtils';
 import exifr from 'exifr';
 
 /**

@@ -1,19 +1,19 @@
 import { useMemo, useRef, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { AppConfig } from '../../config';
-import UploadCard from '../../components/Upload/UploadCard';
-import ToolWorkspaceShell from '../../components/Layout/Tool/ToolWorkspaceShell';
-import ToolPageWrapper from '../../components/Layout/Tool/ToolPageWrapper';
-import PreviewImageBox from '../../components/Workspace/display/PreviewImageBox';
-import WorkspaceFileSummary from '../../components/Workspace/display/WorkspaceFileSummary';
-import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErrorAlert';
-import WorkspaceActionRow from '../../components/Actions/WorkspaceActionRow';
-import WorkspaceResultDownload from '../../components/Workspace/display/WorkspaceResultDownload';
-import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
-import RotateFlipControls from '../../components/Workspace/controls/Editor/RotateFlipControls';
-import { useWorkspaceFile } from '../../hooks/workspace/Core/useWorkspaceFile';
-import { useRotateFlip } from '../../hooks/workspace/Editor/useRotateFlip';
-import { generateSafeFilename } from '../../utils/file/fileUtils';
+import { AppConfig } from '@/config';
+import UploadCard from '@/components/Upload/UploadCard';
+import ToolWorkspaceShell from '@/components/Layout/Tool/ToolWorkspaceShell';
+import ToolPageWrapper from '@/components/Layout/Tool/ToolPageWrapper';
+import PreviewImageBox from '@/components/Workspace/display/PreviewImageBox';
+import WorkspaceFileSummary from '@/components/Workspace/display/WorkspaceFileSummary';
+import WorkspaceErrorAlert from '@/components/Workspace/display/WorkspaceErrorAlert';
+import WorkspaceActionRow from '@/components/Actions/WorkspaceActionRow';
+import WorkspaceResultDownload from '@/components/Workspace/display/WorkspaceResultDownload';
+import ClientSideHeader from '@/components/Workspace/Header/ClientSideHeader';
+import RotateFlipControls from '@/components/Workspace/controls/Editor/RotateFlipControls';
+import { useWorkspaceFile } from '@/hooks/workspace/Core/useWorkspaceFile';
+import { useRotateFlip } from '@/hooks/workspace/Editor/useRotateFlip';
+import { generateSafeFilename } from '@/utils/file/fileUtils';
 
 export default function RotateFlip() {
   const fileInputRef = useRef(null);

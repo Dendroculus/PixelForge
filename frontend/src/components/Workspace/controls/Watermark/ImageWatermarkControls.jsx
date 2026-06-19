@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
-import UploadCard from '../../../Upload/UploadCard';
-import { AppConfig } from '../../../../config';
+import UploadCard from '@/components/Upload/UploadCard';
+import { AppConfig } from '@/config';
 
 /**
  * Control inputs specifically for adjusting image logo watermarks (scale and opacity).

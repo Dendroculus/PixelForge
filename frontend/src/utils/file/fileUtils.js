@@ -1,4 +1,4 @@
-import { AppConfig } from '../../config';
+import { AppConfig } from '@/config';
 /**
  * Utility module for file-related operations and conversions.
  */
@@ -24,7 +24,7 @@ export const generateSafeFilename = (originalName, suffix, extension) => {
     .replace(/\.[^/.]+$/, '')
     .replace(/[^\w-]+/g, '_')
     .slice(0, 80);
-    
+
   return `${safeBase}_${suffix}.${extension}`;
 };
 
@@ -36,10 +36,10 @@ export const generateSafeFilename = (originalName, suffix, extension) => {
 export const getFileExtension = (filename) => {
   if (!filename || typeof filename !== 'string') return '';
   const lastDotIndex = filename.lastIndexOf('.');
-  
+
   // If there is no dot, or the dot is the first character (e.g., '.gitignore'), return empty
   if (lastDotIndex <= 0) return '';
-  
+
   return filename.slice(lastDotIndex + 1).toLowerCase();
 };
 
@@ -51,10 +51,10 @@ export const getFileExtension = (filename) => {
  */
 export const isSameExtension = (filename, targetExtension) => {
   if (!filename || !targetExtension) return false;
-  
+
   const fileExt = getFileExtension(filename);
   const targetExt = targetExtension.toLowerCase();
-  
+
   return fileExt === targetExt;
 };
 
@@ -62,7 +62,7 @@ export const isSameExtension = (filename, targetExtension) => {
  * @returns {string[]} An array of acceptable MIME types and extensions for file inputs.
  */
 export const getAcceptableMimeTypes = () => {
-  const types = AppConfig.ALLOWED_EXTENSIONS.flatMap(ext => {
+  const types = AppConfig.ALLOWED_EXTENSIONS.flatMap((ext) => {
     // Map 'jpg' to 'jpeg' for the official MIME type
     const mimeExt = ext === 'jpg' ? 'jpeg' : ext;
     return [`.${ext}`, `image/${mimeExt}`];

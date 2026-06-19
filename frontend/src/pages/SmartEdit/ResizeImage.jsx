@@ -1,21 +1,21 @@
 import { useMemo, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { AppConfig } from '../../config';
+import { AppConfig } from '@/config';
 
-import UploadCard from '../../components/Upload/UploadCard';
-import ToolWorkspaceShell from '../../components/Layout/Tool/ToolWorkspaceShell';
-import ToolPageWrapper from '../../components/Layout/Tool/ToolPageWrapper';
-import PreviewImageBox from '../../components/Workspace/display/PreviewImageBox';
-import WorkspaceFileSummary from '../../components/Workspace/display/WorkspaceFileSummary';
-import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErrorAlert';
-import WorkspaceActionRow from '../../components/Actions/WorkspaceActionRow';
-import WorkspaceResultDownload from '../../components/Workspace/display/WorkspaceResultDownload';
-import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
-import ResizeControls from '../../components/Workspace/controls/Editor/ResizeControls';
+import UploadCard from '@/components/Upload/UploadCard';
+import ToolWorkspaceShell from '@/components/Layout/Tool/ToolWorkspaceShell';
+import ToolPageWrapper from '@/components/Layout/Tool/ToolPageWrapper';
+import PreviewImageBox from '@/components/Workspace/display/PreviewImageBox';
+import WorkspaceFileSummary from '@/components/Workspace/display/WorkspaceFileSummary';
+import WorkspaceErrorAlert from '@/components/Workspace/display/WorkspaceErrorAlert';
+import WorkspaceActionRow from '@/components/Actions/WorkspaceActionRow';
+import WorkspaceResultDownload from '@/components/Workspace/display/WorkspaceResultDownload';
+import ClientSideHeader from '@/components/Workspace/Header/ClientSideHeader';
+import ResizeControls from '@/components/Workspace/controls/Editor/ResizeControls';
 
-import { useWorkspaceFile } from '../../hooks/workspace/Core/useWorkspaceFile';
-import { useImageResize } from '../../hooks/workspace/Editor/useImageResize';
-import { generateSafeFilename } from '../../utils/file/fileUtils';
+import { useWorkspaceFile } from '@/hooks/workspace/Core/useWorkspaceFile';
+import { useImageResize } from '@/hooks/workspace/Editor/useImageResize';
+import { generateSafeFilename } from '@/utils/file/fileUtils';
 
 export default function ResizeImage() {
   const fileInputRef = useRef(null);

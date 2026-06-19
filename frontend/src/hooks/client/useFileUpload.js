@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { validateImageUpload } from '../../utils/file/fileValidation';
-import { useImagePaste } from '../../hooks/client/useImagePaste';
+import { validateImageUpload } from '@/utils/file/fileValidation';
+import { useImagePaste } from '@/hooks/client/useImagePaste';
 
 /**
  * Reusable hook for handling file upload logic, drag & drop, and validation.
@@ -32,7 +32,7 @@ export function useFileUpload({
 }) {
   const [error, setError] = useState('');
   const [isDragging, setIsDragging] = useState(false);
-  
+
   const internalRef = useRef(null);
   const inputRef = externalInputRef || internalRef;
   const timeoutRef = useRef(null);
@@ -45,18 +45,21 @@ export function useFileUpload({
     }
   }, []);
 
-  const handleError = useCallback((msg) => {
-    setError(msg);
-    onValidationError?.(msg);
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    
-    if (clearErrorAfterMs > 0) {
-      timeoutRef.current = setTimeout(() => {
-        setError('');
-        timeoutRef.current = null;
-      }, clearErrorAfterMs);
-    }
-  }, [clearErrorAfterMs, onValidationError]);
+  const handleError = useCallback(
+    (msg) => {
+      setError(msg);
+      onValidationError?.(msg);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+      if (clearErrorAfterMs > 0) {
+        timeoutRef.current = setTimeout(() => {
+          setError('');
+          timeoutRef.current = null;
+        }, clearErrorAfterMs);
+      }
+    },
+    [clearErrorAfterMs, onValidationError],
+  );
 
   useEffect(() => {
     return () => {
@@ -64,27 +67,42 @@ export function useFileUpload({
     };
   }, []);
 
-  const processFile = useCallback(async (file) => {
-    if (!file) return;
-    clearError();
+  const processFile = useCallback(
+    async (file) => {
+      if (!file) return;
+      clearError();
 
-    if (!validate) {
-      onFileSelect?.(file);
+      if (!validate) {
+        onFileSelect?.(file);
+        if (inputRef.current) inputRef.current.value = '';
+        return;
+      }
+
+      const result = await validateImageUpload(
+        file,
+        maxSizeMB,
+        requireGrayscale,
+      );
+
+      if (!result.isValid) {
+        handleError(result.error || 'Invalid file.');
+        if (inputRef.current) inputRef.current.value = '';
+        return;
+      }
+
+      onFileSelect?.(result.file || file);
       if (inputRef.current) inputRef.current.value = '';
-      return;
-    }
-
-    const result = await validateImageUpload(file, maxSizeMB, requireGrayscale);
-
-    if (!result.isValid) {
-      handleError(result.error || 'Invalid file.');
-      if (inputRef.current) inputRef.current.value = '';
-      return;
-    }
-
-    onFileSelect?.(result.file || file);
-    if (inputRef.current) inputRef.current.value = '';
-  }, [validate, onFileSelect, maxSizeMB, requireGrayscale, clearError, handleError, inputRef]);
+    },
+    [
+      validate,
+      onFileSelect,
+      maxSizeMB,
+      requireGrayscale,
+      clearError,
+      handleError,
+      inputRef,
+    ],
+  );
 
   useImagePaste(processFile);
 
@@ -98,17 +116,23 @@ export function useFileUpload({
     setIsDragging(false);
   }, []);
 
-  const handleDrop = useCallback((e) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) processFile(file);
-  }, [processFile]);
+  const handleDrop = useCallback(
+    (e) => {
+      e.preventDefault();
+      setIsDragging(false);
+      const file = e.dataTransfer.files?.[0];
+      if (file) processFile(file);
+    },
+    [processFile],
+  );
 
-  const handleChange = useCallback((e) => {
-    const file = e.target.files?.[0];
-    if (file) processFile(file);
-  }, [processFile]);
+  const handleChange = useCallback(
+    (e) => {
+      const file = e.target.files?.[0];
+      if (file) processFile(file);
+    },
+    [processFile],
+  );
 
   const handleClick = useCallback(() => {
     if (error) clearError();
@@ -126,6 +150,6 @@ export function useFileUpload({
       onDrop: handleDrop,
       onChange: handleChange,
       onClick: handleClick,
-    }
+    },
   };
 }
