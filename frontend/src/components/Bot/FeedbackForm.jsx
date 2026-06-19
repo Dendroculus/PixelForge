@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { apiService } from '../../services/apiService';
 import { Turnstile } from '@marsidev/react-turnstile';
-import { STORAGE_KEYS, APP_CONFIG } from '../../config';
+import { STORAGE_KEYS, AppConfig } from '../../config';
 
 /**
  * FeedbackForm Component
@@ -33,7 +33,7 @@ export default function FeedbackForm() {
     if (!limitHitTime) return false;
 
     const timePassed = Date.now() - parseInt(limitHitTime, 10);
-    if (timePassed < APP_CONFIG.DAY_MS) {
+    if (timePassed < AppConfig.DAY_MS) {
       return true; // Still locked out
     } else {
       localStorage.removeItem(STORAGE_KEYS.FEEDBACK_LIMIT); // Lock expired

@@ -8,7 +8,7 @@ import WorkspaceLimitCard from './cards/WorkspaceLimitCard';
 import WorkspaceMarketing from './cards/WorkspaceMarketing';
 import StagedFileCard from './cards/StagedFileCard';
 import ResultActions from '../Actions/ResultActions';
-import { APP_CONFIG as config, RESULT_LABELS } from '../../config';
+import { AppConfig as config, RESULT_LABELS } from '../../config';
 
 /**
  * Reusable AI feature workspace shell for upload, processing, preview, and result actions.

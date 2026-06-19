@@ -1,4 +1,4 @@
-import { APP_CONFIG } from '../../config';
+import { AppConfig } from '../../config';
 /**
  * Utility module for file-related operations and conversions.
  */
@@ -62,7 +62,7 @@ export const isSameExtension = (filename, targetExtension) => {
  * @returns {string[]} An array of acceptable MIME types and extensions for file inputs.
  */
 export const getAcceptableMimeTypes = () => {
-  const types = APP_CONFIG.ALLOWED_EXTENSIONS.flatMap(ext => {
+  const types = AppConfig.ALLOWED_EXTENSIONS.flatMap(ext => {
     // Map 'jpg' to 'jpeg' for the official MIME type
     const mimeExt = ext === 'jpg' ? 'jpeg' : ext;
     return [`.${ext}`, `image/${mimeExt}`];

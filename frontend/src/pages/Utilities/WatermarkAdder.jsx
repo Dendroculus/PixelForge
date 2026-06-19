@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { APP_CONFIG } from '../../config';
+import { AppConfig, FontFamilies, WatermarkColors } from '../../config';
 
 import UploadCard from '../../components/Upload/UploadCard';
 import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
@@ -18,10 +18,7 @@ import WatermarkPreviewOverlay from '../../components/Workspace/display/Watermar
 
 import { useWatermark } from '../../hooks/workspace/useWatermark';
 import { generateSafeFilename } from '../../utils/file/fileUtils';
-import { FontFamilies } from '../../config';
 
-
-const WATERMARK_COLORS = ['#ffffff', '#000000', '#ef4444', '#3b82f6', '#10b981', '#f59e0b'];
 
 export default function WatermarkAdder() {
   const { refs, workspaceFile, state, actions } = useWatermark();
@@ -54,7 +51,7 @@ export default function WatermarkAdder() {
                 inputId="wm-file-input"
                 inputRef={fileInputRef}
                 onChange={onFileChange}
-                helperText={`Any format up to ${APP_CONFIG.MAX_FILE_SIZE_MB}MB`}
+                helperText={`Any format up to ${AppConfig.MAX_FILE_SIZE_MB}MB`}
                 hasActiveFile={false}
               />
             ) : (
@@ -69,7 +66,7 @@ export default function WatermarkAdder() {
                   textWm={textWm}
                   setTextWm={actions.setTextWm}
                   fontFamilies={FontFamilies}
-                  watermarkColors={WATERMARK_COLORS}
+                  watermarkColors={WatermarkColors}
                 />
               )}
 
@@ -99,7 +96,7 @@ export default function WatermarkAdder() {
         }
         rightHeader={<h3 className="text-sm font-medium text-slate-700">Preview Workspace</h3>}
         rightBody={
-          <div className="absolute inset-2 flex flex-col">
+          <div className="absolute inset-0 flex flex-col">
             <PreviewImageBox
               previewUrl={previewUrl}
               resultUrl={resultUrl}

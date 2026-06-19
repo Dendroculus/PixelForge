@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { loadFileFromIDB } from '../../utils/storage/idb';
 import { clearAppSession } from '../../utils/storage/session';
-import { APP_CONFIG as config } from '../../config';
+import { AppConfig as config } from '../../config';
 import { isExpired } from '../../utils/time';
 
 export function useSessionPersistence({

@@ -6,7 +6,7 @@ import logoFullWhite from './assets/PixelForgeAI.png';
 import logoSvg from './assets/PixelForge.svg';
 import PixelForgeChatbot from './assets/PixelForgeChatbot.png'
 
-export const APP_CONFIG = {
+export const AppConfig = {
   MAX_FILE_SIZE_MB: 10,
   COMPRESS_MAX_SIZE_MB: 15,
   ALLOWED_EXTENSIONS: ["jpg", "jpeg", "png", "webp"],
@@ -104,3 +104,5 @@ export const WatermarkDefaultImage = {
   naturalWidth: 1,
   naturalHeight: 1,
 };
+
+export const WatermarkColors = ['#ffffff', '#000000', '#ef4444', '#3b82f6', '#10b981', '#f59e0b'];

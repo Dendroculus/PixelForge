@@ -49,3 +49,15 @@ export function parseWatermarkTextLines(chars, styles, defaultStyles) {
     return { text: line.text, segments };
   });
 }
+
+/**
+ * Generates the standardized CSS style object for text watermark segments.
+ * @param {{b: boolean, i: boolean, u: boolean}} seg
+ * @returns {React.CSSProperties}
+ */
+export const getTextSegmentStyle = (seg) => ({
+  fontWeight: seg.b ? 'bold' : 'normal',
+  fontStyle: seg.i ? 'italic' : 'normal',
+  textDecoration: seg.u ? 'underline' : 'none',
+  textDecorationSkipInk: 'none', // Keeps underline continuous for characters like 'j' and 'f'
+});

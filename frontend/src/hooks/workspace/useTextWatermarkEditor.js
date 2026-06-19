@@ -135,7 +135,7 @@ export function useTextWatermarkEditor(textWm, setTextWm) {
         const newStyles = [...(prev.charStyles || [])];
         const selectedStyles = newStyles.slice(start, end);
 
-        const isAllApplied = selectedStyles.every((s) => s && s[styleKey]);
+        const isAllApplied = selectedStyles.every((s) => s?.[styleKey]);
         const newValue = !isAllApplied;
 
         for (let i = start; i < end; i++) {

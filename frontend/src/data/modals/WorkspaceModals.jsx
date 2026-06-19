@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import AppModals from '../../components/Common/AppModals';
 import CountdownTimer from '../../components/Common/CountdownTimer';
-import { APP_CONFIG as config } from '../../config';
+import { AppConfig as config } from '../../config';
 import { makeStorageKeys } from '../../utils/storage/storageKeys';
 
 export default function WorkspaceModals({ appAlert, setAppAlert, featureName }) {

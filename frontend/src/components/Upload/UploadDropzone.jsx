@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import { APP_CONFIG as config } from '../../config';
+import { AppConfig as config } from '../../config';
 import { useFileUpload } from '../../hooks/client/useFileUpload';
 import { AcceptableImageMimeTypes } from '../../utils/file/fileUtils';
 

@@ -1,4 +1,4 @@
-import { APP_CONFIG as config } from '../../config';
+import { AppConfig as config } from '../../config';
 
 const ERROR_MESSAGES = {
   ATTACK: "Are you trying to attack the web? Well that's unfortunate",
