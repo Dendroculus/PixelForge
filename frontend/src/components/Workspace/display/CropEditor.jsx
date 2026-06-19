@@ -1,10 +1,12 @@
 import React from 'react';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
+import PropTypes from 'prop-types';
+
 import FitModeToggle from '../controls/FitModeToggle';
 import Magnifier, { ZoomButton } from '../controls/Magnifier';
 import AspectRatioControls from '../controls/AspectRatioControls';
-import PropTypes from 'prop-types';
+import CropHeader from '../Header/CropHeader';
 
 /**
  * @param {Object} props
@@ -50,43 +52,21 @@ export default function CropEditor({
   cleanupResult,
   aspectRatioOptions
 }) {
-  /**
-   * @returns {void}
-   */
   const handleToggleFitMode = () => {
     setFitMode((prev) => (prev === 'fit' ? 'scroll' : 'fit'));
   };
 
   return (
     <div 
-      className="bg-[#0f172a] rounded-2xl shadow-2xl border border-slate-800 flex flex-col w-full max-w-6xl mx-auto overflow-hidden relative text-left"
+      className="crop-workspace-scope bg-[#0f172a] rounded-2xl shadow-2xl border border-slate-800 flex flex-col w-full max-w-6xl mx-auto overflow-hidden relative text-left"
       style={{ height: 'calc(100vh - 60px)', minHeight: '600px' }}
     >
-      <div className="flex-none flex items-center justify-between px-6 py-4 bg-slate-900 border-b border-slate-800 shadow-sm z-10">
-        <div className="flex items-center gap-4">
-          <h2 className="text-white font-bold text-lg">Focus Crop</h2>
-          {cropSizeLabel && (
-            <span className="hidden sm:inline-block px-2.5 py-1 rounded-md bg-slate-800 text-indigo-400 text-[10px] font-black tracking-wider uppercase border border-slate-700">
-              {cropSizeLabel}
-            </span>
-          )}
-        </div>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={onCancel}
-            className="text-sm font-bold text-slate-400 hover:text-white transition-colors"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={applyCrop}
-            disabled={!canApply}
-            className="px-6 py-2.5 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-          >
-            Apply Crop
-          </button>
-        </div>
-      </div>
+      <CropHeader 
+        cropSizeLabel={cropSizeLabel}
+        canApply={canApply}
+        onCancel={onCancel}
+        applyCrop={applyCrop}
+      />
 
       <div className="flex-1 min-h-0 w-full relative bg-slate-950/50 flex flex-col overflow-hidden">
         <Magnifier
@@ -118,76 +98,45 @@ export default function CropEditor({
           )}
         >
           {() => (
-            <>
-              <style>{`
-                .custom-scroll::-webkit-scrollbar {
-                  width: 8px;
-                }
-                .custom-scroll::-webkit-scrollbar-track {
-                  background: rgba(15, 23, 42, 0.4); 
-                  border-radius: 4px;
-                }
-                .custom-scroll::-webkit-scrollbar-thumb {
-                  background: rgba(71, 85, 105, 0.8); 
-                  border-radius: 4px;
-                }
-                .custom-scroll::-webkit-scrollbar-thumb:hover {
-                  background: rgba(99, 102, 241, 0.9); 
-                }
-                .ReactCrop__crop-selection {
-                  animation: none !important;
-                  background-image: none !important;
-                  border: 2px solid white !important;
-                  box-shadow: 0 0 5px rgba(0,0,0,0.5) !important;
-                }
-                .ReactCrop__drag-handle.ord-n,
-                .ReactCrop__drag-handle.ord-e,
-                .ReactCrop__drag-handle.ord-s,
-                .ReactCrop__drag-handle.ord-w {
-                  display: none !important;
-                }
-              `}</style>
-
-              <ReactCrop
-                crop={crop}
-                onChange={(pixelCrop, percentCrop) => setCrop(percentCrop)}
-                onComplete={(pixelCrop, percentCrop) => {
-                  setCompletedCrop(percentCrop);
-                  cleanupResult();
+            <ReactCrop
+              crop={crop}
+              onChange={(pixelCrop, percentCrop) => setCrop(percentCrop)}
+              onComplete={(pixelCrop, percentCrop) => {
+                setCompletedCrop(percentCrop);
+                cleanupResult();
+              }}
+              aspect={aspect || undefined}
+              className={fitMode === 'fit' ? "flex items-center justify-center" : ""}
+              style={
+                fitMode === 'fit'
+                  ? {
+                      width: imageSize.width > 0 ? `calc((100vh - 260px) * ${imageAspect})` : 'auto',
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                      margin: 'auto'
+                    }
+                  : {
+                      width: '100%',
+                      maxWidth: '800px', 
+                      height: 'max-content',
+                      margin: '0 auto',
+                      display: 'block'
+                    }
+              }
+            >
+              <img
+                ref={imgRef}
+                alt="Crop preview"
+                src={previewUrl}
+                onLoad={onImageLoad}
+                className={`block ${fitMode === 'scroll' ? 'shadow-2xl' : ''}`}
+                style={{
+                  width: '100%',
+                  height: 'auto',
+                  display: 'block'
                 }}
-                aspect={aspect || undefined}
-                className={fitMode === 'fit' ? "flex items-center justify-center" : ""}
-                style={
-                  fitMode === 'fit'
-                    ? {
-                        width: imageSize.width > 0 ? `calc((100vh - 260px) * ${imageAspect})` : 'auto',
-                        maxWidth: '100%',
-                        maxHeight: '100%',
-                        margin: 'auto'
-                      }
-                    : {
-                        width: '100%',
-                        maxWidth: '800px', 
-                        height: 'max-content',
-                        margin: '0 auto',
-                        display: 'block'
-                      }
-                }
-              >
-                <img
-                  ref={imgRef}
-                  alt="Crop preview"
-                  src={previewUrl}
-                  onLoad={onImageLoad}
-                  className={`block ${fitMode === 'scroll' ? 'shadow-2xl' : ''}`}
-                  style={{
-                    width: '100%',
-                    height: 'auto',
-                    display: 'block'
-                  }}
-                />
-              </ReactCrop>
-            </>
+              />
+            </ReactCrop>
           )}
         </Magnifier>
       </div>

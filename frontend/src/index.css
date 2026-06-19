@@ -1,1 +1,28 @@
 @import "tailwindcss";
+
+.crop-workspace-scope .custom-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.crop-workspace-scope .custom-scroll::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.4); 
+  border-radius: 4px;
+}
+.crop-workspace-scope .custom-scroll::-webkit-scrollbar-thumb {
+  background: rgba(71, 85, 105, 0.8); 
+  border-radius: 4px;
+}
+.crop-workspace-scope .custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.9); 
+}
+.crop-workspace-scope .ReactCrop__crop-selection {
+  animation: none !important;
+  background-image: none !important;
+  border: 2px solid white !important;
+  box-shadow: 0 0 5px rgba(0,0,0,0.5) !important;
+}
+.crop-workspace-scope .ReactCrop__drag-handle.ord-n,
+.crop-workspace-scope .ReactCrop__drag-handle.ord-e,
+.crop-workspace-scope .ReactCrop__drag-handle.ord-s,
+.crop-workspace-scope .ReactCrop__drag-handle.ord-w {
+  display: none !important;
+}
