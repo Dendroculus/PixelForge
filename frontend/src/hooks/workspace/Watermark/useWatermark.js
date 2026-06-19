@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
-import { useWorkspaceFile } from './useWorkspaceFile';
-import { calculateImageRect, loadImage } from '../../utils/image/watermarkMath';
-import { renderWatermarkToBlob } from '../../utils/image/watermarkRender';
-import { WatermarkDefaultImage, WatermarkDefaulText } from '../../config';
+import { useWorkspaceFile } from '../Core/useWorkspaceFile';
+import {
+  calculateImageRect,
+  loadImage,
+} from '../../../utils/image/watermarkMath';
+import { renderWatermarkToBlob } from '../../../utils/image/watermarkRender';
+import { WatermarkDefaultImage, WatermarkDefaulText } from '../../../config';
 
 /**
  * @returns {Object}
@@ -16,18 +19,33 @@ export function useWatermark() {
 
   const [activeTab, setActiveTab] = useState('text');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [imageRect, setImageRect] = useState({ left: 0, top: 0, width: 1, height: 1, scale: 1 });
+  const [imageRect, setImageRect] = useState({
+    left: 0,
+    top: 0,
+    width: 1,
+    height: 1,
+    scale: 1,
+  });
   const [overlayPos, setOverlayPos] = useState({ x: 0, y: 0 });
   const [overlaySize, setOverlaySize] = useState({ width: 1, height: 1 });
   const [isOverlaySelected, setIsOverlaySelected] = useState(false);
-  
+
   const hasInitializedPos = useRef(false);
 
   const [textWm, setTextWm] = useState(WatermarkDefaulText);
   const [imgWm, setImgWm] = useState(WatermarkDefaultImage);
 
   const workspaceFile = useWorkspaceFile(fileInputRef);
-  const { file, previewUrl, setResultBlob, resultUrl, setResultUrl, setError, cleanupResult, resetAll } = workspaceFile;
+  const {
+    file,
+    previewUrl,
+    setResultBlob,
+    resultUrl,
+    setResultUrl,
+    setError,
+    cleanupResult,
+    resetAll,
+  } = workspaceFile;
 
   useEffect(() => {
     hasInitializedPos.current = false;
@@ -35,7 +53,10 @@ export function useWatermark() {
   }, [previewUrl]);
 
   const updateImageRect = useCallback(() => {
-    const rect = calculateImageRect(imageRef.current, previewContainerRef.current);
+    const rect = calculateImageRect(
+      imageRef.current,
+      previewContainerRef.current,
+    );
     setImageRect(rect);
 
     if (!hasInitializedPos.current && rect.width > 1) {
@@ -61,52 +82,82 @@ export function useWatermark() {
     if (!node) return;
     const update = () => {
       const r = node.getBoundingClientRect();
-      setOverlaySize({ width: Math.max(1, r.width), height: Math.max(1, r.height) });
+      setOverlaySize({
+        width: Math.max(1, r.width),
+        height: Math.max(1, r.height),
+      });
     };
     update();
     const ro = new ResizeObserver(update);
     ro.observe(node);
     return () => ro.disconnect();
-  }, [activeTab, textWm, imgWm.url, imgWm.scale, imgWm.naturalWidth, imgWm.naturalHeight, previewUrl]);
+  }, [
+    activeTab,
+    textWm,
+    imgWm.url,
+    imgWm.scale,
+    imgWm.naturalWidth,
+    imgWm.naturalHeight,
+    previewUrl,
+  ]);
 
   const dragBounds = useMemo(() => {
-    const maxX = Math.max(imageRect.left, imageRect.left + imageRect.width - overlaySize.width);
-    const maxY = Math.max(imageRect.top, imageRect.top + imageRect.height - overlaySize.height);
-    return { left: imageRect.left, top: imageRect.top, right: maxX, bottom: maxY };
+    const maxX = Math.max(
+      imageRect.left,
+      imageRect.left + imageRect.width - overlaySize.width,
+    );
+    const maxY = Math.max(
+      imageRect.top,
+      imageRect.top + imageRect.height - overlaySize.height,
+    );
+    return {
+      left: imageRect.left,
+      top: imageRect.top,
+      right: maxX,
+      bottom: maxY,
+    };
   }, [imageRect, overlaySize]);
 
   /**
    * @param {Event} e
    * @returns {Promise<void>}
    */
-  const handleWatermarkImageUpload = useCallback(async (e) => {
-    const wmFile = e.target.files?.[0];
-    if (!wmFile) return;
+  const handleWatermarkImageUpload = useCallback(
+    async (e) => {
+      const wmFile = e.target.files?.[0];
+      if (!wmFile) return;
 
-    if (imgWm.url) URL.revokeObjectURL(imgWm.url);
-    const nextUrl = URL.createObjectURL(wmFile);
+      if (imgWm.url) URL.revokeObjectURL(imgWm.url);
+      const nextUrl = URL.createObjectURL(wmFile);
 
-    try {
-      const loaded = await loadImage(nextUrl);
-      setError('');
-      setImgWm((prev) => ({
-        ...prev,
-        url: nextUrl,
-        naturalWidth: loaded.naturalWidth || 1,
-        naturalHeight: loaded.naturalHeight || 1,
-      }));
-      setActiveTab('image');
-      setIsOverlaySelected(false);
-      cleanupResult();
-    } catch {
-      URL.revokeObjectURL(nextUrl);
-      setError('Failed to load watermark image.');
-    }
-  }, [imgWm.url, cleanupResult, setError]);
+      try {
+        const loaded = await loadImage(nextUrl);
+        setError('');
+        setImgWm((prev) => ({
+          ...prev,
+          url: nextUrl,
+          naturalWidth: loaded.naturalWidth || 1,
+          naturalHeight: loaded.naturalHeight || 1,
+        }));
+        setActiveTab('image');
+        setIsOverlaySelected(false);
+        cleanupResult();
+      } catch {
+        URL.revokeObjectURL(nextUrl);
+        setError('Failed to load watermark image.');
+      }
+    },
+    [imgWm.url, cleanupResult, setError],
+  );
 
   const handleRemoveWatermarkImage = useCallback(() => {
     if (imgWm.url) URL.revokeObjectURL(imgWm.url);
-    setImgWm((prev) => ({ ...prev, url: null, naturalWidth: 1, naturalHeight: 1 }));
+    setImgWm((prev) => ({
+      ...prev,
+      url: null,
+      naturalWidth: 1,
+      naturalHeight: 1,
+    }));
     setIsOverlaySelected(false);
     cleanupResult();
   }, [imgWm.url, cleanupResult]);
@@ -141,7 +192,7 @@ export function useWatermark() {
         textWm,
         imgWm,
         imageRect,
-        overlayNode: overlayRef.current
+        overlayNode: overlayRef.current,
       });
 
       setResultBlob(blob);
@@ -151,7 +202,18 @@ export function useWatermark() {
     } finally {
       setIsProcessing(false);
     }
-  }, [file, previewUrl, cleanupResult, imageRect, activeTab, textWm, imgWm, setResultBlob, setResultUrl, setError]);
+  }, [
+    file,
+    previewUrl,
+    cleanupResult,
+    imageRect,
+    activeTab,
+    textWm,
+    imgWm,
+    setResultBlob,
+    setResultUrl,
+    setError,
+  ]);
 
   const handleReset = useCallback(() => {
     if (imgWm.url) URL.revokeObjectURL(imgWm.url);
@@ -166,16 +228,42 @@ export function useWatermark() {
     hasInitializedPos.current = false;
   }, [imgWm.url, resetAll]);
 
-  const canProcess = useMemo(() => Boolean(file) && !isProcessing && !resultUrl, [file, isProcessing, resultUrl]);
+  const canProcess = useMemo(
+    () => Boolean(file) && !isProcessing && !resultUrl,
+    [file, isProcessing, resultUrl],
+  );
 
   return {
-    refs: { fileInputRef, watermarkImageRef, imageRef, previewContainerRef, overlayRef },
+    refs: {
+      fileInputRef,
+      watermarkImageRef,
+      imageRef,
+      previewContainerRef,
+      overlayRef,
+    },
     workspaceFile,
-    state: { activeTab, isProcessing, overlayPos, isOverlaySelected, textWm, imgWm, dragBounds, canProcess, imageRect },
-    actions: { 
-      setActiveTab, setTextWm, setImgWm, setIsOverlaySelected, updateImageRect,
-      handleWatermarkImageUpload, handleRemoveWatermarkImage, handleDeleteSelected, 
-      applyWatermark, handleReset 
-    }
+    state: {
+      activeTab,
+      isProcessing,
+      overlayPos,
+      isOverlaySelected,
+      textWm,
+      imgWm,
+      dragBounds,
+      canProcess,
+      imageRect,
+    },
+    actions: {
+      setActiveTab,
+      setTextWm,
+      setImgWm,
+      setIsOverlaySelected,
+      updateImageRect,
+      handleWatermarkImageUpload,
+      handleRemoveWatermarkImage,
+      handleDeleteSelected,
+      applyWatermark,
+      handleReset,
+    },
   };
 }

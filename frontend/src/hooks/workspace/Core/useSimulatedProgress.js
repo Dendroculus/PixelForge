@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { makeStorageKeys } from '../../utils/storage/storageKeys';
+import { makeStorageKeys } from '../../../utils/storage/storageKeys';
 
 /**
  * React hook to simulate progressive loading during processing state.
@@ -9,7 +9,12 @@ import { makeStorageKeys } from '../../utils/storage/storageKeys';
  * @param {string|null} turnstileToken
  * @param {string} featureName
  */
-export function useSimulatedProgress(isProcessing, setProgress, turnstileToken, featureName) {
+export function useSimulatedProgress(
+  isProcessing,
+  setProgress,
+  turnstileToken,
+  featureName,
+) {
   useEffect(() => {
     let interval;
     const storageKeys = makeStorageKeys(featureName);
@@ -17,7 +22,8 @@ export function useSimulatedProgress(isProcessing, setProgress, turnstileToken, 
     if (isProcessing) {
       const savedJobId = localStorage.getItem(storageKeys.JOB_ID);
       const savedProgress = localStorage.getItem(storageKeys.PROGRESS);
-      const isProcessingStored = localStorage.getItem(storageKeys.IS_PROCESSING) === 'true';
+      const isProcessingStored =
+        localStorage.getItem(storageKeys.IS_PROCESSING) === 'true';
 
       if (!turnstileToken && !savedJobId && !isProcessingStored) {
         setProgress(0);

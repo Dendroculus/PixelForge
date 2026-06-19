@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import FitModeToggle from '../../controls/FitModeToggle';
-import Magnifier, { ZoomButton } from '../../controls/Magnifier';
+import FitModeToggle from '../../controls/Editor/FitModeToggle';
+import Magnifier, { ZoomButton } from '../../controls/Editor/Magnifier';
 
 /**
  * Inner content logic for the interactive before/after image comparison slider.
@@ -29,24 +29,26 @@ function ResultViewerContent({
 
   useEffect(() => {
     if (isLoaded) return undefined;
-    
+
     const initialTimeout = setTimeout(() => {
       setLoadingText(
-        isHighRes 
-          ? 'High-resolution file detected. Almost there...' 
-          : 'Wrapping things up. Almost ready...'
+        isHighRes
+          ? 'High-resolution file detected. Almost there...'
+          : 'Wrapping things up. Almost ready...',
       );
     }, 3000);
 
     const slowNetworkTimeout = setTimeout(() => {
-      setLoadingText('Loading is taking a bit longer than usual. Thanks for your patience!');
+      setLoadingText(
+        'Loading is taking a bit longer than usual. Thanks for your patience!',
+      );
     }, 8000);
-    
+
     return () => {
       clearTimeout(initialTimeout);
       clearTimeout(slowNetworkTimeout);
     };
-  }, [isLoaded, isHighRes]); 
+  }, [isLoaded, isHighRes]);
 
   const handleProcessedLoad = () => {
     setIsLoaded(true);
@@ -58,7 +60,10 @@ function ResultViewerContent({
     setFitMode((prev) => (prev === 'cover' ? 'contain' : 'cover'));
   };
 
-  const fitClass = fitMode === 'cover' ? 'object-cover object-top' : 'object-contain bg-slate-100';
+  const fitClass =
+    fitMode === 'cover'
+      ? 'object-cover object-top'
+      : 'object-contain bg-slate-100';
 
   return (
     <Magnifier
@@ -85,7 +90,9 @@ function ResultViewerContent({
               isZoomed={isZoomed}
               onToggle={toggleZoom}
               className={`p-2 backdrop-blur rounded-lg border shadow-sm transition-colors ${
-                isZoomed ? 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700' : 'bg-white/90 border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-white'
+                isZoomed
+                  ? 'bg-indigo-600 border-indigo-600 text-white hover:bg-indigo-700'
+                  : 'bg-white/90 border-slate-200 text-slate-600 hover:text-indigo-600 hover:bg-white'
               }`}
             />
           </div>
@@ -104,9 +111,9 @@ function ResultViewerContent({
 
           <div
             className="absolute top-3 right-3 bg-slate-900/90 text-white text-[10px] font-medium px-2 py-0.5 rounded border border-slate-800 pointer-events-none uppercase tracking-wide shadow-sm z-20 transition-transform"
-            style={{ 
-              transform: isZoomed ? 'scale(0.4)' : 'scale(1)', 
-              transformOrigin: 'top right'
+            style={{
+              transform: isZoomed ? 'scale(0.4)' : 'scale(1)',
+              transformOrigin: 'top right',
             }}
           >
             {resultLabel}
@@ -114,9 +121,9 @@ function ResultViewerContent({
 
           <div
             className="absolute top-3 left-3 bg-white/95 text-slate-700 text-[10px] font-medium px-2 py-0.5 rounded border border-slate-300 pointer-events-none uppercase tracking-wide shadow-sm z-20 transition-transform"
-            style={{ 
-              transform: isZoomed ? 'scale(0.4)' : 'scale(1)', 
-              transformOrigin: 'top left'
+            style={{
+              transform: isZoomed ? 'scale(0.4)' : 'scale(1)',
+              transformOrigin: 'top left',
             }}
           >
             {originalLabel}
@@ -124,7 +131,9 @@ function ResultViewerContent({
 
           <div
             className="absolute inset-0 w-full h-full pointer-events-none z-10"
-            style={{ clipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)` }}
+            style={{
+              clipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)`,
+            }}
           >
             <img
               src={originalImage}
@@ -139,9 +148,23 @@ function ResultViewerContent({
           >
             <div
               className="absolute top-1/2 -translate-y-1/2 w-7 h-7 bg-white rounded-full shadow-sm flex items-center justify-center border border-slate-200 transition-transform"
-              style={{ left: '0', marginLeft: '-14px', transform: isZoomed ? 'scale(0.4)' : 'scale(1)' }}
+              style={{
+                left: '0',
+                marginLeft: '-14px',
+                transform: isZoomed ? 'scale(0.4)' : 'scale(1)',
+              }}
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400">
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="text-slate-400"
+              >
                 <path d="M9 18l-6-6 6-6" />
                 <path d="M15 6l6 6-6 6" />
               </svg>

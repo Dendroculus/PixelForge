@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { IMAGES as img } from '../../config';
+import { IMAGES as img } from '../../../config';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
 
@@ -13,10 +13,10 @@ import PropTypes from 'prop-types';
  * @returns {JSX.Element}
  */
 export default function Header({
-  badgeText = "The Open-Source Image Studio",
-  titlePrefix = "What would you like to",
-  words = ["transform.", "enhance.", "edit.", "optimize."],
-  subtitle = ""
+  badgeText = 'The Open-Source Image Studio',
+  titlePrefix = 'What would you like to',
+  words = ['transform.', 'enhance.', 'edit.', 'optimize.'],
+  subtitle = '',
 }) {
   const [index, setIndex] = useState(0);
   const [isFading, setIsFading] = useState(false);
@@ -65,7 +65,9 @@ export default function Header({
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-500"></span>
           </span>
-          <span className="text-sm font-bold text-slate-700 tracking-wide">{badgeText}</span>
+          <span className="text-sm font-bold text-slate-700 tracking-wide">
+            {badgeText}
+          </span>
         </div>
       )}
 
@@ -73,7 +75,9 @@ export default function Header({
         {titlePrefix} <br />
         <span
           className={`inline-block pb-2 text-transparent bg-clip-text bg-linear-to-r from-indigo-500 via-purple-500 to-fuchsia-500 transition-all duration-300 ease-in-out ${
-            isFading ? 'opacity-0 translate-y-4 blur-sm' : 'opacity-100 translate-y-0 blur-0'
+            isFading
+              ? 'opacity-0 translate-y-4 blur-sm'
+              : 'opacity-100 translate-y-0 blur-0'
           }`}
         >
           {displayWord}
@@ -93,5 +97,5 @@ Header.propTypes = {
   badgeText: PropTypes.string,
   titlePrefix: PropTypes.string,
   words: PropTypes.arrayOf(PropTypes.string),
-  subtitle: PropTypes.string
+  subtitle: PropTypes.string,
 };

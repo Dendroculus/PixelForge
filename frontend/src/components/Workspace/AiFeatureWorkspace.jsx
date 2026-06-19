@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
-import WorkspaceLayout from '../../components/Layout/WorkspaceLayout';
+import WorkspaceLayout from '../Layout/Tool/WorkspaceLayout';
 import UploadDropzone from '../../components/Upload/UploadDropzone';
 import ResultViewer from '../../components/Workspace/display/ResultViewer/ResultViewer';
 import WorkspaceModals from '../../data/modals/WorkspaceModals';

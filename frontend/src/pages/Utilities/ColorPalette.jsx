@@ -2,17 +2,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import UploadCard from '../../components/Upload/UploadCard';
-import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
-import ToolPageWrapper from '../../components/Layout/ToolPageWrapper';
+import ToolWorkspaceShell from '../../components/Layout/Tool/ToolWorkspaceShell';
+import ToolPageWrapper from '../../components/Layout/Tool/ToolPageWrapper';
 import PreviewImageBox from '../../components/Workspace/display/PreviewImageBox';
 import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErrorAlert';
 import PaletteSwatches from '../../components/Workspace/display/PaletteSwatches';
 import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
-import ColorPaletteControls from '../../components/Workspace/controls/ColorPaletteControls';
+import ColorPaletteControls from '../../components/Workspace/controls/Palette/ColorPaletteControls';
 
-import { useWorkspaceFile } from '../../hooks/workspace/useWorkspaceFile';
+import { useWorkspaceFile } from '../../hooks/workspace/Core/useWorkspaceFile';
 import usePaletteSampling from '../../hooks/client/usePaletteSampling';
-import { useColorPaletteEditor } from '../../hooks/workspace/useColorPaletteEditor';
+import { useColorPaletteEditor } from '../../hooks/workspace/Utility/useColorPaletteEditor';
 
 /**
  * Interactive color palette extraction tool.
@@ -58,8 +58,13 @@ export default function ColorPalette() {
     handleVariationChange,
     onPointPointerDown,
     updateImageRect,
-    resetEditor
-  } = useColorPaletteEditor({ previewUrl, samplePaletteFromPoints, imageRef, previewContainerRef });
+    resetEditor,
+  } = useColorPaletteEditor({
+    previewUrl,
+    samplePaletteFromPoints,
+    imageRef,
+    previewContainerRef,
+  });
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -67,7 +72,7 @@ export default function ColorPalette() {
     }
   }, [paletteStyle]);
 
-    /**
+  /**
    * Resets the workspace to its initial state.
    * Clears the uploaded image, extracted palette,
    * copied color state, processing state, and editor data.
@@ -80,7 +85,7 @@ export default function ColorPalette() {
     resetEditor();
   }, [resetWorkspaceFile, setIsProcessing, setPalette, resetEditor]);
 
-    /**
+  /**
    * Copies a color value to the clipboard and temporarily
    * marks it as the most recently copied color.
    *
@@ -130,13 +135,17 @@ export default function ColorPalette() {
                   className="mb-4 flex flex-col"
                 >
                   <div className="mb-2 flex items-center justify-between gap-3">
-                    <h3 className="text-sm font-bold text-slate-700">Palette</h3>
+                    <h3 className="text-sm font-bold text-slate-700">
+                      Palette
+                    </h3>
                     <div className="inline-flex rounded-lg border border-slate-200 bg-white p-1 text-[11px] font-bold">
                       <button
                         type="button"
                         onClick={() => setPaletteStyle('square')}
                         className={`px-2.5 py-1 rounded-md transition ${
-                          paletteStyle === 'square' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+                          paletteStyle === 'square'
+                            ? 'bg-indigo-600 text-white'
+                            : 'text-slate-600 hover:bg-slate-100'
                         }`}
                       >
                         Square
@@ -145,7 +154,9 @@ export default function ColorPalette() {
                         type="button"
                         onClick={() => setPaletteStyle('circle')}
                         className={`px-2.5 py-1 rounded-md transition ${
-                          paletteStyle === 'circle' ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:bg-slate-100'
+                          paletteStyle === 'circle'
+                            ? 'bg-indigo-600 text-white'
+                            : 'text-slate-600 hover:bg-slate-100'
                         }`}
                       >
                         Circle
@@ -154,7 +165,10 @@ export default function ColorPalette() {
                   </div>
 
                   <PaletteSwatches
-                    palette={palette.map((hex, i) => ({ id: points[i]?.id ?? i, hex }))}
+                    palette={palette.map((hex, i) => ({
+                      id: points[i]?.id ?? i,
+                      hex,
+                    }))}
                     paletteStyle={paletteStyle}
                     copiedHex={copiedHex}
                     onCopy={copyToClipboard}
@@ -179,7 +193,11 @@ export default function ColorPalette() {
             )}
           </div>
         }
-        rightHeader={<h3 className="flex items-center justify-between text-sm font-bold text-slate-800">Preview Workspace</h3>}
+        rightHeader={
+          <h3 className="flex items-center justify-between text-sm font-bold text-slate-800">
+            Preview Workspace
+          </h3>
+        }
         rightBody={
           <div className="absolute inset-2 flex flex-col">
             <PreviewImageBox
@@ -204,7 +222,12 @@ export default function ColorPalette() {
                         top: imageRect.top + p.y * imageRect.height,
                         backgroundColor: hex,
                       }}
-                      transition={{ type: 'spring', stiffness: 200, damping: 25, mass: 0.8 }}
+                      transition={{
+                        type: 'spring',
+                        stiffness: 200,
+                        damping: 25,
+                        mass: 0.8,
+                      }}
                       style={{ width: 22, height: 22 }}
                       title={hex.toUpperCase()}
                       aria-label={`Move color picker ${i + 1}`}

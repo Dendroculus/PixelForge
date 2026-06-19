@@ -3,41 +3,67 @@ import { AnimatePresence } from 'framer-motion';
 import { AppConfig, FontFamilies, WatermarkColors } from '../../config';
 
 import UploadCard from '../../components/Upload/UploadCard';
-import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
-import ToolPageWrapper from '../../components/Layout/ToolPageWrapper';
+import ToolWorkspaceShell from '../../components/Layout/Tool/ToolWorkspaceShell';
+import ToolPageWrapper from '../../components/Layout/Tool/ToolPageWrapper';
 import PreviewImageBox from '../../components/Workspace/display/PreviewImageBox';
 import WorkspaceFileSummary from '../../components/Workspace/display/WorkspaceFileSummary';
 import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErrorAlert';
 import WorkspaceActionRow from '../../components/Actions/WorkspaceActionRow';
 import WorkspaceResultDownload from '../../components/Workspace/display/WorkspaceResultDownload';
 import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
-import WatermarkModeTabs from '../../components/Workspace/controls/WatermarkModeTabs';
-import TextWatermarkControls from '../../components/Workspace/controls/TextWatermarkControls';
-import ImageWatermarkControls from '../../components/Workspace/controls/ImageWatermarkControls';
+import WatermarkModeTabs from '../../components/Workspace/controls/Watermark/WatermarkModeTabs';
+import TextWatermarkControls from '../../components/Workspace/controls/Watermark/TextWatermarkControls';
+import ImageWatermarkControls from '../../components/Workspace/controls/Watermark/ImageWatermarkControls';
 import WatermarkPreviewOverlay from '../../components/Workspace/display/WatermarkPreviewOverlay';
 
-import { useWatermark } from '../../hooks/workspace/useWatermark';
+import { useWatermark } from '../../hooks/workspace/Watermark/useWatermark';
 import { generateSafeFilename } from '../../utils/file/fileUtils';
-
 
 export default function WatermarkAdder() {
   const { refs, workspaceFile, state, actions } = useWatermark();
-  const { fileInputRef, watermarkImageRef, imageRef, previewContainerRef, overlayRef } = refs;
-  const { file, previewUrl, resultBlob, resultUrl, error, setError, onFileChange } = workspaceFile;
-  const { activeTab, isProcessing, overlayPos, isOverlaySelected, textWm, imgWm, dragBounds, canProcess } = state;
-  
+  const {
+    fileInputRef,
+    watermarkImageRef,
+    imageRef,
+    previewContainerRef,
+    overlayRef,
+  } = refs;
+  const {
+    file,
+    previewUrl,
+    resultBlob,
+    resultUrl,
+    error,
+    setError,
+    onFileChange,
+  } = workspaceFile;
+  const {
+    activeTab,
+    isProcessing,
+    overlayPos,
+    isOverlaySelected,
+    textWm,
+    imgWm,
+    dragBounds,
+    canProcess,
+  } = state;
+
   useEffect(() => {
     const linkId = 'watermark-fonts';
     if (!document.getElementById(linkId)) {
       const link = document.createElement('link');
       link.id = linkId;
       link.rel = 'stylesheet';
-      link.href = 'https://fonts.googleapis.com/css2?family=Anton&family=Caveat:wght@400;700&family=Dancing+Script:wght@400;700&family=Inter:wght@400;700&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;700&family=Nunito:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@400;700&family=Pacifico&family=Playfair+Display:wght@400;700&family=Poppins:wght@400;700&family=Raleway:wght@400;700&family=Roboto:wght@400;700&family=Ubuntu:wght@400;700&display=swap';
+      link.href =
+        'https://fonts.googleapis.com/css2?family=Anton&family=Caveat:wght@400;700&family=Dancing+Script:wght@400;700&family=Inter:wght@400;700&family=Lato:wght@400;700&family=Merriweather:wght@400;700&family=Montserrat:wght@400;700&family=Nunito:wght@400;700&family=Open+Sans:wght@400;700&family=Oswald:wght@400;700&family=Pacifico&family=Playfair+Display:wght@400;700&family=Poppins:wght@400;700&family=Raleway:wght@400;700&family=Roboto:wght@400;700&family=Ubuntu:wght@400;700&display=swap';
       document.head.appendChild(link);
     }
   }, []);
 
-  const downloadName = useMemo(() => generateSafeFilename(file?.name, 'watermarked', 'jpg'), [file?.name]);
+  const downloadName = useMemo(
+    () => generateSafeFilename(file?.name, 'watermarked', 'jpg'),
+    [file?.name],
+  );
 
   return (
     <ToolPageWrapper>
@@ -58,8 +84,13 @@ export default function WatermarkAdder() {
               <WorkspaceFileSummary file={file} />
             )}
 
-            <div className={`space-y-3 transition-opacity duration-300 ${!file || resultUrl ? 'pointer-events-none opacity-40' : 'opacity-100'}`}>
-              <WatermarkModeTabs activeTab={activeTab} setActiveTab={actions.setActiveTab} />
+            <div
+              className={`space-y-3 transition-opacity duration-300 ${!file || resultUrl ? 'pointer-events-none opacity-40' : 'opacity-100'}`}
+            >
+              <WatermarkModeTabs
+                activeTab={activeTab}
+                setActiveTab={actions.setActiveTab}
+              />
 
               {activeTab === 'text' && (
                 <TextWatermarkControls
@@ -73,7 +104,9 @@ export default function WatermarkAdder() {
               {activeTab === 'image' && (
                 <ImageWatermarkControls
                   watermarkImageRef={watermarkImageRef}
-                  handleWatermarkImageUpload={actions.handleWatermarkImageUpload}
+                  handleWatermarkImageUpload={
+                    actions.handleWatermarkImageUpload
+                  }
                   onRemoveWatermarkImage={actions.handleRemoveWatermarkImage}
                   imgWm={imgWm}
                   setImgWm={actions.setImgWm}
@@ -94,7 +127,11 @@ export default function WatermarkAdder() {
             primaryDisabled={!canProcess}
           />
         }
-        rightHeader={<h3 className="text-sm font-medium text-slate-700">Preview Workspace</h3>}
+        rightHeader={
+          <h3 className="text-sm font-medium text-slate-700">
+            Preview Workspace
+          </h3>
+        }
         rightBody={
           <div className="absolute inset-0 flex flex-col">
             <PreviewImageBox
@@ -113,18 +150,18 @@ export default function WatermarkAdder() {
                     onLoad={actions.updateImageRect}
                   />
 
-                <WatermarkPreviewOverlay
-                  overlayRef={overlayRef}
-                  overlayPos={overlayPos}
-                  activeTab={activeTab}
-                  textWm={textWm}
-                  imgWm={imgWm}
-                  dragBounds={dragBounds}
-                  imageRect={state.imageRect}
-                  isSelected={isOverlaySelected}
-                  onSelect={() => actions.setIsOverlaySelected(true)}
-                  onDelete={actions.handleDeleteSelected}
-                />
+                  <WatermarkPreviewOverlay
+                    overlayRef={overlayRef}
+                    overlayPos={overlayPos}
+                    activeTab={activeTab}
+                    textWm={textWm}
+                    imgWm={imgWm}
+                    dragBounds={dragBounds}
+                    imageRect={state.imageRect}
+                    isSelected={isOverlaySelected}
+                    onSelect={() => actions.setIsOverlaySelected(true)}
+                    onDelete={actions.handleDeleteSelected}
+                  />
                 </>
               )}
             </PreviewImageBox>

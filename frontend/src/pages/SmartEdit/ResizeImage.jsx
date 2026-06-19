@@ -3,25 +3,26 @@ import { AnimatePresence } from 'framer-motion';
 import { AppConfig } from '../../config';
 
 import UploadCard from '../../components/Upload/UploadCard';
-import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
-import ToolPageWrapper from '../../components/Layout/ToolPageWrapper';
+import ToolWorkspaceShell from '../../components/Layout/Tool/ToolWorkspaceShell';
+import ToolPageWrapper from '../../components/Layout/Tool/ToolPageWrapper';
 import PreviewImageBox from '../../components/Workspace/display/PreviewImageBox';
 import WorkspaceFileSummary from '../../components/Workspace/display/WorkspaceFileSummary';
 import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErrorAlert';
 import WorkspaceActionRow from '../../components/Actions/WorkspaceActionRow';
 import WorkspaceResultDownload from '../../components/Workspace/display/WorkspaceResultDownload';
 import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
-import ResizeControls from '../../components/Workspace/controls/ResizeControls';
+import ResizeControls from '../../components/Workspace/controls/Editor/ResizeControls';
 
-import { useWorkspaceFile } from '../../hooks/workspace/useWorkspaceFile';
-import { useImageResize } from '../../hooks/workspace/useImageResize';
+import { useWorkspaceFile } from '../../hooks/workspace/Core/useWorkspaceFile';
+import { useImageResize } from '../../hooks/workspace/Editor/useImageResize';
 import { generateSafeFilename } from '../../utils/file/fileUtils';
 
 export default function ResizeImage() {
   const fileInputRef = useRef(null);
 
   const workspaceFile = useWorkspaceFile(fileInputRef);
-  const { file, previewUrl, resultBlob, resultUrl, error, onFileChange } = workspaceFile;
+  const { file, previewUrl, resultBlob, resultUrl, error, onFileChange } =
+    workspaceFile;
 
   const {
     origWidth,
@@ -41,11 +42,16 @@ export default function ResizeImage() {
   } = useImageResize(workspaceFile);
 
   const downloadName = useMemo(
-    () => generateSafeFilename(file?.name, `${targetWidth}x${targetHeight}`, 'jpg'),
-    [file?.name, targetWidth, targetHeight]
+    () =>
+      generateSafeFilename(file?.name, `${targetWidth}x${targetHeight}`, 'jpg'),
+    [file?.name, targetWidth, targetHeight],
   );
 
-  const showLiveStage = Boolean(previewUrl) && !resultUrl && Number(targetWidth) > 0 && Number(targetHeight) > 0;
+  const showLiveStage =
+    Boolean(previewUrl) &&
+    !resultUrl &&
+    Number(targetWidth) > 0 &&
+    Number(targetHeight) > 0;
 
   return (
     <ToolPageWrapper>
@@ -91,7 +97,11 @@ export default function ResizeImage() {
             primaryDisabled={!canProcess}
           />
         }
-        rightHeader={<h3 className="text-sm font-medium text-slate-700">Preview Workspace</h3>}
+        rightHeader={
+          <h3 className="text-sm font-medium text-slate-700">
+            Preview Workspace
+          </h3>
+        }
         rightBody={
           <div className="absolute inset-2 flex flex-col bg-white rounded-xl">
             <PreviewImageBox

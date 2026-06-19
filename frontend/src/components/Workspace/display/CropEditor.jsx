@@ -3,9 +3,9 @@ import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import PropTypes from 'prop-types';
 
-import FitModeToggle from '../controls/FitModeToggle';
-import Magnifier, { ZoomButton } from '../controls/Magnifier';
-import AspectRatioControls from '../controls/AspectRatioControls';
+import FitModeToggle from '../controls/Editor/FitModeToggle';
+import Magnifier, { ZoomButton } from '../controls/Editor/Magnifier';
+import AspectRatioControls from '../controls/Editor/AspectRatioControls';
 import CropHeader from '../Header/CropHeader';
 
 /**
@@ -50,18 +50,18 @@ export default function CropEditor({
   imageAspect,
   onCancel,
   cleanupResult,
-  aspectRatioOptions
+  aspectRatioOptions,
 }) {
   const handleToggleFitMode = () => {
     setFitMode((prev) => (prev === 'fit' ? 'scroll' : 'fit'));
   };
 
   return (
-    <div 
+    <div
       className="crop-workspace-scope bg-[#0f172a] rounded-2xl shadow-2xl border border-slate-800 flex flex-col w-full max-w-6xl mx-auto overflow-hidden relative text-left"
       style={{ height: 'calc(100vh - 60px)', minHeight: '600px' }}
     >
-      <CropHeader 
+      <CropHeader
         cropSizeLabel={cropSizeLabel}
         canApply={canApply}
         onCancel={onCancel}
@@ -71,11 +71,15 @@ export default function CropEditor({
       <div className="flex-1 min-h-0 w-full relative bg-slate-950/50 flex flex-col overflow-hidden">
         <Magnifier
           containerClassName={`flex-1 w-full h-full p-4 sm:p-8 ${
-            fitMode === 'fit' 
-              ? 'flex items-center justify-center overflow-hidden' 
+            fitMode === 'fit'
+              ? 'flex items-center justify-center overflow-hidden'
               : 'overflow-y-auto overflow-x-hidden custom-scroll block'
           }`}
-          innerClassName={fitMode === 'fit' ? 'flex items-center justify-center w-full h-full' : 'w-full h-full'}
+          innerClassName={
+            fitMode === 'fit'
+              ? 'flex items-center justify-center w-full h-full'
+              : 'w-full h-full'
+          }
           renderControls={({ isZoomed, toggleZoom }) => (
             <div className="absolute bottom-6 right-6 z-50 flex gap-2">
               <FitModeToggle
@@ -89,8 +93,8 @@ export default function CropEditor({
                 isZoomed={isZoomed}
                 onToggle={toggleZoom}
                 className={`p-2.5 backdrop-blur rounded-lg border shadow-lg transition-all ${
-                  isZoomed 
-                    ? 'bg-indigo-600 border-indigo-500 text-white hover:bg-indigo-500' 
+                  isZoomed
+                    ? 'bg-indigo-600 border-indigo-500 text-white hover:bg-indigo-500'
                     : 'bg-slate-800/90 border-slate-700 text-slate-300 hover:text-white hover:bg-slate-700 hover:border-slate-500'
                 }`}
               />
@@ -106,21 +110,26 @@ export default function CropEditor({
                 cleanupResult();
               }}
               aspect={aspect || undefined}
-              className={fitMode === 'fit' ? "flex items-center justify-center" : ""}
+              className={
+                fitMode === 'fit' ? 'flex items-center justify-center' : ''
+              }
               style={
                 fitMode === 'fit'
                   ? {
-                      width: imageSize.width > 0 ? `calc((100vh - 260px) * ${imageAspect})` : 'auto',
+                      width:
+                        imageSize.width > 0
+                          ? `calc((100vh - 260px) * ${imageAspect})`
+                          : 'auto',
                       maxWidth: '100%',
                       maxHeight: '100%',
-                      margin: 'auto'
+                      margin: 'auto',
                     }
                   : {
                       width: '100%',
-                      maxWidth: '800px', 
+                      maxWidth: '800px',
                       height: 'max-content',
                       margin: '0 auto',
-                      display: 'block'
+                      display: 'block',
                     }
               }
             >
@@ -133,7 +142,7 @@ export default function CropEditor({
                 style={{
                   width: '100%',
                   height: 'auto',
-                  display: 'block'
+                  display: 'block',
                 }}
               />
             </ReactCrop>
@@ -141,10 +150,10 @@ export default function CropEditor({
         </Magnifier>
       </div>
 
-      <AspectRatioControls 
-        aspect={aspect} 
-        onApplyAspect={applyAspect} 
-        options={aspectRatioOptions} 
+      <AspectRatioControls
+        aspect={aspect}
+        onApplyAspect={applyAspect}
+        options={aspectRatioOptions}
       />
     </div>
   );
@@ -162,13 +171,13 @@ CropEditor.propTypes = {
   cropSizeLabel: PropTypes.string,
   onImageLoad: PropTypes.func.isRequired,
   imgRef: PropTypes.shape({
-    current: PropTypes.any
+    current: PropTypes.any,
   }).isRequired,
   fitMode: PropTypes.oneOf(['fit', 'scroll']).isRequired,
   setFitMode: PropTypes.func.isRequired,
   imageSize: PropTypes.shape({
     width: PropTypes.number.isRequired,
-    height: PropTypes.number.isRequired
+    height: PropTypes.number.isRequired,
   }).isRequired,
   imageAspect: PropTypes.number.isRequired,
   onCancel: PropTypes.func.isRequired,
@@ -176,13 +185,13 @@ CropEditor.propTypes = {
   aspectRatioOptions: PropTypes.arrayOf(
     PropTypes.shape({
       label: PropTypes.string.isRequired,
-      value: PropTypes.number
-    })
-  ).isRequired
+      value: PropTypes.number,
+    }),
+  ).isRequired,
 };
 
 CropEditor.defaultProps = {
   crop: undefined,
   aspect: null,
-  cropSizeLabel: ''
+  cropSizeLabel: '',
 };

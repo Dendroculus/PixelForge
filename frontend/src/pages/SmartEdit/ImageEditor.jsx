@@ -1,22 +1,24 @@
 import { useRef } from 'react';
 import { AppConfig } from '../../config';
 
-import UploadCard              from '../../components/Upload/UploadCard';
-import ToolWorkspaceShell      from '../../components/Layout/ToolWorkspaceShell';
-import ToolPageWrapper         from '../../components/Layout/ToolPageWrapper';
-import PreviewImageBox         from '../../components/Workspace/display/PreviewImageBox';
-import WorkspaceFileSummary    from '../../components/Workspace/display/WorkspaceFileSummary';
-import WorkspaceErrorAlert     from '../../components/Workspace/display/WorkspaceErrorAlert';
-import ClientSideHeader        from '../../components/Workspace/Header/ClientSideHeader';
-import FitModeToggle           from '../../components/Workspace/controls/FitModeToggle';
-import Magnifier, { ZoomButton } from '../../components/Workspace/controls/Magnifier';
-import ImageEditorFilters      from '../../components/Workspace/controls/ImageEditorFilters';
+import UploadCard from '../../components/Upload/UploadCard';
+import ToolWorkspaceShell from '../../components/Layout/Tool/ToolWorkspaceShell';
+import ToolPageWrapper from '../../components/Layout/Tool/ToolPageWrapper';
+import PreviewImageBox from '../../components/Workspace/display/PreviewImageBox';
+import WorkspaceFileSummary from '../../components/Workspace/display/WorkspaceFileSummary';
+import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErrorAlert';
+import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
+import FitModeToggle from '../../components/Workspace/controls/Editor/FitModeToggle';
+import Magnifier, {
+  ZoomButton,
+} from '../../components/Workspace/controls/Editor/Magnifier';
+import ImageEditorFilters from '../../components/Workspace/controls/Editor/ImageEditorFilters';
 
-import { useWorkspaceFile } from '../../hooks/workspace/useWorkspaceFile';
-import { useImageEditor   } from '../../hooks/workspace/useImageEditor';
+import { useWorkspaceFile } from '../../hooks/workspace/Core/useWorkspaceFile';
+import { useImageEditor } from '../../hooks/workspace/Editor/useImageEditor';
 
 export default function ImageEditor() {
-  const fileInputRef  = useRef(null);
+  const fileInputRef = useRef(null);
   const workspaceFile = useWorkspaceFile(fileInputRef);
   const { file, previewUrl, error, onFileChange } = workspaceFile;
 
@@ -57,8 +59,13 @@ export default function ImageEditor() {
               <WorkspaceFileSummary file={file} />
             )}
 
-            <div className={`space-y-6 transition-opacity duration-300 ${!file ? 'pointer-events-none opacity-40' : 'opacity-100'}`}>
-              <ImageEditorFilters filters={filters} onFilterChange={handleFilterChange} />
+            <div
+              className={`space-y-6 transition-opacity duration-300 ${!file ? 'pointer-events-none opacity-40' : 'opacity-100'}`}
+            >
+              <ImageEditorFilters
+                filters={filters}
+                onFilterChange={handleFilterChange}
+              />
             </div>
 
             <WorkspaceErrorAlert error={error} />
@@ -101,7 +108,11 @@ export default function ImageEditor() {
             </button>
           </div>
         }
-        rightHeader={<h3 className="text-sm font-medium text-slate-700">Preview Workspace</h3>}
+        rightHeader={
+          <h3 className="text-sm font-medium text-slate-700">
+            Preview Workspace
+          </h3>
+        }
         rightBody={
           <div className="absolute inset-2 flex flex-col bg-slate-100 rounded-xl overflow-hidden shadow-inner group">
             <PreviewImageBox
@@ -144,7 +155,9 @@ export default function ImageEditor() {
                       src={displayUrl}
                       alt="Edited preview"
                       className={`h-full w-full pointer-events-none ${
-                        fitMode === 'contain' ? 'object-contain' : 'object-cover'
+                        fitMode === 'contain'
+                          ? 'object-contain'
+                          : 'object-cover'
                       }`}
                     />
                   )}

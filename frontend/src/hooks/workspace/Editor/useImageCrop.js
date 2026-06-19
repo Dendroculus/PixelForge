@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
-import { buildDefaultCrop, generateCroppedImageBlob } from '../../utils/image/cropUtils';
-import { generateSafeFilename } from '../../utils/file/fileUtils';
+import { buildDefaultCrop, generateCroppedImageBlob } from '../../../utils/image/cropUtils';
+import { generateSafeFilename } from '../../../utils/file/fileUtils';
 
 /**
  * Hook to manage react-image-crop state and canvas processing logic.
