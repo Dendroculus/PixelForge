@@ -1,12 +1,12 @@
 import { useState, useRef, useCallback } from 'react';
-import { saveFileToIDB } from '../../utils/storage/idb';
-import { clearAppSession } from '../../utils/storage/session';
+import { saveFileToIDB } from '@/utils/storage/idb';
+import { clearAppSession } from '@/utils/storage/session';
 import { useSessionPersistence } from '../workspace/Core/useSessionPersistence';
 import { useUsageLimit } from '../auth/useUsageLimit';
 import {
   makeStorageKeys,
   migrateStorageKeys,
-} from '../../utils/storage/storageKeys';
+} from '@/utils/storage/storageKeys';
 
 export function usePipeline(
   setProgress,

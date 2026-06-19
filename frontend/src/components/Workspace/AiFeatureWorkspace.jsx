@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import WorkspaceLayout from '../Layout/Tool/WorkspaceLayout';
-import UploadDropzone from '../../components/Upload/UploadDropzone';
-import ResultViewer from '../../components/Workspace/display/ResultViewer/ResultViewer';
-import WorkspaceModals from '../../data/modals/WorkspaceModals';
+import UploadDropzone from '@/components/Upload/UploadDropzone';
+import ResultViewer from '@/components/Workspace/display/ResultViewer/ResultViewer';
+import WorkspaceModals from '@/data/modals/WorkspaceModals';
 import WorkspaceLimitCard from './cards/WorkspaceLimitCard';
 import WorkspaceMarketing from './cards/WorkspaceMarketing';
 import StagedFileCard from './cards/StagedFileCard';
 import ResultActions from '../Actions/ResultActions';
-import { AppConfig as config, RESULT_LABELS } from '../../config';
+import { AppConfig as config, RESULT_LABELS } from '@/config';
 
 /**
  * Reusable AI feature workspace shell for upload, processing, preview, and result actions.

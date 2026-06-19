@@ -1,10 +1,10 @@
 import { useRef, useCallback } from 'react';
-import { useWorkspaceFile } from '../../hooks/workspace/Core/useWorkspaceFile';
-import { useImageCrop } from '../../hooks/workspace/Editor/useImageCrop';
-import { CROP_ASPECT_RATIOS } from '../../config';
-import ToolStateWrapper from '../../components/Layout/Tool/ToolStateWrapper';
-import WorkspaceSuccessCard from '../../components/Workspace/cards/WorkspaceSuccessCard';
-import CropEditor from '../../components/Workspace/display/CropEditor';
+import { useWorkspaceFile } from '@/hooks/workspace/Core/useWorkspaceFile';
+import { useImageCrop } from '@/hooks/workspace/Editor/useImageCrop';
+import { CROP_ASPECT_RATIOS } from '@/config';
+import ToolStateWrapper from '@/components/Layout/Tool/ToolStateWrapper';
+import WorkspaceSuccessCard from '@/components/Workspace/cards/WorkspaceSuccessCard';
+import CropEditor from '@/components/Workspace/display/CropEditor';
 
 /**
  * @returns {JSX.Element}

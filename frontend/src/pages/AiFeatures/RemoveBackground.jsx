@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import AiFeatureWorkspace from '../../components/Workspace/AiFeatureWorkspace';
-import RemoveBgControls from '../../components/Workspace/controls/AiFeatures/RemoveBgControls';
-import { useRemBGPipeline } from '../../hooks/pipeline/useRemBGPipeline';
-import { useSimulatedProgress } from '../../hooks/workspace/Core/useSimulatedProgress';
-import { marketingProps } from '../../data/feature/remBgMarketing';
+import AiFeatureWorkspace from '@/components/Workspace/AiFeatureWorkspace';
+import RemoveBgControls from '@/components/Workspace/controls/AiFeatures/RemoveBgControls';
+import { useRemBGPipeline } from '@/hooks/pipeline/useRemBGPipeline';
+import { useSimulatedProgress } from '@/hooks/workspace/Core/useSimulatedProgress';
+import { marketingProps } from '@/data/feature/remBgMarketing';
 
 export default function RemoveBG() {
   const [progress, setProgress] = useState(0);

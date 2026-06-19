@@ -1,9 +1,11 @@
 import PropTypes from 'prop-types';
-import { AppConfig as config } from '../../config';
-import { useFileUpload } from '../../hooks/client/useFileUpload';
-import { AcceptableImageMimeTypes } from '../../utils/file/fileUtils';
+import { AppConfig as config } from '@/config';
+import { useFileUpload } from '@/hooks/client/useFileUpload';
+import { AcceptableImageMimeTypes } from '@/utils/file/fileUtils';
 
-const AllowedFormatsText = config.ALLOWED_EXTENSIONS.map(e => e.toUpperCase()).join(', ');
+const AllowedFormatsText = config.ALLOWED_EXTENSIONS.map((e) =>
+  e.toUpperCase(),
+).join(', ');
 
 /**
  * Image upload dropzone component supporting click, drag & drop, and clipboard paste.
@@ -14,7 +16,10 @@ const AllowedFormatsText = config.ALLOWED_EXTENSIONS.map(e => e.toUpperCase()).j
  * @param {boolean} [props.requireGrayscale=false] - Whether uploaded images must pass grayscale validation.
  * @returns {JSX.Element}
  */
-export default function UploadDropzone({ onFileSelect, requireGrayscale = false }) {
+export default function UploadDropzone({
+  onFileSelect,
+  requireGrayscale = false,
+}) {
   const { isDragging, error, inputRef, handlers } = useFileUpload({
     onFileSelect,
     requireGrayscale,
@@ -52,12 +57,32 @@ export default function UploadDropzone({ onFileSelect, requireGrayscale = false 
           ${error ? 'bg-rose-100 border-rose-200 text-rose-600' : 'bg-white border-white/50 text-slate-700'}`}
         >
           {error ? (
-            <svg className="w-7 h-7 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-7 h-7 animate-bounce"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
           ) : (
-            <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+            <svg
+              className="w-7 h-7"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="1.5"
+                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+              />
             </svg>
           )}
         </div>

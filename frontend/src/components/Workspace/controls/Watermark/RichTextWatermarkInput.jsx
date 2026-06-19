@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { useRef } from 'react';
-import { getTextSegmentStyle } from '../../../../utils/image/watermarkUtils';
+import { getTextSegmentStyle } from '@/utils/image/watermarkUtils';
 
 const CustomStyles = `
   .custom-textarea-scroll::-webkit-scrollbar { width: 6px; }

@@ -1,23 +1,23 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { AppConfig } from '../../config';
-import UploadCard from '../../components/Upload/UploadCard';
-import ToolWorkspaceShell from '../../components/Layout/Tool/ToolWorkspaceShell';
-import ToolPageWrapper from '../../components/Layout/Tool/ToolPageWrapper';
-import PreviewImageBox from '../../components/Workspace/display/PreviewImageBox';
-import WorkspaceFileSummary from '../../components/Workspace/display/WorkspaceFileSummary';
-import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErrorAlert';
-import WorkspaceActionRow from '../../components/Actions/WorkspaceActionRow';
-import FormatDropdown from '../../components/Workspace/controls/Convert/FormatDropdown';
-import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
-import AppModals from '../../components/Common/AppModals';
-import { useWorkspaceFile } from '../../hooks/workspace/Core/useWorkspaceFile';
-import useImageConversion from '../../hooks/client/useImageConversion';
+import { AppConfig } from '@/config';
+import UploadCard from '@/components/Upload/UploadCard';
+import ToolWorkspaceShell from '@/components/Layout/Tool/ToolWorkspaceShell';
+import ToolPageWrapper from '@/components/Layout/Tool/ToolPageWrapper';
+import PreviewImageBox from '@/components/Workspace/display/PreviewImageBox';
+import WorkspaceFileSummary from '@/components/Workspace/display/WorkspaceFileSummary';
+import WorkspaceErrorAlert from '@/components/Workspace/display/WorkspaceErrorAlert';
+import WorkspaceActionRow from '@/components/Actions/WorkspaceActionRow';
+import FormatDropdown from '@/components/Workspace/controls/Convert/FormatDropdown';
+import ClientSideHeader from '@/components/Workspace/Header/ClientSideHeader';
+import AppModals from '@/components/Common/AppModals';
+import { useWorkspaceFile } from '@/hooks/workspace/Core/useWorkspaceFile';
+import useImageConversion from '@/hooks/client/useImageConversion';
 import {
   bytesToMB,
   generateSafeFilename,
   isSameExtension,
-} from '../../utils/file/fileUtils';
+} from '@/utils/file/fileUtils';
 
 /** @constant {string} DEFAULT_FORMAT - Default target format on mount and after reset. */
 const DEFAULT_FORMAT = 'png';

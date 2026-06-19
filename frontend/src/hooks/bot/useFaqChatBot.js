@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FAQ_DATA } from '../../data/bot/chatBotdata';
+import { FAQ_DATA } from '@/data/bot/chatBotdata';
 
 /**
  * Manages state and interaction flow for the FAQ chatbot widget.
@@ -24,10 +24,10 @@ export function useFaqChatBot() {
           ...qa,
           category: cat.title,
           icon: cat.icon,
-          categoryId: cat.id
-        }))
+          categoryId: cat.id,
+        })),
       ),
-    []
+    [],
   );
 
   const filteredResults = useMemo(() => {
@@ -37,7 +37,7 @@ export function useFaqChatBot() {
       (item) =>
         item.q.toLowerCase().includes(q) ||
         item.a.toLowerCase().includes(q) ||
-        item.category.toLowerCase().includes(q)
+        item.category.toLowerCase().includes(q),
     );
   }, [query, allQuestions]);
 
@@ -83,7 +83,9 @@ export function useFaqChatBot() {
    * @param {string} text - The question string to match.
    */
   const openFromQuickAction = (text) => {
-    const found = allQuestions.find((q) => q.q.toLowerCase() === text.toLowerCase());
+    const found = allQuestions.find(
+      (q) => q.q.toLowerCase() === text.toLowerCase(),
+    );
     if (found) {
       startAnswerFlow(found);
     }
@@ -155,6 +157,6 @@ export function useFaqChatBot() {
     openCategory,
     openFromQuickAction,
     handleBack,
-    handleClose
+    handleClose,
   };
 }

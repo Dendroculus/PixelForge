@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import PropTypes from 'prop-types';
-import { IMAGES as img } from '../../../config';
-import { NavLinks } from '../../../data/navConfig';
+import { IMAGES as img } from '@/config';
+import { NavLinks } from '@/data/navConfig';
 
 /**
  * Standardized SVG Icon wrapper.

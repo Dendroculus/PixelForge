@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import AiFeatureWorkspace from '../../components/Workspace/AiFeatureWorkspace';
-import ColorRestoreControls from '../../components/Workspace/controls/AiFeatures/ColorRestoreControls';
-import { useColorRestorePipeline } from '../../hooks/pipeline/useColorRestorePipeline';
-import { useSimulatedProgress } from '../../hooks/workspace/Core/useSimulatedProgress';
-import { marketingProps } from '../../data/feature/colorRestoreMarketing';
+import AiFeatureWorkspace from '@/components/Workspace/AiFeatureWorkspace';
+import ColorRestoreControls from '@/components/Workspace/controls/AiFeatures/ColorRestoreControls';
+import { useColorRestorePipeline } from '@/hooks/pipeline/useColorRestorePipeline';
+import { useSimulatedProgress } from '@/hooks/workspace/Core/useSimulatedProgress';
+import { marketingProps } from '@/data/feature/colorRestoreMarketing';
 
 export default function ColorRestoration() {
   const [progress, setProgress] = useState(0);

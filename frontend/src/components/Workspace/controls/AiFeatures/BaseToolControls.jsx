@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
 import { Turnstile } from '@marsidev/react-turnstile';
-import ProgressBar from '../../../Common/ProgressBar';
+import ProgressBar from '@/components/Common/ProgressBar';
 
 /**
  * Renders a generic tool controls component with Turnstile integration and background processing feedback.
@@ -39,17 +39,23 @@ export default function BaseToolControls({
 
   return (
     <>
-      <div 
-        className={!shouldHideTurnstile ? "w-full flex justify-center -mb-1" : ""}
-        style={shouldHideTurnstile ? { 
-          position: 'absolute', 
-          opacity: 0.01,
-          width: '50px', 
-          height: '50px', 
-          pointerEvents: 'none', 
-          zIndex: -1,
-          overflow: 'hidden' 
-        } : {}}
+      <div
+        className={
+          !shouldHideTurnstile ? 'w-full flex justify-center -mb-1' : ''
+        }
+        style={
+          shouldHideTurnstile
+            ? {
+                position: 'absolute',
+                opacity: 0.01,
+                width: '50px',
+                height: '50px',
+                pointerEvents: 'none',
+                zIndex: -1,
+                overflow: 'hidden',
+              }
+            : {}
+        }
       >
         <Turnstile
           ref={turnstileRef}
@@ -62,15 +68,17 @@ export default function BaseToolControls({
         <div className="w-full flex flex-col items-center justify-center">
           <ProgressBar
             progress={progress}
-            customText={isWaitingForToken ? "Verifying connection..." : progressText}
+            customText={
+              isWaitingForToken ? 'Verifying connection...' : progressText
+            }
           />
         </div>
       )}
 
       {!isProcessing && !resultUrl && (
         <div className="flex flex-col items-center justify-center gap-4 w-full">
-          {!isWaitingForToken && (
-              children || (
+          {!isWaitingForToken &&
+            (children || (
               <div className="flex gap-2 w-full">
                 <button
                   onClick={handleCancel}
@@ -86,8 +94,7 @@ export default function BaseToolControls({
                   {submitText}
                 </button>
               </div>
-            )
-          )}
+            ))}
         </div>
       )}
     </>

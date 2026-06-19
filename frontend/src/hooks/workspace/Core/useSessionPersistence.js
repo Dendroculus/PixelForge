@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { loadFileFromIDB } from '../../../utils/storage/idb';
-import { clearAppSession } from '../../../utils/storage/session';
-import { AppConfig as config } from '../../../config';
-import { isExpired } from '../../../utils/time';
+import { loadFileFromIDB } from '@/utils/storage/idb';
+import { clearAppSession } from '@/utils/storage/session';
+import { AppConfig as config } from '@/config';
+import { isExpired } from '@/utils/time';
 
 export function useSessionPersistence({
   setSelectedFile,

@@ -3,7 +3,7 @@ import {
   loadImage,
   toSafeDimension,
   processImageResize,
-} from '../../../utils/image/imageUtils';
+} from '@/utils/image/imageUtils';
 
 export const MaxDimension = 5000;
 

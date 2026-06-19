@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { processImageWithCanvas } from '../../utils/image/imageUtils';
+import { processImageWithCanvas } from '@/utils/image/imageUtils';
 
 /**
  * Manages image compression task lifecycle and output generation.
@@ -44,11 +44,21 @@ export default function useImageCompression({
       setResultBlob(blob);
       setResultUrl(URL.createObjectURL(blob));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unexpected compression error.');
+      setError(
+        e instanceof Error ? e.message : 'Unexpected compression error.',
+      );
     } finally {
       setIsCompressing(false);
     }
-  }, [cleanupResult, file, isCompressing, quality, setError, setResultBlob, setResultUrl]);
+  }, [
+    cleanupResult,
+    file,
+    isCompressing,
+    quality,
+    setError,
+    setResultBlob,
+    setResultUrl,
+  ]);
 
   return {
     isCompressing,

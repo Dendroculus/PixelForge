@@ -1,23 +1,23 @@
 import { useEffect, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { AppConfig, FontFamilies, WatermarkColors } from '../../config';
+import { AppConfig, FontFamilies, WatermarkColors } from '@/config';
 
-import UploadCard from '../../components/Upload/UploadCard';
-import ToolWorkspaceShell from '../../components/Layout/Tool/ToolWorkspaceShell';
-import ToolPageWrapper from '../../components/Layout/Tool/ToolPageWrapper';
-import PreviewImageBox from '../../components/Workspace/display/PreviewImageBox';
-import WorkspaceFileSummary from '../../components/Workspace/display/WorkspaceFileSummary';
-import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErrorAlert';
-import WorkspaceActionRow from '../../components/Actions/WorkspaceActionRow';
-import WorkspaceResultDownload from '../../components/Workspace/display/WorkspaceResultDownload';
-import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
-import WatermarkModeTabs from '../../components/Workspace/controls/Watermark/WatermarkModeTabs';
-import TextWatermarkControls from '../../components/Workspace/controls/Watermark/TextWatermarkControls';
-import ImageWatermarkControls from '../../components/Workspace/controls/Watermark/ImageWatermarkControls';
-import WatermarkPreviewOverlay from '../../components/Workspace/display/WatermarkPreviewOverlay';
+import UploadCard from '@/components/Upload/UploadCard';
+import ToolWorkspaceShell from '@/components/Layout/Tool/ToolWorkspaceShell';
+import ToolPageWrapper from '@/components/Layout/Tool/ToolPageWrapper';
+import PreviewImageBox from '@/components/Workspace/display/PreviewImageBox';
+import WorkspaceFileSummary from '@/components/Workspace/display/WorkspaceFileSummary';
+import WorkspaceErrorAlert from '@/components/Workspace/display/WorkspaceErrorAlert';
+import WorkspaceActionRow from '@/components/Actions/WorkspaceActionRow';
+import WorkspaceResultDownload from '@/components/Workspace/display/WorkspaceResultDownload';
+import ClientSideHeader from '@/components/Workspace/Header/ClientSideHeader';
+import WatermarkModeTabs from '@/components/Workspace/controls/Watermark/WatermarkModeTabs';
+import TextWatermarkControls from '@/components/Workspace/controls/Watermark/TextWatermarkControls';
+import ImageWatermarkControls from '@/components/Workspace/controls/Watermark/ImageWatermarkControls';
+import WatermarkPreviewOverlay from '@/components/Workspace/display/WatermarkPreviewOverlay';
 
-import { useWatermark } from '../../hooks/workspace/Watermark/useWatermark';
-import { generateSafeFilename } from '../../utils/file/fileUtils';
+import { useWatermark } from '@/hooks/workspace/Watermark/useWatermark';
+import { generateSafeFilename } from '@/utils/file/fileUtils';
 
 export default function WatermarkAdder() {
   const { refs, workspaceFile, state, actions } = useWatermark();

@@ -3,7 +3,7 @@ import {
   clamp,
   makeInitialPoints,
   resizePoints,
-} from '../../../utils/image/paletteMath';
+} from '@/utils/image/paletteMath';
 
 /**
  * @param {Object} params
