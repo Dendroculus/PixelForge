@@ -2,18 +2,22 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { AppConfig } from '../../config';
 import UploadCard from '../../components/Upload/UploadCard';
-import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
-import ToolPageWrapper from '../../components/Layout/ToolPageWrapper';
+import ToolWorkspaceShell from '../../components/Layout/Tool/ToolWorkspaceShell';
+import ToolPageWrapper from '../../components/Layout/Tool/ToolPageWrapper';
 import PreviewImageBox from '../../components/Workspace/display/PreviewImageBox';
 import WorkspaceFileSummary from '../../components/Workspace/display/WorkspaceFileSummary';
 import WorkspaceErrorAlert from '../../components/Workspace/display/WorkspaceErrorAlert';
 import WorkspaceActionRow from '../../components/Actions/WorkspaceActionRow';
-import FormatDropdown from '../../components/Workspace/controls/FormatDropdown';
+import FormatDropdown from '../../components/Workspace/controls/Convert/FormatDropdown';
 import ClientSideHeader from '../../components/Workspace/Header/ClientSideHeader';
 import AppModals from '../../components/Common/AppModals';
-import { useWorkspaceFile } from '../../hooks/workspace/useWorkspaceFile';
+import { useWorkspaceFile } from '../../hooks/workspace/Core/useWorkspaceFile';
 import useImageConversion from '../../hooks/client/useImageConversion';
-import { bytesToMB, generateSafeFilename, isSameExtension } from '../../utils/file/fileUtils';
+import {
+  bytesToMB,
+  generateSafeFilename,
+  isSameExtension,
+} from '../../utils/file/fileUtils';
 
 /** @constant {string} DEFAULT_FORMAT - Default target format on mount and after reset. */
 const DEFAULT_FORMAT = 'png';
@@ -54,11 +58,7 @@ export default function ConvertFormat() {
     cleanupResult,
   } = useWorkspaceFile(fileInputRef);
 
-  const {
-    isConverting,
-    setIsConverting,
-    convertImage,
-  } = useImageConversion({
+  const { isConverting, setIsConverting, convertImage } = useImageConversion({
     file,
     targetFormat,
     quality,
@@ -100,8 +100,14 @@ export default function ConvertFormat() {
     setIsConverting(false);
   }, [cleanupResult, setResultBlob, setResultUrl, setError, setIsConverting]);
 
-  const canConvert = useMemo(() => Boolean(file) && !isConverting, [file, isConverting]);
-  const downloadName = useMemo(() => generateSafeFilename(file?.name, 'converted', targetFormat), [file?.name, targetFormat]);
+  const canConvert = useMemo(
+    () => Boolean(file) && !isConverting,
+    [file, isConverting],
+  );
+  const downloadName = useMemo(
+    () => generateSafeFilename(file?.name, 'converted', targetFormat),
+    [file?.name, targetFormat],
+  );
 
   return (
     <ToolPageWrapper>
@@ -131,10 +137,14 @@ export default function ConvertFormat() {
                 optionClassName="font-bold"
               />
 
-              <div className={`flex flex-col justify-center transition-opacity duration-300 ${targetFormat === 'png' ? 'pointer-events-none opacity-30' : 'opacity-100'}`}>
+              <div
+                className={`flex flex-col justify-center transition-opacity duration-300 ${targetFormat === 'png' ? 'pointer-events-none opacity-30' : 'opacity-100'}`}
+              >
                 <label className="mb-2 flex w-full items-center justify-between text-sm font-bold text-slate-700">
                   <span>Quality</span>
-                  <span className="text-indigo-600">{Math.round(quality * 100)}%</span>
+                  <span className="text-indigo-600">
+                    {Math.round(quality * 100)}%
+                  </span>
                 </label>
                 <div className="pt-1">
                   <input
@@ -175,9 +185,17 @@ export default function ConvertFormat() {
         }
         rightBody={
           <div className="absolute inset-2 flex flex-col">
-            <PreviewImageBox previewUrl={previewUrl} resultUrl={resultUrl} resultAlt="Converted output preview" />
+            <PreviewImageBox
+              previewUrl={previewUrl}
+              resultUrl={resultUrl}
+              resultAlt="Converted output preview"
+            />
             {resultUrl ? (
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-3 shrink-0">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-3 shrink-0"
+              >
                 <a
                   href={resultUrl}
                   download={downloadName}
@@ -196,7 +214,10 @@ export default function ConvertFormat() {
         onClose={() => setIsModalOpen(false)}
         title="Invalid Conversion"
       >
-        <p>You already uploaded a file with this extension. Converting to the same format is not allowed.</p>
+        <p>
+          You already uploaded a file with this extension. Converting to the
+          same format is not allowed.
+        </p>
       </AppModals>
     </ToolPageWrapper>
   );

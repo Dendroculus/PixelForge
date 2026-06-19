@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import { renderPreviewDataUrl, processImageEditing } from '../../utils/image/editorUtils';
-import { generateSafeFilename } from '../../utils/file/fileUtils';
+import { renderPreviewDataUrl, processImageEditing } from '../../../utils/image/editorUtils';
+import { generateSafeFilename } from '../../../utils/file/fileUtils';
 
 export const DEFAULT_FILTERS = {
   brightness  : 0,

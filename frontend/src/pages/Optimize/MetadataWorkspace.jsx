@@ -1,9 +1,10 @@
-import { useMetadataProcessor } from '../../hooks/workspace/useMetadataProcessor';
-import { useObjectUrlCleanup } from '../../hooks/workspace/useObjectUrlCleanup';
+import { useMetadataProcessor } from '../../hooks/workspace/Utility/useMetadataProcessor';
+import { useObjectUrlCleanup } from '../../hooks/workspace/Core/useObjectUrlCleanup';
 import { useMemo } from 'react';
-import ToolStateWrapper from '../../components/Layout/ToolStateWrapper';
+import ToolStateWrapper from '../../components/Layout/Tool/ToolStateWrapper';
 
-const formatKey = (key) => key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
+const formatKey = (key) =>
+  key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
 
 export default function MetadataWorkspace() {
   const {
@@ -17,7 +18,10 @@ export default function MetadataWorkspace() {
     handleCancel,
   } = useMetadataProcessor();
 
-  const trackedUrls = useMemo(() => [previewUrl, strippedUrl], [previewUrl, strippedUrl]);
+  const trackedUrls = useMemo(
+    () => [previewUrl, strippedUrl],
+    [previewUrl, strippedUrl],
+  );
   useObjectUrlCleanup(trackedUrls);
 
   return (
@@ -32,19 +36,39 @@ export default function MetadataWorkspace() {
           onReset={handleCancel}
         >
           {/* GUARD: Only evaluate this UI if a file exists and processing is done */}
-          {selectedFile && !isProcessing && (
-            isClean ? (
+          {selectedFile &&
+            !isProcessing &&
+            (isClean ? (
               <div className="bg-white/50 backdrop-blur-2xl p-8 rounded-2xl shadow-xl border border-emerald-100/60 max-w-2xl mx-auto text-center flex flex-col items-center">
                 <div className="w-16 h-16 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mb-4 shadow-sm border border-emerald-200">
-                  <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                  <svg
+                    className="w-8 h-8"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M5 13l4 4L19 7"
+                    ></path>
                   </svg>
                 </div>
-                <h3 className="text-2xl font-black text-slate-800 mb-2">Already Clean!</h3>
-                <p className="text-slate-600 font-medium mb-6">We scanned the file, and no EXIF data, location tags, or hidden metadata were found. It is already safe to share.</p>
+                <h3 className="text-2xl font-black text-slate-800 mb-2">
+                  Already Clean!
+                </h3>
+                <p className="text-slate-600 font-medium mb-6">
+                  We scanned the file, and no EXIF data, location tags, or
+                  hidden metadata were found. It is already safe to share.
+                </p>
 
                 <div className="bg-white/50 rounded-xl p-2 border border-white/40 mb-8 w-full max-w-sm h-48 flex justify-center shadow-inner">
-                  <img src={previewUrl} alt="Original" className="h-full w-auto object-contain rounded-lg" />
+                  <img
+                    src={previewUrl}
+                    alt="Original"
+                    className="h-full w-auto object-contain rounded-lg"
+                  />
                 </div>
 
                 <button
@@ -58,12 +82,20 @@ export default function MetadataWorkspace() {
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 text-left">
                 <div className="bg-white/50 backdrop-blur-2xl p-6 rounded-2xl shadow-xl border border-white/60 flex flex-col h-full">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold text-slate-800">Original File</h3>
-                    <span className="text-xs font-bold bg-rose-100 text-rose-600 px-2 py-1 rounded-md uppercase tracking-wider">Has Metadata</span>
+                    <h3 className="text-lg font-bold text-slate-800">
+                      Original File
+                    </h3>
+                    <span className="text-xs font-bold bg-rose-100 text-rose-600 px-2 py-1 rounded-md uppercase tracking-wider">
+                      Has Metadata
+                    </span>
                   </div>
 
                   <div className="bg-white/50 rounded-xl p-2 border border-white/40 flex justify-center mb-6 h-48 shrink-0 shadow-inner">
-                    <img src={previewUrl} alt="Original" className="h-full w-auto object-contain rounded-lg" />
+                    <img
+                      src={previewUrl}
+                      alt="Original"
+                      className="h-full w-auto object-contain rounded-lg"
+                    />
                   </div>
 
                   <div className="grow bg-white/60 rounded-xl border border-white/80 p-4 overflow-y-auto max-h-75 custom-scrollbar shadow-inner">
@@ -73,11 +105,22 @@ export default function MetadataWorkspace() {
                     <div className="space-y-2">
                       {/* Added fallback to empty object to prevent crash if metadata is undefined */}
                       {Object.entries(metadata || {})
-                        .filter(([val]) => typeof val === 'string' || typeof val === 'number')
+                        .filter(
+                          ([val]) =>
+                            typeof val === 'string' || typeof val === 'number',
+                        )
                         .map(([key, val]) => (
-                          <div key={key} className="flex justify-between items-center text-sm border-b border-slate-200/60 pb-1 last:border-0">
-                            <span className="text-slate-500 font-medium">{formatKey(key)}</span>
-                            <span className="text-slate-800 font-semibold text-right max-w-[50%] truncate" title={String(val)}>
+                          <div
+                            key={key}
+                            className="flex justify-between items-center text-sm border-b border-slate-200/60 pb-1 last:border-0"
+                          >
+                            <span className="text-slate-500 font-medium">
+                              {formatKey(key)}
+                            </span>
+                            <span
+                              className="text-slate-800 font-semibold text-right max-w-[50%] truncate"
+                              title={String(val)}
+                            >
                               {String(val)}
                             </span>
                           </div>
@@ -88,22 +131,45 @@ export default function MetadataWorkspace() {
 
                 <div className="bg-white/50 backdrop-blur-2xl p-6 rounded-2xl shadow-xl border border-white/60 flex flex-col h-full">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold text-slate-800">Cleaned File</h3>
-                    <span className="text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md uppercase tracking-wider">Metadata Stripped</span>
+                    <h3 className="text-lg font-bold text-slate-800">
+                      Cleaned File
+                    </h3>
+                    <span className="text-xs font-bold bg-emerald-100 text-emerald-700 px-2 py-1 rounded-md uppercase tracking-wider">
+                      Metadata Stripped
+                    </span>
                   </div>
 
                   <div className="bg-white/50 rounded-xl p-2 border border-white/40 flex justify-center mb-6 h-48 shrink-0 shadow-inner">
-                    <img src={strippedUrl} alt="Stripped" className="h-full w-auto object-contain rounded-lg" />
+                    <img
+                      src={strippedUrl}
+                      alt="Stripped"
+                      className="h-full w-auto object-contain rounded-lg"
+                    />
                   </div>
 
                   <div className="grow flex flex-col justify-center items-center text-center px-4 space-y-4">
                     <div className="w-16 h-16 bg-emerald-100 text-emerald-500 rounded-full flex items-center justify-center mb-2 shadow-sm border border-emerald-200">
-                      <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                      <svg
+                        className="w-8 h-8"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth="2"
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        ></path>
                       </svg>
                     </div>
-                    <h4 className="text-xl font-black text-slate-800">100% Clean & Private</h4>
-                    <p className="text-sm text-slate-600 font-medium">All hidden location data, camera settings, and tracking timestamps have been permanently removed.</p>
+                    <h4 className="text-xl font-black text-slate-800">
+                      100% Clean & Private
+                    </h4>
+                    <p className="text-sm text-slate-600 font-medium">
+                      All hidden location data, camera settings, and tracking
+                      timestamps have been permanently removed.
+                    </p>
                   </div>
 
                   <div className="flex gap-3 mt-6 pt-4 border-t border-slate-200/50">
@@ -123,8 +189,7 @@ export default function MetadataWorkspace() {
                   </div>
                 </div>
               </div>
-            )
-          )}
+            ))}
         </ToolStateWrapper>
       </section>
     </div>

@@ -1,5 +1,5 @@
 import PropTypes from 'prop-types';
-import UploadDropzone from '../../components/Upload/UploadDropzone';
+import UploadDropzone from '../../Upload/UploadDropzone';
 
 /**
  * Wrapper component that handles different tool states (uploading, processing, error, active).

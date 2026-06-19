@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
+import { processImageWithCanvas } from '../../../utils/image/imageUtils';
 import exifr from 'exifr';
-import { processImageWithCanvas } from '../../utils/image/imageUtils';
 
 /**
  * Handles image metadata parsing and metadata stripping flow.

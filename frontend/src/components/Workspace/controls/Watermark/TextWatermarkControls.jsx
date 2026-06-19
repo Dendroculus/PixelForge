@@ -1,10 +1,10 @@
 import PropTypes from 'prop-types';
-import FormatDropdown from '../../../components/Workspace/controls/FormatDropdown';
-import { useTextWatermarkEditor } from '../../../hooks/workspace/useTextWatermarkEditor';
+import FormatDropdown from '../Convert/FormatDropdown';
+import { useTextWatermarkEditor } from '../../../../hooks/workspace/Watermark/useTextWatermarkEditor';
 import RichTextWatermarkInput from './RichTextWatermarkInput';
-import TextStyleToggles from './common/TextStyleToggles';
-import ColorSwatches from './common/ColorSwatches';
-import RangeSlider from './common/RangeSlider';
+import TextStyleToggles from '../Common/TextStyleToggles';
+import ColorSwatches from '../Common/ColorSwatches';
+import RangeSlider from '../Common/RangeSlider';
 
 /**
  * Watermark text editor with rich-text formatting support.
@@ -17,17 +17,22 @@ import RangeSlider from './common/RangeSlider';
  * @param {string[]} props.watermarkColors - Available color presets.
  * @returns {JSX.Element}
  */
-export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies, watermarkColors }) {
-  const { textareaRef, handleTextChange, updateActiveToggles, toggleStyle } = useTextWatermarkEditor(textWm, setTextWm);
+export default function TextWatermarkControls({
+  textWm,
+  setTextWm,
+  fontFamilies,
+  watermarkColors,
+}) {
+  const { textareaRef, handleTextChange, updateActiveToggles, toggleStyle } =
+    useTextWatermarkEditor(textWm, setTextWm);
 
   return (
     <div className="space-y-3 pb-1">
-      
-      <RichTextWatermarkInput 
-        textWm={textWm} 
-        textareaRef={textareaRef} 
-        onTextChange={handleTextChange} 
-        onInteraction={updateActiveToggles} 
+      <RichTextWatermarkInput
+        textWm={textWm}
+        textareaRef={textareaRef}
+        onTextChange={handleTextChange}
+        onInteraction={updateActiveToggles}
       />
 
       <div className="grid grid-cols-2 gap-3">
@@ -35,7 +40,9 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
           <FormatDropdown
             value={textWm.fontFamily}
             options={fontFamilies}
-            onChange={(val) => setTextWm((prev) => ({ ...prev, fontFamily: val }))}
+            onChange={(val) =>
+              setTextWm((prev) => ({ ...prev, fontFamily: val }))
+            }
             label="Font Family"
             transform="none"
             labelClassName="mb-1.5 block text-xs font-bold text-slate-700 uppercase tracking-wide"
@@ -45,7 +52,7 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
         </div>
 
         <div className="flex flex-col justify-end pb-0.5">
-          <TextStyleToggles 
+          <TextStyleToggles
             isBold={textWm.isBold}
             isItalic={textWm.isItalic}
             isUnderline={textWm.isUnderline}
@@ -54,10 +61,10 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
         </div>
       </div>
 
-      <ColorSwatches 
-        colors={watermarkColors} 
-        selectedColor={textWm.color} 
-        onColorChange={(color) => setTextWm((prev) => ({ ...prev, color }))} 
+      <ColorSwatches
+        colors={watermarkColors}
+        selectedColor={textWm.color}
+        onColorChange={(color) => setTextWm((prev) => ({ ...prev, color }))}
       />
 
       <div className="grid grid-cols-2 gap-4">
@@ -82,7 +89,6 @@ export default function TextWatermarkControls({ textWm, setTextWm, fontFamilies,
           displayValue={`${Math.round(textWm.opacity * 100)}%`}
         />
       </div>
-      
     </div>
   );
 }

@@ -1,8 +1,8 @@
 import { useRef, useCallback } from 'react';
-import { useWorkspaceFile } from '../../hooks/workspace/useWorkspaceFile';
-import { useImageCrop } from '../../hooks/workspace/useImageCrop';
+import { useWorkspaceFile } from '../../hooks/workspace/Core/useWorkspaceFile';
+import { useImageCrop } from '../../hooks/workspace/Editor/useImageCrop';
 import { CROP_ASPECT_RATIOS } from '../../config';
-import ToolStateWrapper from '../../components/Layout/ToolStateWrapper';
+import ToolStateWrapper from '../../components/Layout/Tool/ToolStateWrapper';
 import WorkspaceSuccessCard from '../../components/Workspace/cards/WorkspaceSuccessCard';
 import CropEditor from '../../components/Workspace/display/CropEditor';
 
@@ -43,7 +43,7 @@ export default function CropImage() {
     cropSizeLabel,
     downloadName,
     isFocusMode,
-    imageAspect
+    imageAspect,
   } = useImageCrop({
     file,
     error,
@@ -52,26 +52,35 @@ export default function CropImage() {
     setResultBlob,
     setResultUrl,
     setError,
-    resetAll
+    resetAll,
   });
 
   /**
    * @param {File} selectedFile
    * @returns {void}
    */
-  const handleFileSelectWrapper = useCallback((selectedFile) => {
-    if (selectedFile) {
+  const handleFileSelectWrapper = useCallback(
+    (selectedFile) => {
+      if (selectedFile) {
         onFileChange({ target: { files: [selectedFile] } });
-    }
-  }, [onFileChange]);
+      }
+    },
+    [onFileChange],
+  );
 
   return (
     <div className="w-full">
-      <input type="file" ref={fileInputRef} className="hidden" onChange={onFileChange} />
-      <section 
-        className={isFocusMode 
-          ? "w-full mx-auto px-4 sm:px-6 pt-4 pb-6 relative z-10" 
-          : "max-w-6xl mx-auto px-6 pt-4 pb-16 text-center relative z-10"
+      <input
+        type="file"
+        ref={fileInputRef}
+        className="hidden"
+        onChange={onFileChange}
+      />
+      <section
+        className={
+          isFocusMode
+            ? 'w-full mx-auto px-4 sm:px-6 pt-4 pb-6 relative z-10'
+            : 'max-w-6xl mx-auto px-6 pt-4 pb-16 text-center relative z-10'
         }
       >
         <ToolStateWrapper
@@ -83,7 +92,7 @@ export default function CropImage() {
           onReset={handleReset}
         >
           {resultUrl ? (
-            <WorkspaceSuccessCard 
+            <WorkspaceSuccessCard
               title="Crop Successful!"
               description="Your image is ready to use."
               resultUrl={resultUrl}
@@ -93,7 +102,7 @@ export default function CropImage() {
               downloadText="Download Image"
             />
           ) : (
-            <CropEditor 
+            <CropEditor
               previewUrl={previewUrl}
               crop={crop}
               setCrop={setCrop}

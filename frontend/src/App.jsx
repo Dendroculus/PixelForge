@@ -4,9 +4,9 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { legalModalData } from './data/modals/legalModalData';
 import routes from './routes';
 
-import Navbar from './components/Layout/NavBar';
-import GlobalHeader from './components/Layout/GlobalHeader';
-import Footer from './components/Layout/Footer';
+import Navbar from './components/Layout/Core/NavBar';
+import GlobalHeader from './components/Layout/Core/GlobalHeader';
+import Footer from './components/Layout/Core/Footer';
 import NotFound from './pages/Special/NotFound';
 import AppModals from './components/Common/AppModals';
 import FaqChatbotWidget from './pages/Special/FaqChatbotWidget';
@@ -28,10 +28,14 @@ const WorkspaceLoader = () => (
 );
 
 export default function App() {
-  const [modalState, setModalState] = useState({ isOpen: false, type: 'privacy' });
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    type: 'privacy',
+  });
 
   const openModal = (type) => setModalState({ isOpen: true, type });
-  const closeModal = () => setModalState((prev) => ({ ...prev, isOpen: false }));
+  const closeModal = () =>
+    setModalState((prev) => ({ ...prev, isOpen: false }));
 
   const activeModalData = legalModalData[modalState.type];
 
@@ -39,7 +43,7 @@ export default function App() {
     <BrowserRouter>
       <div className="min-h-screen bg-linear-to-br from-[#EEAECA] to-[#94BBE9] text-slate-800 flex flex-col overflow-x-hidden selection:bg-white/40">
         <Navbar />
-        
+
         <main className="flex-1 min-h-0 relative w-full flex flex-col">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-200 h-150 bg-white/40 blur-3xl rounded-full pointer-events-none -z-10" />
           <div className="absolute top-100 right-0 w-100 h-100 bg-white/30 blur-3xl rounded-full pointer-events-none -z-10" />
@@ -50,28 +54,29 @@ export default function App() {
             <Routes>
               {routes.map((r) => {
                 const Component = r.component;
-                const FallbackLoader = r.path === '/upscale' ? WorkspaceLoader : PageLoader;
-                
+                const FallbackLoader =
+                  r.path === '/upscale' ? WorkspaceLoader : PageLoader;
+
                 return (
-                  <Route 
-                    key={r.path} 
-                    path={r.path} 
+                  <Route
+                    key={r.path}
+                    path={r.path}
                     element={
                       <Suspense fallback={<FallbackLoader />}>
                         <Component />
                       </Suspense>
-                    } 
+                    }
                   />
                 );
               })}
-              
-              <Route 
-                path="*" 
+
+              <Route
+                path="*"
                 element={
                   <Suspense fallback={<PageLoader />}>
                     <NotFound />
                   </Suspense>
-                } 
+                }
               />
             </Routes>
           </Suspense>
@@ -83,7 +88,11 @@ export default function App() {
           <Footer openModal={openModal} />
         </div>
 
-        <AppModals isOpen={modalState.isOpen} onClose={closeModal} title={activeModalData.title}>
+        <AppModals
+          isOpen={modalState.isOpen}
+          onClose={closeModal}
+          title={activeModalData.title}
+        >
           {activeModalData.content}
         </AppModals>
       </div>

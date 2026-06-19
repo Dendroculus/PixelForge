@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { loadImage, toSafeDimension, processImageResize } from '../../utils/image/imageUtils';
+import {
+  loadImage,
+  toSafeDimension,
+  processImageResize,
+} from '../../../utils/image/imageUtils';
 
-export const MAX_DIMENSION = 5000;
+export const MaxDimension = 5000;
 
 /**
  * Calculates constrained dimensions while preserving aspect ratio and respecting maximum limits.
@@ -14,20 +18,20 @@ export const MAX_DIMENSION = 5000;
 const calculateLockedDimensions = (dimension, value, ratio, maxDim) => {
   const isWidth = dimension === 'width';
   let primary = value;
-  let opposite = isWidth 
-    ? Math.round(value / ratio) 
+  let opposite = isWidth
+    ? Math.round(value / ratio)
     : Math.round(value * ratio);
 
   if (opposite > maxDim) {
     opposite = maxDim;
-    primary = isWidth 
-      ? Math.round(opposite * ratio) 
+    primary = isWidth
+      ? Math.round(opposite * ratio)
       : Math.round(opposite / ratio);
   }
 
   return {
     width: isWidth ? primary : Math.max(1, opposite),
-    height: isWidth ? Math.max(1, opposite) : primary
+    height: isWidth ? Math.max(1, opposite) : primary,
   };
 };
 
@@ -69,7 +73,8 @@ export function useImageResize({
   const previewRatio = useMemo(() => {
     const w = Number(targetWidth);
     const h = Number(targetHeight);
-    if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return 1;
+    if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0)
+      return 1;
     return w / h;
   }, [targetWidth, targetHeight]);
 
@@ -93,18 +98,18 @@ export function useImageResize({
     loadImage(previewUrl)
       .then((img) => {
         if (!active) return;
-        
+
         let w = img.naturalWidth || 0;
         let h = img.naturalHeight || 0;
         const ratio = h > 0 ? w / h : 1;
 
-        if (w > MAX_DIMENSION || h > MAX_DIMENSION) {
+        if (w > MaxDimension || h > MaxDimension) {
           if (w >= h) {
-            w = MAX_DIMENSION;
-            h = Math.max(1, Math.round(MAX_DIMENSION / ratio));
+            w = MaxDimension;
+            h = Math.max(1, Math.round(MaxDimension / ratio));
           } else {
-            h = MAX_DIMENSION;
-            w = Math.max(1, Math.round(MAX_DIMENSION * ratio));
+            h = MaxDimension;
+            w = Math.max(1, Math.round(MaxDimension * ratio));
           }
         }
 
@@ -118,36 +123,52 @@ export function useImageResize({
         setError('Could not read image dimensions.');
       });
 
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [previewUrl, setError]);
 
-  const handleDimensionChange = useCallback((dimension, value) => {
-    const val = toSafeDimension(value, MAX_DIMENSION);
-    const isWidth = dimension === 'width';
-    
-    if (val === '') {
-      if (isWidth || lockAspect) setTargetWidth('');
-      if (!isWidth || lockAspect) setTargetHeight('');
+  const handleDimensionChange = useCallback(
+    (dimension, value) => {
+      const val = toSafeDimension(value, MaxDimension);
+      const isWidth = dimension === 'width';
+
+      if (val === '') {
+        if (isWidth || lockAspect) setTargetWidth('');
+        if (!isWidth || lockAspect) setTargetHeight('');
+        cleanupResult();
+        return;
+      }
+
+      if (!lockAspect || val <= 0) {
+        isWidth ? setTargetWidth(val) : setTargetHeight(val);
+        cleanupResult();
+        return;
+      }
+
+      const { width, height } = calculateLockedDimensions(
+        dimension,
+        val,
+        aspectRatio,
+        MaxDimension,
+      );
+
+      setTargetWidth(width);
+      setTargetHeight(height);
       cleanupResult();
-      return;
-    }
+    },
+    [lockAspect, aspectRatio, cleanupResult],
+  );
 
-    if (!lockAspect || val <= 0) {
-      isWidth ? setTargetWidth(val) : setTargetHeight(val);
-      cleanupResult();
-      return;
-    }
+  const handleWidthChange = useCallback(
+    (e) => handleDimensionChange('width', e.target.value),
+    [handleDimensionChange],
+  );
 
-    const { width, height } = calculateLockedDimensions(dimension, val, aspectRatio, MAX_DIMENSION);
-    
-    setTargetWidth(width);
-    setTargetHeight(height);
-    cleanupResult();
-  }, [lockAspect, aspectRatio, cleanupResult]);
-
-  const handleWidthChange = useCallback((e) => handleDimensionChange('width', e.target.value), [handleDimensionChange]);
-  
-  const handleHeightChange = useCallback((e) => handleDimensionChange('height', e.target.value), [handleDimensionChange]);
+  const handleHeightChange = useCallback(
+    (e) => handleDimensionChange('height', e.target.value),
+    [handleDimensionChange],
+  );
 
   const toggleLock = useCallback(() => {
     setLockAspect((prev) => {
@@ -158,8 +179,8 @@ export function useImageResize({
           let newHeight = Math.round(w / aspectRatio);
           let safeWidth = w;
 
-          if (newHeight > MAX_DIMENSION) {
-            newHeight = MAX_DIMENSION;
+          if (newHeight > MaxDimension) {
+            newHeight = MaxDimension;
             safeWidth = Math.round(newHeight * aspectRatio);
           }
 
@@ -172,25 +193,42 @@ export function useImageResize({
     });
   }, [targetWidth, aspectRatio, cleanupResult]);
 
-  const applyPreset = useCallback((w, h) => {
-    setTargetWidth(toSafeDimension(w, MAX_DIMENSION));
-    setTargetHeight(toSafeDimension(h, MAX_DIMENSION));
-    setLockAspect(false);
-    cleanupResult();
-  }, [cleanupResult]);
+  const applyPreset = useCallback(
+    (w, h) => {
+      setTargetWidth(toSafeDimension(w, MaxDimension));
+      setTargetHeight(toSafeDimension(h, MaxDimension));
+      setLockAspect(false);
+      cleanupResult();
+    },
+    [cleanupResult],
+  );
 
   const applyResize = useCallback(async () => {
     const w = Number(targetWidth);
     const h = Number(targetHeight);
 
-    if (!file || !previewUrl || !Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) return;
+    if (
+      !file ||
+      !previewUrl ||
+      !Number.isFinite(w) ||
+      !Number.isFinite(h) ||
+      w <= 0 ||
+      h <= 0
+    )
+      return;
 
     setIsProcessing(true);
     setError('');
     cleanupResult();
 
     try {
-      const blob = await processImageResize(previewUrl, w, h, file.type, MAX_DIMENSION);
+      const blob = await processImageResize(
+        previewUrl,
+        w,
+        h,
+        file.type,
+        MaxDimension,
+      );
       setResultBlob(blob);
       setResultUrl(URL.createObjectURL(blob));
     } catch (e) {
@@ -199,7 +237,16 @@ export function useImageResize({
     } finally {
       setIsProcessing(false);
     }
-  }, [file, previewUrl, targetWidth, targetHeight, cleanupResult, setResultBlob, setResultUrl, setError]);
+  }, [
+    file,
+    previewUrl,
+    targetWidth,
+    targetHeight,
+    cleanupResult,
+    setResultBlob,
+    setResultUrl,
+    setError,
+  ]);
 
   const handleReset = useCallback(() => {
     resetAll();
@@ -207,13 +254,13 @@ export function useImageResize({
     let h = origHeight;
     const ratio = h > 0 ? w / h : 1;
 
-    if (w > MAX_DIMENSION || h > MAX_DIMENSION) {
+    if (w > MaxDimension || h > MaxDimension) {
       if (w >= h) {
-        w = MAX_DIMENSION;
-        h = Math.max(1, Math.round(MAX_DIMENSION / ratio));
+        w = MaxDimension;
+        h = Math.max(1, Math.round(MaxDimension / ratio));
       } else {
-        h = MAX_DIMENSION;
-        w = Math.max(1, Math.round(MAX_DIMENSION * ratio));
+        h = MaxDimension;
+        w = Math.max(1, Math.round(MaxDimension * ratio));
       }
     }
 
@@ -224,10 +271,19 @@ export function useImageResize({
   }, [resetAll, origWidth, origHeight]);
 
   return {
-    origWidth, origHeight,
-    targetWidth, targetHeight,
-    lockAspect, isProcessing, canProcess, previewRatio,
-    handleWidthChange, handleHeightChange, toggleLock, applyPreset,
-    applyResize, handleReset
+    origWidth,
+    origHeight,
+    targetWidth,
+    targetHeight,
+    lockAspect,
+    isProcessing,
+    canProcess,
+    previewRatio,
+    handleWidthChange,
+    handleHeightChange,
+    toggleLock,
+    applyPreset,
+    applyResize,
+    handleReset,
   };
 }

@@ -1,6 +1,6 @@
 import { useLocation } from 'react-router-dom';
 import Header from './Header';
-import { headerConfig } from '../../data/headerConfig';
+import { headerConfig } from '../../../data/headerConfig';
 
 export default function GlobalHeader() {
   const location = useLocation();

@@ -1,4 +1,4 @@
-import { MAX_DIMENSION } from '../../../hooks/workspace/useImageResize';
+import { MaxDimension } from '../../../../hooks/workspace/Editor/useImageResize';
 import PropTypes from 'prop-types';
 
 const RESIZE_PRESETS = [
@@ -33,13 +33,17 @@ export default function ResizeControls({
   onHeightChange,
   onToggleLock,
   onApplyPreset,
-  disabled
+  disabled,
 }) {
   return (
-    <div className={`space-y-6 transition-opacity duration-300 ${disabled ? 'pointer-events-none opacity-40' : 'opacity-100'}`}>
+    <div
+      className={`space-y-6 transition-opacity duration-300 ${disabled ? 'pointer-events-none opacity-40' : 'opacity-100'}`}
+    >
       <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="block text-xs font-bold text-slate-700 uppercase tracking-wide">Custom Dimensions</h3>
+          <h3 className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+            Custom Dimensions
+          </h3>
           {origWidth > 0 && (
             <span className="text-[10px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md">
               Original: {origWidth} x {origHeight}
@@ -49,18 +53,25 @@ export default function ResizeControls({
 
         <div className="flex items-center gap-3">
           <div className="flex-1 relative">
-            <label htmlFor="targetWidth" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1 absolute -top-2 left-2 bg-white px-1">Width</label>
+            <label
+              htmlFor="targetWidth"
+              className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1 absolute -top-2 left-2 bg-white px-1"
+            >
+              Width
+            </label>
             <input
               id="targetWidth"
               type="number"
               value={targetWidth}
               onChange={onWidthChange}
               min="1"
-              max={MAX_DIMENSION}
+              max={MaxDimension}
               placeholder="Width"
               className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 pr-8"
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">px</span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
+              px
+            </span>
           </div>
 
           <button
@@ -74,36 +85,55 @@ export default function ResizeControls({
           >
             {lockAspect ? (
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
+                  clipRule="evenodd"
+                />
               </svg>
             ) : (
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z" clipRule="evenodd" />
+                <path
+                  fillRule="evenodd"
+                  d="M10 2a5 5 0 00-5 5v2a2 2 0 00-2 2v5a2 2 0 002 2h10a2 2 0 002-2v-5a2 2 0 00-2-2H7V7a3 3 0 015.905-.75 1 1 0 001.937-.5A5.002 5.002 0 0010 2z"
+                  clipRule="evenodd"
+                />
               </svg>
             )}
           </button>
 
           <div className="flex-1 relative">
-            <label htmlFor="targetHeight" className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1 absolute -top-2 left-2 bg-white px-1">Height</label>
+            <label
+              htmlFor="targetHeight"
+              className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1 absolute -top-2 left-2 bg-white px-1"
+            >
+              Height
+            </label>
             <input
               id="targetHeight"
               type="number"
               value={targetHeight}
               onChange={onHeightChange}
               min="1"
-              max={MAX_DIMENSION}
+              max={MaxDimension}
               placeholder="Height"
               className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 shadow-sm focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100 pr-8"
             />
-            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">px</span>
+            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
+              px
+            </span>
           </div>
         </div>
 
         <div className="mt-5 pt-4 border-t border-slate-100">
-          <h3 className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-3">Quick Presets</h3>
+          <h3 className="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-3">
+            Quick Presets
+          </h3>
           <div className="grid grid-cols-2 gap-2">
             {RESIZE_PRESETS.map((preset) => {
-              const isSelected = Number(targetWidth) === preset.width && Number(targetHeight) === preset.height;
+              const isSelected =
+                Number(targetWidth) === preset.width &&
+                Number(targetHeight) === preset.height;
               return (
                 <button
                   key={preset.label}
@@ -114,10 +144,14 @@ export default function ResizeControls({
                       : 'bg-slate-50 border-slate-200 hover:bg-white hover:border-indigo-200 hover:shadow-sm'
                   }`}
                 >
-                  <span className={`text-xs font-bold ${isSelected ? 'text-indigo-700' : 'text-slate-700'}`}>
+                  <span
+                    className={`text-xs font-bold ${isSelected ? 'text-indigo-700' : 'text-slate-700'}`}
+                  >
                     {preset.label}
                   </span>
-                  <span className={`text-[10px] font-semibold mt-0.5 ${isSelected ? 'text-indigo-500' : 'text-slate-400'}`}>
+                  <span
+                    className={`text-[10px] font-semibold mt-0.5 ${isSelected ? 'text-indigo-500' : 'text-slate-400'}`}
+                  >
                     {preset.width} × {preset.height} px
                   </span>
                 </button>

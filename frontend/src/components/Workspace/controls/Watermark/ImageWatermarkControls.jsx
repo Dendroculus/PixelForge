@@ -1,6 +1,6 @@
 import PropTypes from 'prop-types';
-import UploadCard from '../../Upload/UploadCard';
-import { AppConfig } from '../../../config';
+import UploadCard from '../../../Upload/UploadCard';
+import { AppConfig } from '../../../../config';
 
 /**
  * Control inputs specifically for adjusting image logo watermarks (scale and opacity).
@@ -32,7 +32,10 @@ export default function ImageWatermarkControls({
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="wm-scale" className="mb-1.5 block text-xs font-bold text-slate-700 uppercase tracking-wide">
+          <label
+            htmlFor="wm-scale"
+            className="mb-1.5 block text-xs font-bold text-slate-700 uppercase tracking-wide"
+          >
             Scale
           </label>
           <input
@@ -49,9 +52,14 @@ export default function ImageWatermarkControls({
           />
         </div>
         <div>
-          <label htmlFor="wm-opacity" className="mb-1.5 flex items-center justify-between text-xs font-bold text-slate-700 uppercase tracking-wide">
+          <label
+            htmlFor="wm-opacity"
+            className="mb-1.5 flex items-center justify-between text-xs font-bold text-slate-700 uppercase tracking-wide"
+          >
             <span>Opacity</span>
-            <span className="text-indigo-600">{Math.round(imgWm.opacity * 100)}%</span>
+            <span className="text-indigo-600">
+              {Math.round(imgWm.opacity * 100)}%
+            </span>
           </label>
           <input
             id="wm-opacity"
@@ -74,7 +82,7 @@ export default function ImageWatermarkControls({
 ImageWatermarkControls.propTypes = {
   watermarkImageRef: PropTypes.oneOfType([
     PropTypes.func,
-    PropTypes.shape({ current: PropTypes.any })
+    PropTypes.shape({ current: PropTypes.any }),
   ]),
   handleWatermarkImageUpload: PropTypes.func.isRequired,
   imgWm: PropTypes.shape({

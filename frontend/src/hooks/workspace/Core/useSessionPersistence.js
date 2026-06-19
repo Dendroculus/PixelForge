@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
-import { loadFileFromIDB } from '../../utils/storage/idb';
-import { clearAppSession } from '../../utils/storage/session';
-import { AppConfig as config } from '../../config';
-import { isExpired } from '../../utils/time';
+import { loadFileFromIDB } from '../../../utils/storage/idb';
+import { clearAppSession } from '../../../utils/storage/session';
+import { AppConfig as config } from '../../../config';
+import { isExpired } from '../../../utils/time';
 
 export function useSessionPersistence({
   setSelectedFile,
@@ -17,7 +17,7 @@ export function useSessionPersistence({
   resultUrl,
   previewUrl,
   storageKeys,
-  feature
+  feature,
 }) {
   const sessionRestored = useRef(false);
 
@@ -25,7 +25,7 @@ export function useSessionPersistence({
     if (sessionRestored.current) return;
     sessionRestored.current = true;
 
-   const restoreSession = async () => {
+    const restoreSession = async () => {
       const resetState = () => {
         setSelectedFile(null);
         setPreviewUrl(null);
@@ -36,8 +36,10 @@ export function useSessionPersistence({
 
       try {
         const savedFile = await loadFileFromIDB(feature);
-        
-        const uploadTimestamp = localStorage.getItem(storageKeys.UPLOAD_TIMESTAMP);
+
+        const uploadTimestamp = localStorage.getItem(
+          storageKeys.UPLOAD_TIMESTAMP,
+        );
         const savedResult = localStorage.getItem(storageKeys.RESULT_URL);
         const savedJobId = localStorage.getItem(storageKeys.JOB_ID);
         const storedAlert = localStorage.getItem(storageKeys.ALERT);
@@ -50,7 +52,11 @@ export function useSessionPersistence({
           return;
         }
 
-        if (!savedResult && uploadTimestamp && isExpired(uploadTimestamp, config.UPLOAD_DRAFT_EXPIRATION_TIME)) {
+        if (
+          !savedResult &&
+          uploadTimestamp &&
+          isExpired(uploadTimestamp, config.UPLOAD_DRAFT_EXPIRATION_TIME)
+        ) {
           await clearAppSession(feature);
           resetState();
           return;
@@ -59,9 +65,15 @@ export function useSessionPersistence({
         setSelectedFile(savedFile);
         setPreviewUrl(URL.createObjectURL(savedFile));
 
-        const savedTimestamp = localStorage.getItem(storageKeys.RESULT_TIMESTAMP);
+        const savedTimestamp = localStorage.getItem(
+          storageKeys.RESULT_TIMESTAMP,
+        );
 
-        if (savedResult && savedTimestamp && isExpired(savedTimestamp, config.RESULT_EXPIRATION_TIME)) {
+        if (
+          savedResult &&
+          savedTimestamp &&
+          isExpired(savedTimestamp, config.RESULT_EXPIRATION_TIME)
+        ) {
           await clearAppSession(feature);
           setSelectedFile(null);
           setPreviewUrl(null);
@@ -79,12 +91,19 @@ export function useSessionPersistence({
           return;
         }
 
-        const isProcessingStored = localStorage.getItem(storageKeys.IS_PROCESSING) === 'true';
+        const isProcessingStored =
+          localStorage.getItem(storageKeys.IS_PROCESSING) === 'true';
 
         if (savedJobId || isProcessingStored) {
-          let refreshCount = parseInt(localStorage.getItem(storageKeys.REFRESH_COUNT) || '0', 10);
+          let refreshCount = parseInt(
+            localStorage.getItem(storageKeys.REFRESH_COUNT) || '0',
+            10,
+          );
           refreshCount++;
-          localStorage.setItem(storageKeys.REFRESH_COUNT, refreshCount.toString());
+          localStorage.setItem(
+            storageKeys.REFRESH_COUNT,
+            refreshCount.toString(),
+          );
 
           if (refreshCount === 3) {
             localStorage.setItem(storageKeys.ALERT, 'potato');
@@ -110,9 +129,17 @@ export function useSessionPersistence({
 
     restoreSession();
   }, [
-    pollForResult, handleUpscale, appAlert.show, setAppAlert,
-    setIsProcessing, setPreviewUrl, setResultUrl, setSelectedFile,
-    setJobId, storageKeys, feature
+    pollForResult,
+    handleUpscale,
+    appAlert.show,
+    setAppAlert,
+    setIsProcessing,
+    setPreviewUrl,
+    setResultUrl,
+    setSelectedFile,
+    setJobId,
+    storageKeys,
+    feature,
   ]);
 
   useEffect(() => {
@@ -126,9 +153,14 @@ export function useSessionPersistence({
 
     if (shouldWatchDraft) {
       interval = setInterval(async () => {
-        const uploadTimestamp = localStorage.getItem(storageKeys.UPLOAD_TIMESTAMP);
+        const uploadTimestamp = localStorage.getItem(
+          storageKeys.UPLOAD_TIMESTAMP,
+        );
 
-        if (uploadTimestamp && isExpired(uploadTimestamp, config.UPLOAD_DRAFT_EXPIRATION_TIME)) {
+        if (
+          uploadTimestamp &&
+          isExpired(uploadTimestamp, config.UPLOAD_DRAFT_EXPIRATION_TIME)
+        ) {
           await clearAppSession(feature, previewUrl);
           setSelectedFile(null);
           setPreviewUrl(null);
@@ -141,8 +173,15 @@ export function useSessionPersistence({
 
     return () => clearInterval(interval);
   }, [
-    previewUrl, resultUrl, setIsProcessing, setJobId,
-    setPreviewUrl, setResultUrl, setSelectedFile, storageKeys, feature
+    previewUrl,
+    resultUrl,
+    setIsProcessing,
+    setJobId,
+    setPreviewUrl,
+    setResultUrl,
+    setSelectedFile,
+    storageKeys,
+    feature,
   ]);
 
   useEffect(() => {
@@ -158,7 +197,14 @@ export function useSessionPersistence({
       performCleanup();
     }
   }, [
-    appAlert.show, appAlert.type, feature, previewUrl, 
-    setSelectedFile, setPreviewUrl, setResultUrl, setJobId, setIsProcessing
+    appAlert.show,
+    appAlert.type,
+    feature,
+    previewUrl,
+    setSelectedFile,
+    setPreviewUrl,
+    setResultUrl,
+    setJobId,
+    setIsProcessing,
   ]);
 }

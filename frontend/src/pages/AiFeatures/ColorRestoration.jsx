@@ -2,7 +2,7 @@ import { useState } from 'react';
 import AiFeatureWorkspace from '../../components/Workspace/AiFeatureWorkspace';
 import ColorRestoreControls from '../../components/Workspace/controls/AiFeatures/ColorRestoreControls';
 import { useColorRestorePipeline } from '../../hooks/pipeline/useColorRestorePipeline';
-import { useSimulatedProgress } from '../../hooks/workspace/useSimulatedProgress';
+import { useSimulatedProgress } from '../../hooks/workspace/Core/useSimulatedProgress';
 import { marketingProps } from '../../data/feature/colorRestoreMarketing';
 
 export default function ColorRestoration() {
@@ -29,7 +29,12 @@ export default function ColorRestoration() {
     isWaitingForToken,
   } = useColorRestorePipeline(setProgress);
 
-  useSimulatedProgress(isProcessing, setProgress, turnstileToken, 'colorrestore');
+  useSimulatedProgress(
+    isProcessing,
+    setProgress,
+    turnstileToken,
+    'colorrestore',
+  );
 
   return (
     <AiFeatureWorkspace

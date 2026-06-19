@@ -2,17 +2,33 @@ import { useState } from 'react';
 import AiFeatureWorkspace from '../../components/Workspace/AiFeatureWorkspace';
 import UpscaleControls from '../../components/Workspace/controls/AiFeatures/UpscaleControls';
 import { useUpscalePipeline } from '../../hooks/pipeline/useUpscalePipeline';
-import { useSimulatedProgress } from '../../hooks/workspace/useSimulatedProgress';
+import { useSimulatedProgress } from '../../hooks/workspace/Core/useSimulatedProgress';
 import { marketingProps } from '../../data/feature/upscaleMarketing';
 
 export default function UpscaleWorkspace() {
   const [progress, setProgress] = useState(0);
 
   const {
-    selectedFile, previewUrl, isProcessing, resultUrl, jobId,
-    handleFileSelect, handleCancel, handleUpscale,
-    turnstileRef, setTurnstileToken, turnstileToken,
-    appAlert, setAppAlert, usesRemaining, resetTimestamp, isLoading, scale, setScale, maxLimit, isWaitingForToken
+    selectedFile,
+    previewUrl,
+    isProcessing,
+    resultUrl,
+    jobId,
+    handleFileSelect,
+    handleCancel,
+    handleUpscale,
+    turnstileRef,
+    setTurnstileToken,
+    turnstileToken,
+    appAlert,
+    setAppAlert,
+    usesRemaining,
+    resetTimestamp,
+    isLoading,
+    scale,
+    setScale,
+    maxLimit,
+    isWaitingForToken,
   } = useUpscalePipeline(setProgress);
 
   useSimulatedProgress(isProcessing, setProgress, turnstileToken, 'upscale');
