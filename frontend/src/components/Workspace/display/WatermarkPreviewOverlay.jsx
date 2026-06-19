@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { parseWatermarkTextLines } from '../../../utils/image/watermarkUtils';
+import { getTextSegmentStyle } from '../../../utils/image/watermarkUtils';
 
 /**
  * @param {Object} props
@@ -9,7 +10,16 @@ import { parseWatermarkTextLines } from '../../../utils/image/watermarkUtils';
  */
 function TrashIcon({ className = 'h-4 w-4' }) {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={className}>
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="black"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+      className={className}
+    >
       <path d="M3 6h18" />
       <path d="M8 6V4.8c0-.99.81-1.8 1.8-1.8h4.4c.99 0 1.8.81 1.8 1.8V6" />
       <path d="M6.5 6l1 13.2c.08 1.03.94 1.8 1.97 1.8h5.06c1.03 0 1.89-.77 1.97-1.8L17.5 6" />
@@ -20,7 +30,7 @@ function TrashIcon({ className = 'h-4 w-4' }) {
 }
 
 TrashIcon.propTypes = {
-  className: PropTypes.string
+  className: PropTypes.string,
 };
 
 /**
@@ -47,24 +57,28 @@ export default function WatermarkPreviewOverlay({
   imageRect,
   isSelected,
   onSelect,
-  onDelete
+  onDelete,
 }) {
   const showActions = isSelected;
   const hasText = activeTab === 'text';
 
-  const maxSafeWidth = imageRect 
-    ? Math.max(50, (imageRect.left + imageRect.width) - overlayPos.x - 8) 
+  const maxSafeWidth = imageRect
+    ? Math.max(50, imageRect.left + imageRect.width - overlayPos.x - 8)
     : '100%';
 
   const renderTextWatermark = () => {
-    const lines = parseWatermarkTextLines(textWm.text || 'Watermark Text', textWm.charStyles, { 
-      b: textWm.isBold, 
-      i: textWm.isItalic, 
-      u: textWm.isUnderline 
-    });
-    
+    const lines = parseWatermarkTextLines(
+      textWm.text || 'Watermark Text',
+      textWm.charStyles,
+      {
+        b: textWm.isBold,
+        i: textWm.isItalic,
+        u: textWm.isUnderline,
+      },
+    );
+
     return (
-      <div 
+      <div
         style={{
           opacity: textWm.opacity,
           maxWidth: `${maxSafeWidth}px`,
@@ -74,20 +88,13 @@ export default function WatermarkPreviewOverlay({
           lineHeight: 1.2,
           fontSize: `${textWm.fontSize}px`,
           fontFamily: `"${textWm.fontFamily}", sans-serif`,
-          color: textWm.color
+          color: textWm.color,
         }}
       >
         {lines.map((line, lIdx) => (
           <div key={lIdx} style={{ minHeight: `${textWm.fontSize}px` }}>
             {line.segments.map((seg, sIdx) => (
-              <span 
-                key={sIdx}
-                style={{
-                  fontWeight: seg.b ? 'bold' : 'normal',
-                  fontStyle: seg.i ? 'italic' : 'normal',
-                  textDecoration: seg.u ? 'underline' : 'none'
-                }}
-              >
+              <span key={sIdx} style={getTextSegmentStyle(seg)}>
                 {seg.text}
               </span>
             ))}
@@ -113,16 +120,21 @@ export default function WatermarkPreviewOverlay({
         <button
           type="button"
           onPointerDown={(e) => e.stopPropagation()}
-          onClick={(e) => { e.stopPropagation(); onDelete?.(); }}
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete?.();
+          }}
           aria-label="Delete watermark"
           title="Delete watermark"
           className="absolute -right-4 -top-4 z-70 inline-flex h-8 w-8 items-center justify-center rounded-full border border-slate-300 bg-white text-black shadow-md transition hover:bg-slate-100"
         >
-          <TrashIcon className='h-5 w-5'/>
+          <TrashIcon className="h-5 w-5" />
         </button>
       )}
 
-      {hasText ? renderTextWatermark() : (
+      {hasText ? (
+        renderTextWatermark()
+      ) : (
         <img
           src={imgWm.url}
           alt="Logo overlay"
@@ -144,7 +156,7 @@ WatermarkPreviewOverlay.propTypes = {
   overlayRef: PropTypes.object.isRequired,
   overlayPos: PropTypes.shape({
     x: PropTypes.number.isRequired,
-    y: PropTypes.number.isRequired
+    y: PropTypes.number.isRequired,
   }).isRequired,
   activeTab: PropTypes.string.isRequired,
   textWm: PropTypes.object.isRequired,
@@ -153,5 +165,5 @@ WatermarkPreviewOverlay.propTypes = {
   imageRect: PropTypes.object,
   isSelected: PropTypes.bool.isRequired,
   onSelect: PropTypes.func.isRequired,
-  onDelete: PropTypes.func.isRequired
+  onDelete: PropTypes.func.isRequired,
 };

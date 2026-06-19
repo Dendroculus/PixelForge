@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { APP_CONFIG as config, FEATURE_LIMITS } from '../../config';
+import { AppConfig as config, FEATURE_LIMITS } from '../../config';
 
 const apiUrl =
   import.meta.env.VITE_API_BASE_URL ||

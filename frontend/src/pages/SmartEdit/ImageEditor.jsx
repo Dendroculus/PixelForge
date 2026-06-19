@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { APP_CONFIG } from '../../config';
+import { AppConfig } from '../../config';
 
 import UploadCard              from '../../components/Upload/UploadCard';
 import ToolWorkspaceShell      from '../../components/Layout/ToolWorkspaceShell';
@@ -50,7 +50,7 @@ export default function ImageEditor() {
                 inputId="editor-file-input"
                 inputRef={fileInputRef}
                 onChange={onFileChange}
-                helperText={`Any format up to ${APP_CONFIG.MAX_FILE_SIZE_MB}MB`}
+                helperText={`Any format up to ${AppConfig.MAX_FILE_SIZE_MB}MB`}
                 hasActiveFile={Boolean(file)}
               />
             ) : (

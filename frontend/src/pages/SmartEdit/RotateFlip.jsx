@@ -1,6 +1,6 @@
 import { useMemo, useRef, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { APP_CONFIG } from '../../config';
+import { AppConfig } from '../../config';
 import UploadCard from '../../components/Upload/UploadCard';
 import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
 import ToolPageWrapper from '../../components/Layout/ToolPageWrapper';
@@ -65,7 +65,7 @@ export default function RotateFlip() {
                 inputId="rf-file-input"
                 inputRef={fileInputRef}
                 onChange={workspaceState.onFileChange}
-                helperText={`Any format up to ${APP_CONFIG.MAX_FILE_SIZE_MB}MB`}
+                helperText={`Any format up to ${AppConfig.MAX_FILE_SIZE_MB}MB`}
                 hasActiveFile={Boolean(workspaceState.file)}
               />
             ) : (

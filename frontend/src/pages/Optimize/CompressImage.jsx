@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { APP_CONFIG } from '../../config';
+import { AppConfig } from '../../config';
 import UploadCard from '../../components/Upload/UploadCard';
 import ToolWorkspaceShell from '../../components/Layout/ToolWorkspaceShell';
 import ToolPageWrapper from '../../components/Layout/ToolPageWrapper';
@@ -115,7 +115,7 @@ export default function ConvertFormat() {
                 inputId="convert-file-input"
                 inputRef={fileInputRef}
                 onChange={onFileChange}
-                helperText={`Any format up to ${APP_CONFIG.MAX_FILE_SIZE_MB}MB`}
+                helperText={`Any format up to ${AppConfig.MAX_FILE_SIZE_MB}MB`}
                 hasActiveFile={Boolean(file)}
               />
               <WorkspaceFileSummary file={file} />
@@ -124,7 +124,7 @@ export default function ConvertFormat() {
             <div className="mb-4 grid grid-cols-2 gap-6">
               <FormatDropdown
                 value={targetFormat}
-                options={APP_CONFIG.ALLOWED_EXTENSIONS}
+                options={AppConfig.ALLOWED_EXTENSIONS}
                 onChange={setTargetFormat}
                 label="Convert To"
                 buttonClassName="flex w-full items-center justify-between rounded-xl border border-white/60 bg-white/60 px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm outline-none transition-all hover:bg-white/80 focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
