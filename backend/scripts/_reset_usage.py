@@ -23,7 +23,7 @@ async def reset_usage_limits() -> None:
         SystemExit: If executed outside the 'development' environment or 
                     if the database pool fails to initialize.
     """
-    if settings.ENVIRONMENT.lower() != "development":
+    if settings.ENVIRONMENT.lower() != "dev":
         logger.error("Security Halt: Destructive scripts are only permitted in the 'development' environment.")
         sys.exit(1)
 

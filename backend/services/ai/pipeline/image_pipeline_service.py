@@ -6,9 +6,9 @@ import urllib.parse
 import time
 from services.azure.storage import StorageService
 from core.config import settings
-from utils.storage_utils import get_result_filename
+from services.azure.storage_utils import get_result_filename
 from core.model_registry import ModelRegistry
-from services.ai.ai_provider import BaseAIProvider, ReplicateProvider
+from provider.ai_provider import BaseAIProvider, ReplicateProvider
 
 logger = logging.getLogger(__name__)
 

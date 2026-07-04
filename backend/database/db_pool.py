@@ -1,13 +1,9 @@
 import asyncio
 import logging
-
 import asyncpg
-
 from core.config import settings
 
-
 logger = logging.getLogger(__name__)
-
 
 # Global database connection pool instance
 _pool: asyncpg.pool.Pool | None = None
@@ -115,12 +111,12 @@ async def close_db_pool() -> None:
         logger.info("Database pool closed.")
 
 
-def get_db_pool() -> asyncpg.pool.Pool | None:
+def get_db_pool() -> asyncpg.pool.Pool | None: 
     """
     Returns the active database connection pool.
 
     Returns:
-        asyncpg.pool.Pool | None:
+    asyncpg.pool.Pool | None:
             Current pool instance or None if not initialized.
     """
     return _pool

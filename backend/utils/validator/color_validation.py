@@ -3,9 +3,6 @@ import numpy as np
 from PIL import Image
 from core.config import settings
 
-
-
-
 def calculate_color_ratio(
     rgb: np.ndarray,
     valid_mask: np.ndarray,

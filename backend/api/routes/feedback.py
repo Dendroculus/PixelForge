@@ -3,7 +3,7 @@ from fastapi import APIRouter, BackgroundTasks, Request
 from limiter.rate_limiter import limiter
 from services.security.turnstile_service import verify_turnstile
 from core.config import settings
-from utils.discord_webhooks import build_feedback_payload, send_discord_message
+from services.notification.discord_webhooks import build_feedback_payload, send_discord_message
 from api.schemas.feedback import FeedbackRequest
 
 router = APIRouter(tags=["feedback"])

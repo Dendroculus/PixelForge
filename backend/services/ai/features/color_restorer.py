@@ -1,9 +1,9 @@
 import asyncio
 import io
-from services.ai.image_pipeline_service import ImagePipelineService
-from services.ai.ai_provider import BaseAIProvider
+from services.ai.pipeline.image_pipeline_service import ImagePipelineService
+from provider.ai_provider import BaseAIProvider
 from core.config import settings
-from utils.color_validation import validate_grayscale_image
+from utils.validator.color_validation import validate_grayscale_image
 
 class ColorRestorer(ImagePipelineService):
     """

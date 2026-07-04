@@ -16,7 +16,7 @@ from datetime import timedelta, timezone, datetime
 from azure.storage.blob import generate_blob_sas, BlobSasPermissions
 
 from core.config import settings
-from utils.storage_utils import get_marker_filename, parse_azure_credentials
+from services.azure.storage_utils import get_marker_filename, parse_azure_credentials
 
 logger = logging.getLogger(__name__)
 

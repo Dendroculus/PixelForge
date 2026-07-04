@@ -2,10 +2,10 @@ import asyncio
 import io
 import logging
 from PIL import Image
-from services.ai.image_pipeline_service import ImagePipelineService
-from services.ai.ai_provider import BaseAIProvider
+from services.ai.pipeline.image_pipeline_service import ImagePipelineService
+from provider.ai_provider import BaseAIProvider
 from core.config import settings
-from utils.image_utils import smart_downscale
+from utils.image.image_utils import smart_downscale
 
 logger = logging.getLogger(__name__)
 

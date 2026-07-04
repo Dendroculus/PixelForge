@@ -28,8 +28,6 @@ from database.db_pool import (
 from services.azure.storage import StorageService
 
 
-# --- Environment Validation ---
-
 if not settings.ALLOWED_ORIGINS:
     raise ValueError(
         "CRITICAL: ALLOWED_ORIGINS must be defined in the environment."
@@ -43,8 +41,6 @@ if "*" in settings.ALLOWED_ORIGINS:
 
 logger = logging.getLogger("main")
 
-
-# --- Logging Configuration ---
 
 LOG_DIR = Path(os.path.dirname(__file__)) / "logs"
 LOG_DIR.mkdir(
@@ -155,8 +151,6 @@ app = FastAPI(
 )
 
 
-# --- Middleware ---
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
@@ -171,8 +165,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# --- Rate Limiting ---
 
 app.state.limiter = limiter
 
@@ -197,8 +189,6 @@ async def root() -> dict:
         "docs": "/api/docs",
     }
 
-
-# --- Routes ---
 
 app.include_router(ai_tools.router)
 app.include_router(feedback.router)

@@ -1,6 +1,8 @@
 """
-This file is created to simplify the command to run the backend server to reduce time of typing and to avoid mistakes. It simply imports the main app from main.py and runs it using uvicorn.
+Run PixelForge FastAPI backend locally.
+NOTE to self: Please do not use this script in HOSTED production environments.
 """
+
 import uvicorn
 
 MAIN_APP = "main:app"
@@ -13,4 +15,13 @@ if __name__ == "__main__":
         host=HOST,
         port=PORT,
         reload=True,
+        reload_excludes=[
+            "logs/*",
+            "*.log",
+            "__pycache__/*",
+            ".ruff_cache/*",
+            ".pytest_cache/*",
+        ],
+        log_config=None,
+        log_level="info",
     )
