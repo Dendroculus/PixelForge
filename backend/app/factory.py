@@ -1,10 +1,15 @@
+import logging
+
 from fastapi import FastAPI
 
 from app.lifecycle import lifespan
-from app.logging_config import configure_logging
+from app.logging.logging_config import configure_logging
 from app.middleware import configure_middleware
 from app.routers import register_routers
 from core.config import settings
+
+
+logger = logging.getLogger(__name__)
 
 
 def validate_environment() -> None:
@@ -20,8 +25,15 @@ def validate_environment() -> None:
 
 
 def create_app() -> FastAPI:
-    validate_environment()
     configure_logging()
+
+    logger.info(
+        "Logging configured. level=%s log_to_file=%s",
+        settings.LOG_LEVEL,
+        settings.LOG_TO_FILE,
+    )
+
+    validate_environment()
 
     app = FastAPI(
         root_path="/api",
@@ -35,3 +47,13 @@ def create_app() -> FastAPI:
     register_routers(app)
 
     return app
+
+logger.info(
+    "Logging configured. level=%s log_to_file=%s handlers=%s",
+    settings.LOG_LEVEL,
+    settings.LOG_TO_FILE,
+    [
+        type(handler).__name__
+        for handler in logging.getLogger().handlers
+    ],
+)
