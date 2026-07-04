@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-router = APIRouter(tags=["Health Check"])
+router = APIRouter(tags=["health"])
 
 
 @router.get("/")
@@ -9,4 +9,4 @@ async def root() -> dict:
         "status": "online",
         "message": "PixelForge API is running",
         "docs": "/api/docs",
-}
+    }
