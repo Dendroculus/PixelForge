@@ -19,6 +19,11 @@ class ModelRegistry:
             "replicate_id": "piddnad/ddcolor:ca494ba129e44e45f661d6ece83c4c98a9a7c774309beca01429b58fce8aa695",
             "input_key": "image",
         },
+        "objectremove": {
+            "replicate_id": "zylim0702/remove-object:0e3a841c913f597c1e4c321560aa69e2bc1f15c65f8c366caafc379240efd8ba",
+            "input_key": "image",
+            "mask_key": "mask",
+        },
     }
 
     @classmethod
@@ -54,3 +59,9 @@ class ModelRegistry:
     @classmethod
     def list_models(cls) -> List[str]:
         return list(cls._MODELS.keys())
+    
+    @classmethod
+    def get_mask_key(cls, model_type: str) -> str:
+        if model_type not in cls._MODELS:
+            raise ValueError(f"Model type '{model_type}' is not registered.")
+        return cls._MODELS[model_type].get("mask_key", "mask")

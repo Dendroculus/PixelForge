@@ -19,3 +19,8 @@ class StartRembgRequest(BaseModel):
 class StartColorRestoreRequest(BaseModel):
     job_id: str
     safe_filename: str
+    
+class StartObjectRemoveRequest(BaseModel):
+    job_id: str
+    safe_filename: str
+    mask_filename: str

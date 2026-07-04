@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     DISCORD_WEBHOOK_URL: str
     REPLICATE_API_TOKEN: str
     ALLOWED_ORIGINS: str
+    ALLOW_TURNSTILE_TEST_BYPASS: bool = False
     
     # --- Logging ---
     LOG_LEVEL: str = "INFO"
@@ -62,21 +63,20 @@ class Settings(BaseSettings):
     UPSCALE_DAILY_USAGE_LIMIT: int = 3
     REMBG_DAILY_USAGE_LIMIT: int = 5
     COLOR_RESTORE_DAILY_USAGE_LIMIT: int = 5
+    OBJECT_REMOVE_DAILY_USAGE_LIMIT: int = 5
     FEEDBACK_DAILY_USAGE_LIMIT: int = 5
 
     SAS_EXPIRATION_MINUTES: int = 11
 
-
     @property
     def FEATURE_LIMITS(self) -> Dict[str, int]:
-        """Return feature usage limits mapping."""
         return {
             "upscale": self.UPSCALE_DAILY_USAGE_LIMIT,
             "rembg": self.REMBG_DAILY_USAGE_LIMIT,
             "colorrestore": self.COLOR_RESTORE_DAILY_USAGE_LIMIT,
+            "objectremove": self.OBJECT_REMOVE_DAILY_USAGE_LIMIT,
             "feedback": self.FEEDBACK_DAILY_USAGE_LIMIT,
         }
-
 
     # --- Database ---
     POOL_MIN_SIZE: int = 1

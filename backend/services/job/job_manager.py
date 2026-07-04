@@ -7,6 +7,7 @@ from services.azure.storage import StorageService
 from services.ai.features.upscale import ai_upscaler
 from services.ai.features.bg_remover import bg_remover
 from services.ai.features.color_restorer import color_restorer
+from services.ai.features.object_remover import object_remover
 
 from core.config import settings
 
@@ -63,11 +64,8 @@ class JobManager:
         """
         await QueueService.reserve_slot(job_id)
 
-        limit = settings.FEATURE_LIMITS.get(
-            feature,
-            settings.UPSCALE_DAILY_USAGE_LIMIT
-        )
-
+        limit = settings.FEATURE_LIMITS[feature]
+        
         is_allowed = await UsageService.check_daily_limit(
             client_ip,
             limit_24h=limit,
@@ -328,4 +326,35 @@ class JobManager:
             client_ip,
             "colorrestore",
             _run
+        )
+        
+    @classmethod
+    async def process_object_remove(
+        cls,
+        job_id: str,
+        safe_filename: str,
+        mask_filename: str,
+        client_ip: str,
+    ) -> None:
+        """
+        Execute object removal process.
+        """
+        async def _run():
+            return await object_remover.run_object_remove(
+                safe_filename=safe_filename,
+                mask_filename=mask_filename,
+                job_id=job_id,
+            )
+
+        await cls._process_feature(
+            job_id,
+            safe_filename,
+            client_ip,
+            "objectremove",
+            _run,
+        )
+
+        await StorageService.delete_azure_blob(
+            settings.UPLOAD_CONTAINER,
+            mask_filename,
         )
