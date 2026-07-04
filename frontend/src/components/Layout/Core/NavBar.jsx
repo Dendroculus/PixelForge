@@ -167,7 +167,7 @@ export default function Navbar() {
           <div className="w-px h-6 bg-slate-300/50 mx-2"></div>
 
           <a
-            href="https://github.com/Dendroculus/image-upscaler-website"
+            href="https://github.com/Dendroculus/PixelForge"
             target="_blank"
             rel="noopener noreferrer"
             className="text-sm hover:text-slate-900 transition-colors flex items-center gap-1.5 font-bold text-slate-600"
