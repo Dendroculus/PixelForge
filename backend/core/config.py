@@ -27,6 +27,14 @@ class Settings(BaseSettings):
     DISCORD_WEBHOOK_URL: str
     REPLICATE_API_TOKEN: str
     ALLOWED_ORIGINS: str
+    
+    # --- Logging ---
+    LOG_LEVEL: str = "INFO"
+    LOG_TO_FILE: bool = False
+    LOG_DIR: str = "logs"
+    LOG_FILE_NAME: str = "pixelforge.log"
+    LOG_MAX_BYTES: int = 10_485_760
+    LOG_BACKUP_COUNT: int = 5
 
 
     @property
