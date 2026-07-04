@@ -1,0 +1,3 @@
+"""
+Module for API schemas.
+"""

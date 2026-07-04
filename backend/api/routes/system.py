@@ -11,7 +11,6 @@ router = APIRouter(tags=["system"])
 
 JOB_ID_RE = re.compile(r"^[a-f0-9]{32}$")
 
-
 @router.get("/result/{job_id}")
 @limiter.limit(settings.POLL_RATE_LIMIT)
 async def get_result(request: Request, job_id: str):

@@ -10,7 +10,7 @@ from database.db_pool import init_db_pool, get_db_pool, close_db_pool
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
+TABLE_TO_TRUNCATE = "ip_usage_hourly"
 
 async def reset_usage_limits() -> None:
     """
@@ -36,12 +36,12 @@ async def reset_usage_limits() -> None:
             sys.exit(1)
 
         async with pool.acquire() as conn:
-            await conn.execute("TRUNCATE TABLE usage RESTART IDENTITY CASCADE;")
+            await conn.execute(f"TRUNCATE TABLE {TABLE_TO_TRUNCATE} RESTART IDENTITY CASCADE;")
 
-        logger.info("✅ Developer usage limits successfully reset.")
+        logger.info("Developer usage limits successfully reset.")
 
     except Exception as e:
-        logger.error("❌ Database truncation failed: %s", e)
+        logger.error("Database truncation failed: %s", e)
         sys.exit(1)
 
     finally:

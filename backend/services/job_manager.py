@@ -11,7 +11,7 @@ from services.ai.upscale import ai_upscaler
 from services.ai.bg_remover import bg_remover
 from services.ai.color_restorer import color_restorer
 
-from api.dependencies import verify_turnstile
+from services.turnstile_service import verify_turnstile
 from core.config import settings
 
 logger = logging.getLogger(__name__)

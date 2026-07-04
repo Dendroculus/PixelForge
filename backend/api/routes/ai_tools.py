@@ -1,86 +1,18 @@
-from typing import Literal, Callable, Any
-
 from fastapi import APIRouter, BackgroundTasks, status, Request
 
 from limiter.rate_limiter import limiter, get_real_client_ip
 from services.job_manager import JobManager
 from core.config import settings
-
-from api.schemas import (
+from domain.ai_features import FeatureType
+from services.ai_job_dispatcher import reserve_and_queue_job
+from api.schemas.ai_tools import (
     InitRequest,
     StartUpscaleRequest,
     StartRembgRequest,
     StartColorRestoreRequest,
 )
 
-
 router = APIRouter(tags=["ai_tools"])
-
-
-FeatureType = Literal["upscale", "rembg", "colorrestore"]
-
-
-async def _reserve_and_queue_job(
-    feature: FeatureType,
-    request: Request,
-    job_id: str,
-    safe_filename: str,
-    bg_tasks: BackgroundTasks,
-    process_func: Callable,
-    *process_args: Any,
-) -> dict:
-    """
-    Reserves a queue slot and schedules an AI processing task.
-
-    Workflow:
-    - Extract client IP.
-    - Reserve processing capacity.
-    - Add background processing task.
-    - Return queued job information.
-
-    Args:
-        feature:
-            AI feature being processed.
-        request:
-            Incoming HTTP request.
-        job_id:
-            Unique job identifier.
-        safe_filename:
-            Sanitized uploaded filename.
-        bg_tasks:
-            FastAPI background task manager.
-        process_func:
-            JobManager processing method to execute.
-        *process_args:
-            Additional arguments required by the processing function.
-
-    Returns:
-        dict:
-            Job status message and job ID.
-    """
-    client_ip = get_real_client_ip(request)
-
-    await JobManager.check_register_and_reserve(
-        job_id,
-        client_ip,
-        feature,
-    )
-
-    bg_tasks.add_task(
-        process_func,
-        job_id,
-        safe_filename,
-        *process_args,
-        client_ip,
-    )
-
-    display_name = "RemBG" if feature == "rembg" else feature.capitalize()
-
-    return {
-        "message": f"{display_name} started",
-        "job_id": job_id,
-    }
-
 
 @router.post("/{feature}/init")
 @limiter.limit(settings.UPLOAD_RATE_LIMIT)
@@ -124,7 +56,7 @@ async def start_upscale(
     """
     Queues an image upscaling job.
     """
-    return await _reserve_and_queue_job(
+    return await reserve_and_queue_job(
         "upscale",
         request,
         payload.job_id,
@@ -146,7 +78,7 @@ async def start_rembg(
     """
     Queues a background removal job.
     """
-    return await _reserve_and_queue_job(
+    return await reserve_and_queue_job(
         "rembg",
         request,
         payload.job_id,
@@ -166,7 +98,7 @@ async def start_colorrestore(
     """
     Queues a color restoration job.
     """
-    return await _reserve_and_queue_job(
+    return await reserve_and_queue_job(
         "colorrestore",
         request,
         payload.job_id,
