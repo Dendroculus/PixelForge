@@ -3,9 +3,9 @@ import io
 from PIL import Image
 from core.config import settings
 from core.model_registry import ModelRegistry
-from services.ai.image_pipeline_service import ImagePipelineService
-from services.ai.ai_provider import BaseAIProvider
-from utils.image_utils import smart_downscale
+from services.ai.pipeline.image_pipeline_service import ImagePipelineService
+from provider.ai_provider import BaseAIProvider
+from utils.image.image_utils import smart_downscale
 
 
 class AIUpscaler(ImagePipelineService):

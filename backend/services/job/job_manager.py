@@ -4,9 +4,9 @@ from fastapi import HTTPException, status
 from limiter.usage_service import UsageService
 from services.job.queue_service import QueueService
 from services.azure.storage import StorageService
-from services.ai.upscale import ai_upscaler
-from services.ai.bg_remover import bg_remover
-from services.ai.color_restorer import color_restorer
+from services.ai.features.upscale import ai_upscaler
+from services.ai.features.bg_remover import bg_remover
+from services.ai.features.color_restorer import color_restorer
 
 from core.config import settings
 

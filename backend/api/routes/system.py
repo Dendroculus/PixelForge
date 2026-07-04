@@ -5,7 +5,7 @@ from limiter.rate_limiter import limiter, get_real_client_ip
 from limiter.usage_service import UsageService
 from services.azure.storage import StorageService
 from core.config import settings
-from utils.storage_utils import get_result_filename
+from services.azure.storage_utils import get_result_filename
 
 router = APIRouter(tags=["system"])
 

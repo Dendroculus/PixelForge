@@ -18,8 +18,8 @@ from fastapi import HTTPException, UploadFile, status
 from PIL import UnidentifiedImageError
 
 from core.config import settings, ALLOWED_MIME_TYPES
-from utils.storage_utils import get_upload_filename
-from utils.image_utils import (
+from services.azure.storage_utils import get_upload_filename
+from utils.image.image_utils import (
     load_and_validate_structure,
     validate_resolution,
     normalize_image,
