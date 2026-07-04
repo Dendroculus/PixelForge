@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import AiFeatureWorkspace from '@/components/Workspace/AiFeatureWorkspace';
 import ObjectRemoveControls from '@/components/Workspace/controls/AiFeatures/ObjectRemoveControls';
 import ObjectRemoveMaskCanvas from '@/components/Workspace/display/ObjectRemoveMaskCanvas';
@@ -8,8 +8,10 @@ import { marketingProps } from '@/data/feature/remBgMarketing';
 
 export default function ObjectRemover() {
   const [progress, setProgress] = useState(0);
-  const [maskBlob, setMaskBlob] = useState(null);
+  const [hasMask, setHasMask] = useState(false);
   const [brushSize, setBrushSize] = useState(32);
+
+  const maskCanvasRef = useRef(null);
 
   const {
     selectedFile,
@@ -39,9 +41,11 @@ export default function ObjectRemover() {
     'objectremove',
   );
 
-  const handleObjectRemove = () => {
+  const handleObjectRemove = async () => {
+    const maskBlob = await maskCanvasRef.current?.getMaskBlob();
+
     if (!maskBlob) {
-      setAppAlert({ show: true, type: 'dos' });
+      setAppAlert({ show: true, type: 'missing_mask' });
       return;
     }
 
@@ -49,8 +53,14 @@ export default function ObjectRemover() {
   };
 
   const handleObjectRemoveCancel = async () => {
-    setMaskBlob(null);
+    setHasMask(false);
+    maskCanvasRef.current?.clearMask();
     await handleCancel();
+  };
+
+  const handleObjectRemoveFileSelect = async (file) => {
+    setHasMask(false);
+    await handleFileSelect(file);
   };
 
   return (
@@ -69,13 +79,16 @@ export default function ObjectRemover() {
       featureName="objectremove"
       featureText="object removals"
       marketingProps={marketingProps}
-      onFileSelect={handleFileSelect}
+      onFileSelect={handleObjectRemoveFileSelect}
       onCancel={handleObjectRemoveCancel}
       leftControls={
         <div className="flex flex-col gap-4">
           {!isProcessing && !resultUrl && (
             <div>
-              <label htmlFor="brushSize" className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2">
+              <label
+                htmlFor="brushSize"
+                className="block text-xs font-black uppercase tracking-wider text-slate-500 mb-2"
+              >
                 Brush Size
               </label>
 
@@ -90,7 +103,9 @@ export default function ObjectRemover() {
               />
 
               <p className="text-xs text-slate-500 mt-1">
-                Paint over the object you want PixelForge to remove.
+                {hasMask
+                  ? 'Mask detected. You can remove the selected object now.'
+                  : 'Paint over the object you want PixelForge to remove first.'}
               </p>
             </div>
           )}
@@ -115,10 +130,11 @@ export default function ObjectRemover() {
       previewOverride={
         previewUrl && !resultUrl ? (
           <ObjectRemoveMaskCanvas
+            ref={maskCanvasRef}
             imageUrl={previewUrl}
             disabled={isProcessing}
             brushSize={brushSize}
-            onMaskChange={setMaskBlob}
+            onMaskChange={setHasMask}
           />
         ) : null
       }

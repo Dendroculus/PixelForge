@@ -116,6 +116,27 @@ export default function WorkspaceModals({
           <p>Please upload your image again if you still need to process it!</p>
         </div>
       </AppModals>
+
+      <AppModals
+        isOpen={appAlert.show && appAlert.type === 'missing_mask'}
+        onClose={closeAndClear}
+        title="Selection Required ✏️"
+      >
+        <div className="space-y-1.5 text-left">
+          <p className="font-semibold text-slate-800 text-base mb-2">
+            Please paint the object area first.
+          </p>
+          <p>
+            Object Remove needs a painted mask so PixelForge knows exactly which
+            part of the image you want to remove.
+          </p>
+          <p>
+            Use the brush on the preview image, paint over the unwanted object,
+            then click <span className="font-semibold">Remove Object</span>{' '}
+            again.
+          </p>
+        </div>
+      </AppModals>
     </>
   );
 }
