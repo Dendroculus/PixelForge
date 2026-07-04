@@ -23,14 +23,21 @@ export function useActions({
   feature,
 }) {
   const [isWaitingForToken, setIsWaitingForToken] = useState(false);
+
   const pendingFileRef = useRef(null);
+  const pendingOptionsRef = useRef({});
+
+  const clearPendingProcess = useCallback(() => {
+    pendingFileRef.current = null;
+    pendingOptionsRef.current = {};
+    setIsWaitingForToken(false);
+  }, []);
 
   useEffect(() => {
     if (!selectedFile) {
-      setIsWaitingForToken(false);
-      pendingFileRef.current = null;
+      clearPendingProcess();
     }
-  }, [selectedFile]);
+  }, [selectedFile, clearPendingProcess]);
 
   const pollForResult = useCallback(
     (id) => {
@@ -46,12 +53,16 @@ export function useActions({
 
       const handleFailure = async () => {
         await clearAppSession(feature, previewUrl);
+
         setSelectedFile(null);
         setPreviewUrl(null);
         setResultUrl(null);
         setJobId(null);
         setIsProcessing(false);
+
+        clearPendingProcess();
         resetTurnstile();
+
         localStorage.setItem(storageKeys.ALERT, 'dos');
         setAppAlert({ show: true, type: 'dos' });
       };
@@ -92,6 +103,7 @@ export function useActions({
             setTimeout(() => {
               setResultUrl(result.data.url);
               setIsProcessing(false);
+              clearPendingProcess();
               resetTurnstile();
             }, 400);
 
@@ -105,6 +117,7 @@ export function useActions({
             }
 
             errorCount++;
+
             if (errorCount > 5) {
               await handleFailure();
               return;
@@ -139,6 +152,7 @@ export function useActions({
       recordUsage,
       storageKeys,
       feature,
+      clearPendingProcess,
     ],
   );
 
@@ -146,31 +160,38 @@ export function useActions({
     async (overrideFile = null, processOptions = {}) => {
       const fileToUse =
         overrideFile instanceof Blob ? overrideFile : selectedFile;
+
       if (!fileToUse) return;
 
       let token = turnstileToken;
 
       if (!token && turnstileRef.current) {
         token = turnstileRef.current.getResponse();
-        if (token) setTurnstileToken(token);
+
+        if (token) {
+          setTurnstileToken(token);
+        }
       }
 
       if (!token) {
         pendingFileRef.current = fileToUse;
+        pendingOptionsRef.current = processOptions;
+
         setIsWaitingForToken(true);
         setIsProcessing(false);
         localStorage.removeItem(storageKeys.IS_PROCESSING);
+
         return;
       }
 
-      setIsWaitingForToken(false);
-      pendingFileRef.current = null;
+      clearPendingProcess();
 
       setIsProcessing(true);
       localStorage.setItem(storageKeys.IS_PROCESSING, 'true');
 
       try {
         const data = await apiCallFn(fileToUse, token, processOptions);
+
         localStorage.setItem(storageKeys.JOB_ID, data.job_id);
         pollForResult(data.job_id);
       } catch (error) {
@@ -179,11 +200,15 @@ export function useActions({
           localStorage.setItem(storageKeys.ALERT, 'limit_reached');
           setAppAlert({ show: true, type: 'limit_reached' });
         } else {
+          console.error(`${feature} processing failed:`, error);
           setAppAlert({ show: true, type: 'dos' });
         }
 
         setIsProcessing(false);
+
         await clearAppSession(feature, previewUrl);
+
+        clearPendingProcess();
         resetTurnstile();
       }
     },
@@ -201,13 +226,16 @@ export function useActions({
       apiCallFn,
       storageKeys,
       feature,
+      clearPendingProcess,
     ],
   );
 
   useEffect(() => {
-    if (isWaitingForToken && turnstileToken && pendingFileRef.current) {
-      handleProcess(pendingFileRef.current);
+    if (!isWaitingForToken || !turnstileToken || !pendingFileRef.current) {
+      return;
     }
+
+    handleProcess(pendingFileRef.current, pendingOptionsRef.current);
   }, [isWaitingForToken, turnstileToken, handleProcess]);
 
   return { pollForResult, handleProcess, isWaitingForToken };
