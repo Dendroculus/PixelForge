@@ -1,4 +1,3 @@
-import os
 import httpx
 import logging
 from fastapi import HTTPException
@@ -11,8 +10,8 @@ async def verify_turnstile(token: str) -> None:
     Verifies the Cloudflare Turnstile token.
     Includes a secure bypass mechanism strictly for local development.
     """
-    env = os.getenv("ENVIRONMENT", "development").lower()
-    allow_bypass = os.getenv("ALLOW_TURNSTILE_TEST_BYPASS", "false").lower() in {"1", "true", "yes", "on"}
+    env = settings.ENVIRONMENT.lower()
+    allow_bypass = settings.ALLOW_TURNSTILE_TEST_BYPASS
     
     if token == "manual_test_bypass" and env in {"local", "dev", "development"} and allow_bypass:
         logger.info("🛡️ Turnstile bypass engaged for local testing.")

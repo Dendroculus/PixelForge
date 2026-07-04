@@ -1,4 +1,3 @@
-import os
 import uuid
 
 from fastapi import HTTPException, status
@@ -26,14 +25,7 @@ class JobInitializer:
     def is_manual_bypass_allowed() -> bool:
         env = settings.ENVIRONMENT.lower()
 
-        allow_bypass = os.getenv("ALLOW_TURNSTILE_TEST_BYPASS", "false").lower() in {
-            "1",
-            "true",
-            "yes",
-            "on",
-        }
-
-        return env in {"local", "dev", "development"} and allow_bypass
+        return env in {"local", "dev", "development"} and settings.ALLOW_TURNSTILE_TEST_BYPASS
 
     @staticmethod
     def _get_safe_extension(filename: str) -> str:
@@ -75,8 +67,15 @@ class JobInitializer:
         ext = cls._get_safe_extension(filename)
         safe_filename = f"{job_id}.{ext}"
 
-        return {
+        response = {
             "job_id": job_id,
             "safe_filename": safe_filename,
             "upload_url": StorageService.generate_upload_sas(safe_filename),
         }
+
+        if feature == "objectremove":
+            mask_filename = f"{job_id}-mask.png"
+            response["mask_filename"] = mask_filename
+            response["mask_upload_url"] = StorageService.generate_upload_sas(mask_filename)
+
+        return response
