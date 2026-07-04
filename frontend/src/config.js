@@ -44,6 +44,7 @@ export const FEATURE_LIMITS = {
   upscale: 3,
   rembg: 5,
   colorrestore: 5,
+  objectremove: 5,
   feedback: 3,
 };
 
@@ -51,6 +52,7 @@ export const RESULT_LABELS = {
   upscale: 'Upscaled',
   rembg: 'Background Removed',
   colorrestore: 'Color Restored',
+  objectremove: 'Object Removed',
 };
 
 export const CROP_ASPECT_RATIOS = [

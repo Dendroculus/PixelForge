@@ -38,6 +38,7 @@ export default function AiFeatureWorkspace({
   previewImageClassName = '',
   resultContainerClassName = 'w-full h-full rounded-2xl overflow-hidden',
   requireGrayscale = false,
+  previewOverride = null,
 }) {
   const [isResultLoaded, setIsResultLoaded] = useState(false);
 
@@ -59,7 +60,7 @@ export default function AiFeatureWorkspace({
         </div>
       );
     } else {
-      rightPanelContent = (
+      rightPanelContent = previewOverride || (
         <img
           src={previewUrl}
           alt="Upload preview"
@@ -197,4 +198,5 @@ AiFeatureWorkspace.propTypes = {
   previewImageClassName: PropTypes.string,
   resultContainerClassName: PropTypes.string,
   requireGrayscale: PropTypes.bool,
+  previewOverride: PropTypes.node,
 };
