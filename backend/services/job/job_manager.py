@@ -1,17 +1,13 @@
 import logging
-import os
-import uuid
-
 from fastapi import HTTPException, status
 
 from limiter.usage_service import UsageService
-from services.queue_service import QueueService
-from services.storage import StorageService
+from services.job.queue_service import QueueService
+from services.azure.storage import StorageService
 from services.ai.upscale import ai_upscaler
 from services.ai.bg_remover import bg_remover
 from services.ai.color_restorer import color_restorer
 
-from services.turnstile_service import verify_turnstile
 from core.config import settings
 
 logger = logging.getLogger(__name__)
@@ -34,103 +30,6 @@ class JobManager:
     - rembg (background removal)
     - colorrestore
     """
-
-    @staticmethod
-    def is_manual_bypass_allowed() -> bool:
-        """
-        Check whether manual Turnstile bypass is allowed.
-
-        Manual bypass is only enabled when:
-        - Application environment is development/local.
-        - ALLOW_TURNSTILE_TEST_BYPASS is explicitly enabled.
-
-        Returns:
-            bool: True if manual testing bypass is allowed.
-        """
-        env = settings.ENVIRONMENT.lower()
-
-        allow_bypass = os.getenv("ALLOW_TURNSTILE_TEST_BYPASS", "false").lower() in {
-            "1", "true", "yes", "on",
-        }
-
-        return env in {"local", "dev", "development"} and allow_bypass
-
-    @classmethod
-    async def initialize_job(
-        cls,
-        cf_turnstile_response: str,
-        filename: str,
-        feature: str,
-        limit_24h: int,
-        client_ip: str
-    ) -> dict:
-        """
-        Initialize a new processing job.
-
-        Performs:
-        - Turnstile validation.
-        - Daily usage limit validation.
-        - Job ID generation.
-        - Safe filename generation.
-        - Upload URL generation.
-
-        Args:
-            cf_turnstile_response:
-                Cloudflare Turnstile verification response.
-
-            filename:
-                Original uploaded filename.
-
-            feature:
-                AI feature being requested.
-
-            limit_24h:
-                Maximum allowed usage within 24 hours.
-
-            client_ip:
-                Client IP used for rate limiting.
-
-        Returns:
-            dict:
-                Contains job metadata:
-                - job_id
-                - safe_filename
-                - upload_url
-
-        Raises:
-            HTTPException:
-                If verification or usage limit validation fails.
-        """
-        if not (
-            cf_turnstile_response == "manual_test_bypass"
-            and cls.is_manual_bypass_allowed()
-        ):
-            await verify_turnstile(cf_turnstile_response)
-
-        is_allowed = await UsageService.check_daily_limit(
-            client_ip,
-            limit_24h=limit_24h,
-            feature=feature
-        )
-
-        if not is_allowed:
-            raise HTTPException(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="LIMIT_REACHED"
-            )
-
-        job_id = uuid.uuid4().hex
-
-        ext = filename.split(".")[-1].lower() if "." in filename else "jpg"
-        ext = ext if ext in {"jpg", "jpeg", "png", "webp"} else "jpg"
-
-        safe_filename = f"{job_id}.{ext}"
-
-        return {
-            "job_id": job_id,
-            "safe_filename": safe_filename,
-            "upload_url": StorageService.generate_upload_sas(safe_filename),
-        }
 
     @classmethod
     async def check_register_and_reserve(

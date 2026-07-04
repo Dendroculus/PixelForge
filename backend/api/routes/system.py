@@ -3,7 +3,7 @@ from fastapi import APIRouter, HTTPException, status, Request
 
 from limiter.rate_limiter import limiter, get_real_client_ip
 from limiter.usage_service import UsageService
-from services.storage import StorageService
+from services.azure.storage import StorageService
 from core.config import settings
 from utils.storage_utils import get_result_filename
 
