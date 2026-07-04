@@ -47,13 +47,3 @@ def create_app() -> FastAPI:
     register_routers(app)
 
     return app
-
-logger.info(
-    "Logging configured. level=%s log_to_file=%s handlers=%s",
-    settings.LOG_LEVEL,
-    settings.LOG_TO_FILE,
-    [
-        type(handler).__name__
-        for handler in logging.getLogger().handlers
-    ],
-)
