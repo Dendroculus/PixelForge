@@ -1,12 +1,12 @@
-# Adding a New AI Feature to PixelForge
+# Menambahkan Fitur AI Baru ke PixelForge
 
-> A practical developer guide for adding a new AI-powered image feature to PixelForge without breaking the shared backend/frontend pipeline.
+> Panduan developer untuk menambahkan fitur AI image baru ke PixelForge tanpa merusak pipeline backend/frontend yang sudah ada.
 
 ---
 
-## 1. The Big Picture
+## 1. Workflow Utama
 
-PixelForge AI features follow a consistent workflow:
+Semua fitur AI PixelForge sebaiknya mengikuti alur ini:
 
 ```txt
 POST /{feature}/init
@@ -16,7 +16,7 @@ POST /{feature}/init
   -> create safe_filename
   -> return Azure upload_url
 
-Frontend uploads image directly to Azure
+Frontend upload image langsung ke Azure
 
 POST /{feature}/start
   -> reserve queue slot
@@ -24,12 +24,12 @@ POST /{feature}/start
   -> run AI job in background
 
 GET /result/{job_id}
-  -> poll until ready, failed, or processing
+  -> poll sampai status ready, failed, atau processing
 ```
 
-Most features only need **one uploaded image**.
+Fitur normal hanya membutuhkan satu uploaded image.
 
-Some special features, like **Object Remove**, need extra generated files such as a mask image:
+Fitur khusus seperti Object Remove membutuhkan file tambahan:
 
 ```txt
 Object Remove:
@@ -40,9 +40,9 @@ original image + generated mask image -> AI model
 
 ## 2. Naming Rules
 
-Choose one stable feature key and reuse it everywhere.
+Pilih satu `feature key` dan gunakan konsisten di backend, frontend, usage, storage, dan API.
 
-Example:
+Contoh:
 
 | Purpose | Example |
 |---|---|
@@ -54,16 +54,16 @@ Example:
 | Usage key | `cartoonize` |
 | Storage key prefix | `cartoonize_*` |
 
-Recommended format:
+Gunakan format:
 
 ```txt
 lowercase
-no spaces
-no uppercase
-short but clear
+tanpa spasi
+tanpa uppercase
+singkat tapi jelas
 ```
 
-Good examples:
+Contoh bagus:
 
 ```txt
 upscale
@@ -74,7 +74,7 @@ cartoonize
 denoise
 ```
 
-Avoid:
+Hindari:
 
 ```txt
 ObjectRemove
@@ -83,13 +83,20 @@ object remove
 removeObjectAI
 ```
 
+Catatan:
+
+```txt
+Backend feature key boleh objectremove.
+Frontend route boleh /object-remove.
+```
+
+Jangan campur internal feature key dengan URL publik.
+
 ---
 
-## 3. Backend Files
+## 3. Backend Checklist
 
-### Backend checklist
-
-For a normal one-image AI feature, usually edit or create these files:
+Untuk fitur AI normal satu gambar, biasanya edit atau buat:
 
 ```txt
 backend/domain/ai_features.py
@@ -102,7 +109,7 @@ backend/services/ai/features/<feature_service>.py
 backend/services/job/job_manager.py
 ```
 
-For special features with extra uploads or custom model inputs, also check:
+Untuk fitur khusus dengan upload tambahan atau input custom, cek juga:
 
 ```txt
 backend/services/job/job_initializer.py
@@ -113,18 +120,14 @@ backend/services/ai/features/<feature_service>.py
 
 ## 4. Backend Step-by-Step
 
-Assume we are adding:
+Contoh fitur:
 
 ```txt
 feature key: cartoonize
 display name: Cartoonize
 ```
 
----
-
 ### 4.1 Update `backend/domain/ai_features.py`
-
-Add the feature key to `FeatureType`.
 
 ```py
 from typing import Literal
@@ -147,23 +150,17 @@ FEATURE_DISPLAY_NAMES: dict[FeatureType, str] = {
 }
 ```
 
-Why this matters:
+Kenapa penting:
 
-- FastAPI validates `{feature}` path parameters from routes like `/{feature}/init`
-- Unsupported feature names are rejected before reaching the job logic
-- Display names are used for user-facing backend responses
-
----
+- FastAPI validasi `{feature}` dari route seperti `/{feature}/init`
+- Feature yang tidak didukung ditolak lebih awal
+- Display name bisa dipakai untuk response user-facing
 
 ### 4.2 Update `backend/core/config.py`
-
-Add a daily limit setting:
 
 ```py
 CARTOONIZE_DAILY_USAGE_LIMIT: int = 5
 ```
-
-Then add it to `FEATURE_LIMITS`:
 
 ```py
 @property
@@ -178,19 +175,17 @@ def FEATURE_LIMITS(self) -> Dict[str, int]:
     }
 ```
 
-Why this matters:
+Dipakai oleh:
 
-- `/usage?feature=cartoonize` needs this
-- `/{feature}/init` checks this before allowing uploads
-- `/cartoonize/start` checks again before reserving the job
-
----
+```txt
+GET /usage?feature=cartoonize
+POST /cartoonize/init
+POST /cartoonize/start
+```
 
 ### 4.3 Update `backend/core/model_registry.py`
 
-Register the AI model.
-
-For a normal image-to-image model:
+Model normal:
 
 ```py
 "cartoonize": {
@@ -199,7 +194,7 @@ For a normal image-to-image model:
 },
 ```
 
-For a model with extra parameters:
+Model dengan parameter tambahan:
 
 ```py
 "cartoonize": {
@@ -209,29 +204,11 @@ For a model with extra parameters:
 },
 ```
 
-If the model needs a custom helper, add one:
-
-```py
-@classmethod
-def get_style_key(cls, model_type: str) -> str:
-    if model_type not in cls._MODELS:
-        raise ValueError(f"Model type '{model_type}' is not registered.")
-    return cls._MODELS[model_type].get("style_key", "style")
-```
-
-Why this matters:
-
-- Keeps model IDs centralized
-- Prevents hardcoding Replicate IDs inside feature services
-- Makes future provider/model changes easier
-
----
+Tujuannya supaya model ID tidak tersebar di banyak file.
 
 ### 4.4 Update `backend/api/schemas/ai_tools.py`
 
-Create a start request schema.
-
-For simple one-image features:
+Fitur sederhana:
 
 ```py
 class StartCartoonizeRequest(BaseModel):
@@ -239,7 +216,7 @@ class StartCartoonizeRequest(BaseModel):
     safe_filename: str
 ```
 
-For tools with user options:
+Fitur dengan opsi:
 
 ```py
 class StartCartoonizeRequest(BaseModel):
@@ -248,7 +225,7 @@ class StartCartoonizeRequest(BaseModel):
     style: str = "anime"
 ```
 
-For tools with extra uploaded files:
+Fitur dengan file tambahan:
 
 ```py
 class StartObjectRemoveRequest(BaseModel):
@@ -257,17 +234,7 @@ class StartObjectRemoveRequest(BaseModel):
     mask_filename: str
 ```
 
-Why this matters:
-
-- Keeps request validation explicit
-- Makes FastAPI error messages clearer
-- Prevents frontend/backend payload mismatch
-
----
-
 ### 4.5 Create `backend/api/routes/ai_tools/cartoonize.py`
-
-For a normal feature:
 
 ```py
 from fastapi import APIRouter, BackgroundTasks, Request, status
@@ -298,7 +265,7 @@ async def start_cartoonize(
     )
 ```
 
-For a feature with extra args:
+Jika ada extra args:
 
 ```py
 return await reserve_and_queue_job(
@@ -312,45 +279,24 @@ return await reserve_and_queue_job(
 )
 ```
 
-Remember the order:
+Urutan akhirnya:
 
 ```txt
 reserve_and_queue_job(...)
   -> process_func(job_id, safe_filename, *process_args, client_ip)
 ```
 
----
-
 ### 4.6 Update `backend/api/routes/router.py`
-
-Import the new route module:
 
 ```py
 from api.routes.ai_tools import color_restore, object_remove, rembg, upscale, cartoonize
 ```
 
-Include it:
-
 ```py
 router.include_router(cartoonize.router)
 ```
-
-Recommended grouping:
-
-```py
-# Real AI tool routes
-router.include_router(upscale.router)
-router.include_router(rembg.router)
-router.include_router(color_restore.router)
-router.include_router(object_remove.router)
-router.include_router(cartoonize.router)
-```
-
----
 
 ### 4.7 Create `backend/services/ai/features/cartoonizer.py`
-
-For a normal model:
 
 ```py
 from services.ai.pipeline.image_pipeline_service import ImagePipelineService
@@ -377,7 +323,7 @@ class Cartoonizer(ImagePipelineService):
 cartoonizer = Cartoonizer()
 ```
 
-For a model that needs custom inputs, override `_process_with_ai()`:
+Jika butuh input custom, override `_process_with_ai()`:
 
 ```py
 async def _process_with_ai(self, image_stream: io.BytesIO, **kwargs) -> str:
@@ -394,17 +340,11 @@ async def _process_with_ai(self, image_stream: io.BytesIO, **kwargs) -> str:
         image_stream.close()
 ```
 
----
-
 ### 4.8 Update `backend/services/job/job_manager.py`
-
-Import the feature service:
 
 ```py
 from services.ai.features.cartoonizer import cartoonizer
 ```
-
-Add the processor method:
 
 ```py
 @classmethod
@@ -429,7 +369,7 @@ async def process_cartoonize(
     )
 ```
 
-For extra args:
+Dengan extra args:
 
 ```py
 @classmethod
@@ -456,15 +396,11 @@ async def process_cartoonize(
     )
 ```
 
----
+### 4.9 Update `backend/services/job/job_initializer.py` hanya untuk special upload
 
-### 4.9 Modify `backend/services/job/job_initializer.py` only for special upload flows
+Fitur normal tidak perlu ubah file ini.
 
-Normal features do not need changes here.
-
-Special features like Object Remove need extra upload URLs.
-
-Example:
+Object Remove membutuhkan upload URL tambahan:
 
 ```py
 response = {
@@ -481,19 +417,11 @@ if feature == "objectremove":
 return response
 ```
 
-Why this matters:
-
-- The frontend uploads directly to Azure
-- The backend must provide all upload URLs before `/start`
-- `/start` should receive filenames, not raw files
-
 ---
 
-## 5. Frontend Files
+## 5. Frontend Checklist
 
-### Frontend checklist
-
-For a normal AI feature, usually edit or create these files:
+Untuk fitur AI normal, biasanya buat atau edit:
 
 ```txt
 frontend/src/services/features/<feature>Service.js
@@ -508,7 +436,7 @@ frontend/src/data/navConfig.js
 frontend/src/config.js
 ```
 
-For special tools with custom UI, custom validation, modals, or extra uploads, also check:
+Untuk fitur dengan custom UI, mask canvas, atau upload tambahan, cek juga:
 
 ```txt
 frontend/src/services/base/apiClient.js
@@ -521,18 +449,7 @@ frontend/src/data/modals/WorkspaceModals.jsx
 
 ## 6. Frontend Step-by-Step
 
-Assume we are adding:
-
-```txt
-feature key: cartoonize
-display name: Cartoonize
-```
-
----
-
 ### 6.1 Create `frontend/src/services/features/cartoonizeService.js`
-
-For normal features:
 
 ```js
 import { apiClient } from '../base/apiClient';
@@ -542,7 +459,7 @@ export async function cartoonizeImage(file, turnstileToken) {
 }
 ```
 
-For options:
+Dengan opsi:
 
 ```js
 export async function cartoonizeImage(file, turnstileToken, style = 'anime') {
@@ -550,19 +467,13 @@ export async function cartoonizeImage(file, turnstileToken, style = 'anime') {
 }
 ```
 
-For extra uploads, create a custom method inside `apiClient.js`, then call it here.
-
----
+Untuk fitur extra upload, buat custom method di `apiClient.js`.
 
 ### 6.2 Update `frontend/src/services/apiService.js`
-
-Import the service:
 
 ```js
 import { cartoonizeImage } from './features/cartoonizeService';
 ```
-
-Add it to the exported object:
 
 ```js
 export const apiService = {
@@ -575,8 +486,6 @@ export const apiService = {
   pollResult,
 };
 ```
-
----
 
 ### 6.3 Create `frontend/src/hooks/actions/useCartoonizeActions.js`
 
@@ -595,7 +504,7 @@ export function useCartoonizeActions(props) {
 }
 ```
 
-With options:
+Dengan options:
 
 ```js
 const apiCallFn = useCallback(
@@ -605,8 +514,6 @@ const apiCallFn = useCallback(
   [],
 );
 ```
-
----
 
 ### 6.4 Create `frontend/src/hooks/pipeline/useCartoonizePipeline.js`
 
@@ -619,14 +526,14 @@ export function useCartoonizePipeline(setProgress) {
 }
 ```
 
-The feature key matters because it controls:
+Feature key mengontrol:
 
-- localStorage keys
-- usage limit calls
-- progress persistence
-- session persistence
-
----
+```txt
+localStorage keys
+usage limit calls
+progress persistence
+session persistence
+```
 
 ### 6.5 Create `frontend/src/components/Workspace/controls/AiFeatures/CartoonizeControls.jsx`
 
@@ -666,9 +573,9 @@ CartoonizeControls.propTypes = {
 };
 ```
 
----
-
 ### 6.6 Create `frontend/src/pages/AiFeatures/CartoonizeImage.jsx`
+
+Gunakan page AI lain sebagai template.
 
 ```jsx
 import { useState } from 'react';
@@ -702,12 +609,7 @@ export default function CartoonizeImage() {
     isWaitingForToken,
   } = useCartoonizePipeline(setProgress);
 
-  useSimulatedProgress(
-    isProcessing,
-    setProgress,
-    turnstileToken,
-    'cartoonize',
-  );
+  useSimulatedProgress(isProcessing, setProgress, turnstileToken, 'cartoonize');
 
   return (
     <AiFeatureWorkspace
@@ -749,8 +651,6 @@ export default function CartoonizeImage() {
 }
 ```
 
----
-
 ### 6.7 Create `frontend/src/data/feature/cartoonizeMarketing.jsx`
 
 ```jsx
@@ -787,11 +687,7 @@ export const marketingProps = {
 };
 ```
 
----
-
 ### 6.8 Update `frontend/src/routes.js`
-
-Add:
 
 ```js
 {
@@ -800,11 +696,7 @@ Add:
 },
 ```
 
----
-
 ### 6.9 Update `frontend/src/data/navConfig.js`
-
-Add the tool to the AI Features section:
 
 ```js
 {
@@ -817,11 +709,7 @@ Add the tool to the AI Features section:
 }
 ```
 
----
-
 ### 6.10 Update `frontend/src/config.js`
-
-Add feature limit:
 
 ```js
 export const FEATURE_LIMITS = {
@@ -834,8 +722,6 @@ export const FEATURE_LIMITS = {
   feedback: 3,
 };
 ```
-
-Add result label:
 
 ```js
 export const RESULT_LABELS = {
@@ -852,8 +738,6 @@ export const RESULT_LABELS = {
 ## 7. Special Feature Patterns
 
 ### Pattern A: Normal one-image feature
-
-Use this when the AI model only needs one image.
 
 ```txt
 Frontend:
@@ -878,11 +762,7 @@ rembg
 colorrestore
 ```
 
----
-
 ### Pattern B: Feature with options
-
-Use this when the AI model needs one image plus settings.
 
 ```txt
 Frontend:
@@ -902,11 +782,7 @@ cartoonize with style
 upscale with scale
 ```
 
----
-
 ### Pattern C: Feature with extra generated upload
-
-Use this when the model needs more than one file.
 
 ```txt
 Frontend:
@@ -936,124 +812,45 @@ objectremove
 
 ## 8. Cloudflare Turnstile Precautions
 
-Cloudflare Turnstile protects PixelForge AI endpoints from abuse. When adding a new AI feature, keep the Turnstile flow consistent with the existing tools.
+Turnstile melindungi endpoint AI dari abuse. Saat menambah fitur baru, jangan bypass flow ini kecuali untuk local testing yang jelas.
 
----
-
-### 8.1 Turnstile flow
-
-The expected flow is:
+### 8.1 Checklist Turnstile
 
 ```txt
-User clicks process
-  -> Turnstile generates token
-  -> frontend sends cf_turnstile_response to POST /{feature}/init
-  -> backend verifies token
-  -> backend returns Azure upload URL
-  -> frontend uploads file to Azure
-  -> frontend calls POST /{feature}/start
+[ ] Frontend mengirim cf_turnstile_response saat POST /{feature}/init
+[ ] Backend memverifikasi token di JobInitializer
+[ ] VITE_TURNSTILE_SITE_KEY tersedia di Vercel/frontend env
+[ ] CLOUDFLARE_TURNSTILE_SECRET_KEY tersedia di backend env
+[ ] ALLOWED_ORIGINS mencakup domain frontend production/preview
+[ ] Setelah mengubah env var, redeploy frontend/backend
 ```
 
-For a normal feature, the token is passed into:
+### 8.2 Tentang error `401` dari `challenges.cloudflare.com`
 
-```js
-apiClient.executeAiJob(feature, file, turnstileToken)
-```
-
-For a special feature such as Object Remove, the token should still be sent during init:
-
-```js
-apiClient.executeObjectRemoveJob(file, maskBlob, turnstileToken)
-```
-
----
-
-### 8.2 Required environment variables
-
-Frontend:
-
-```txt
-VITE_TURNSTILE_SITE_KEY
-VITE_API_BASE_URL
-```
-
-Backend:
-
-```txt
-CLOUDFLARE_TURNSTILE_SECRET_KEY
-ALLOWED_ORIGINS
-ENVIRONMENT
-ALLOW_TURNSTILE_TEST_BYPASS
-```
-
-After changing environment variables, redeploy the affected service:
-
-```txt
-Frontend env changed -> redeploy Vercel
-Backend env changed  -> redeploy backend service
-```
-
----
-
-### 8.3 Production and preview domains
-
-Make sure Turnstile and backend CORS allow the correct domains.
-
-Production examples:
-
-```txt
-https://pixelforge-project.vercel.app
-https://your-production-backend-domain
-```
-
-Preview examples:
-
-```txt
-https://pixel-forge-git-feature-branch-*.vercel.app
-https://your-preview-url.vercel.app
-```
-
-If a feature works locally but fails in Vercel Preview or Production, check:
-
-```txt
-[ ] Is the current frontend URL allowed by Turnstile?
-[ ] Is the current frontend URL included in backend ALLOWED_ORIGINS?
-[ ] Is VITE_API_BASE_URL pointing to the correct backend?
-[ ] Did you redeploy after changing env vars?
-```
-
----
-
-### 8.4 About `401` from `challenges.cloudflare.com`
-
-In DevTools, you may see a request like:
+Di DevTools, kamu bisa melihat:
 
 ```txt
 GET https://challenges.cloudflare.com/... 401 Unauthorized
 ```
 
-This often comes from Cloudflare's Private Access Token challenge. It does **not always mean the full Turnstile flow failed**.
+Ini sering berasal dari Cloudflare Private Access Token challenge. Error ini tidak selalu berarti Turnstile gagal total.
 
-Do not debug only from that line. Check the actual app flow instead:
+Yang lebih penting dicek:
 
 ```txt
-[ ] Did Turnstile onSuccess run?
-[ ] Is turnstileToken set in frontend state?
-[ ] Was POST /{feature}/init sent?
-[ ] Did /{feature}/init return 200?
+[ ] Apakah Turnstile onSuccess terpanggil?
+[ ] Apakah turnstileToken terisi?
+[ ] Apakah POST /{feature}/init terkirim?
+[ ] Apakah backend return 200 dari /{feature}/init?
 ```
 
-If `/init` is never sent, the issue is usually frontend validation or missing input, not Turnstile.
+Jika `/init` tidak pernah terkirim, masalah kemungkinan besar di frontend validation, bukan Turnstile.
 
-Example: Object Remove should not call `/objectremove/init` if the user has not painted a mask yet. In that case, show a user-friendly modal such as `missing_mask`, not a generic server failure modal.
+Jika `/init` terkirim tapi gagal, baru cek secret key, domain, allowed origins, dan backend response.
 
----
+### 8.3 Local bypass
 
-### 8.5 Local testing bypass
-
-PixelForge can use a manual Turnstile bypass for local development.
-
-Example payload:
+Untuk local testing:
 
 ```json
 {
@@ -1062,68 +859,39 @@ Example payload:
 }
 ```
 
-The bypass should only work when the environment is safe:
+Hanya aktifkan jika:
 
 ```txt
 ENVIRONMENT = local/dev/development
 ALLOW_TURNSTILE_TEST_BYPASS = true
 ```
 
-Never enable manual bypass in production.
+Jangan aktifkan bypass di production.
 
-Recommended safety rule:
+### 8.4 Preview deployment
 
-```txt
-Production backend must reject manual_test_bypass.
-```
-
----
-
-### 8.6 Debugging order
-
-When a feature fails, debug in this order:
+Jika memakai Vercel Preview Deployment:
 
 ```txt
-1. Browser DevTools Console
-2. Browser DevTools Network
-3. Was /{feature}/init sent?
-4. Did Turnstile generate a token?
-5. Did backend receive /{feature}/init?
-6. Did Azure upload succeed?
-7. Was /{feature}/start sent?
-8. Did backend job logs show the feature processor running?
-9. Did /result/{job_id} return failed, processing, or ready?
+[ ] Pastikan preview URL diizinkan oleh konfigurasi Turnstile/domain
+[ ] Pastikan backend CORS mengizinkan preview URL
+[ ] Pastikan env var preview sesuai kebutuhan
 ```
 
-This avoids blaming Turnstile when the actual issue is missing frontend input, stale Vercel deployment, CORS, or a failed Azure upload.
-
----
-
-### 8.7 Deployment reminder
-
-Vercel Preview and Production are not always the same.
+Urutan debug production/preview:
 
 ```txt
-Preview deployment:
-created from feature branches or pull requests
-
-Production deployment:
-usually updates only after merge/push to master
+1. Buka DevTools Network
+2. Cek apakah /{feature}/init terkirim
+3. Cek apakah Turnstile token ada
+4. Cek apakah backend menerima request
+5. Cek apakah Azure upload berhasil
+6. Cek apakah /{feature}/start terpanggil
 ```
-
-If local works and preview works but production does not, check the latest Production deployment commit SHA.
-
-```bash
-git log --oneline -5
-```
-
-Compare it with the commit shown in Vercel's Production Deployment page.
 
 ---
 
 ## 9. Manual Backend Testing
-
-Example PowerShell flow:
 
 ```powershell
 $init = Invoke-RestMethod `
@@ -1133,7 +901,7 @@ $init = Invoke-RestMethod `
   -Body '{"cf_turnstile_response":"manual_test_bypass","filename":"test.png"}'
 ```
 
-Upload to Azure:
+Upload ke Azure:
 
 ```powershell
 Invoke-WebRequest `
@@ -1177,142 +945,116 @@ Start-Process $result.url
 
 ---
 
-## 10. Frontend Testing Checklist
+## 10. Testing Checklist
 
-After adding the feature:
+### Frontend
 
 ```txt
-[ ] Route opens correctly
-[ ] Navbar item appears
-[ ] Upload works
-[ ] Turnstile token is received
-[ ] Init endpoint is called
-[ ] Azure upload succeeds
-[ ] Start endpoint is called
-[ ] Progress bar appears
-[ ] Polling reaches ready
-[ ] Result viewer displays before/after
-[ ] Download button works
-[ ] Cancel/reset works
-[ ] Usage limit updates
-[ ] Refresh/session restore does not break
+[ ] Route terbuka
+[ ] Navbar item muncul
+[ ] Upload berhasil
+[ ] Turnstile token diterima
+[ ] Init endpoint terpanggil
+[ ] Azure upload sukses
+[ ] Start endpoint terpanggil
+[ ] Progress bar muncul
+[ ] Polling mencapai ready
+[ ] Result viewer tampil
+[ ] Download button bekerja
+[ ] Cancel/reset bekerja
+[ ] Usage limit update
+[ ] Refresh/session restore aman
+[ ] Validasi user-friendly muncul untuk input yang kurang
+```
+
+Untuk fitur khusus seperti Object Remove:
+
+```txt
+[ ] User tidak bisa process tanpa mask
+[ ] Modal missing_mask muncul jika user lupa paint
+[ ] Setelah paint, maskBlob berhasil dibuat
+[ ] Original image dan mask image ter-upload
+```
+
+### Backend
+
+```txt
+[ ] Feature key ada di FeatureType
+[ ] Display name ada di FEATURE_DISPLAY_NAMES
+[ ] Daily limit ada di FEATURE_LIMITS
+[ ] Model ada di ModelRegistry
+[ ] Start request schema ada
+[ ] Route file ada
+[ ] Route include di router.py
+[ ] JobManager processor ada
+[ ] Feature service ada
+[ ] /{feature}/init bekerja
+[ ] Azure upload bekerja
+[ ] /{feature}/start bekerja
+[ ] /result/{job_id} return processing lalu ready
+[ ] Failed jobs marked failed
+[ ] Usage refunded saat gagal
 ```
 
 ---
 
-## 11. Backend Testing Checklist
-
-```txt
-[ ] Feature key exists in FeatureType
-[ ] Display name exists in FEATURE_DISPLAY_NAMES
-[ ] Daily limit exists in FEATURE_LIMITS
-[ ] Model exists in ModelRegistry
-[ ] Start request schema exists
-[ ] Route file exists
-[ ] Route is included in router.py
-[ ] JobManager processor exists
-[ ] Feature service exists
-[ ] /{feature}/init works
-[ ] Azure upload works
-[ ] /{feature}/start works
-[ ] /result/{job_id} returns processing then ready
-[ ] Failed jobs are marked failed
-[ ] Usage is refunded on failure
-```
-
----
-
-## 12. Common Mistakes
+## 11. Common Mistakes
 
 ### 1. Feature key mismatch
-
-Example bug:
 
 ```txt
 frontend uses: object-remove
 backend expects: objectremove
 ```
 
-Fix:
+Gunakan:
 
 ```txt
-Use objectremove everywhere for the backend feature key.
-Use /object-remove only as the user-facing route if desired.
+objectremove untuk backend feature key
+/object-remove hanya untuk frontend route publik
 ```
 
----
+### 2. Route file dibuat tapi lupa `router.py`
 
-### 2. Adding a route file but forgetting `router.py`
+Jika file route tidak di-include, FastAPI tidak akan mendaftarkan endpoint.
 
-If the file exists but is not included in `backend/api/routes/router.py`, FastAPI will never register it.
+### 3. Frontend route ada tapi nav lupa
 
----
+Page bisa dibuka langsung, tapi user tidak bisa menemukannya.
 
-### 3. Adding frontend route but forgetting nav
+### 4. Backend limit ada tapi frontend limit lupa
 
-The page may work directly by URL, but users cannot discover it.
+Usage card bisa menampilkan angka yang salah.
 
----
+### 5. Special feature dipaksa ke `executeAiJob()`
 
-### 4. Adding backend feature limit but forgetting frontend limit
+Jangan paksa multi-upload feature ke helper satu upload.
 
-The backend may allow usage, but the frontend usage card can show the wrong number.
-
----
-
-### 5. Special feature forced into `executeAiJob()`
-
-Do not force multi-upload features into the standard one-upload helper.
-
-Use a specialized method:
+Gunakan:
 
 ```js
 executeObjectRemoveJob(file, maskBlob, token)
 ```
 
----
-
 ### 6. Missing result label
 
-If `RESULT_LABELS[featureName]` is missing, the result viewer falls back to `Processed`.
+Jika `RESULT_LABELS[featureName]` tidak ada, result viewer fallback ke `Processed`.
 
-That is safe, but less polished.
----
+### 7. User validation memakai server error modal
 
-### 7. User validation uses a server error modal
+Jika user lupa mask/object selection, jangan tampilkan `Processing Failed`.
 
-If the user forgot a required input such as a mask, selected area, or option, do not show a generic server failure modal.
-
-Avoid:
-
-```js
-setAppAlert({ show: true, type: 'dos' });
-```
-
-Use a specific alert type instead:
+Gunakan alert khusus:
 
 ```js
 setAppAlert({ show: true, type: 'missing_mask' });
 ```
 
-Then display a user-friendly modal in:
-
-```txt
-frontend/src/data/modals/WorkspaceModals.jsx
-```
-
-Example message:
-
-```txt
-Please paint the object area first.
-Object Remove needs a painted mask so PixelForge knows exactly which part of the image you want to remove.
-```
+Lalu tampilkan modal user-friendly di `WorkspaceModals.jsx`.
 
 ---
 
-## 13. Safe Git Workflow
-
-Always work from a feature branch.
+## 12. Safe Git Workflow
 
 ```bash
 git switch master
@@ -1320,7 +1062,7 @@ git pull origin master
 git switch -c feat/cartoonize
 ```
 
-After implementation:
+Setelah implementasi:
 
 ```bash
 git status
@@ -1329,18 +1071,25 @@ git commit -m "feat: add cartoonize AI feature"
 git push -u origin feat/cartoonize
 ```
 
-Then open a pull request into `master`.
+Buka PR ke `master`.
 
-Before merging:
+Sebelum merge:
 
 ```bash
 git diff master...feat/cartoonize --stat
 git log --oneline --decorate -5
 ```
 
+Vercel note:
+
+```txt
+Production deployment biasanya update setelah merge/push ke master.
+Preview deployment tidak selalu sama dengan production.
+```
+
 ---
 
-## 14. Quick Reference
+## 13. Quick Reference
 
 ### Normal AI feature
 
@@ -1381,20 +1130,21 @@ Also check:
 
 ---
 
-## 15. Maintainability Notes
+## 14. Maintainability Notes
 
-PixelForge is maintainable because:
+PixelForge maintainable karena:
 
-- Backend route groups are separated by purpose
-- Shared AI job routes handle init, polling, and usage
-- Each AI feature owns only its start route
-- Model configuration is centralized
-- Frontend API calls are centralized
-- Frontend pipelines reuse shared state and polling logic
-- Workspace UI is reusable through `AiFeatureWorkspace`
-- Special tools can override preview UI through `previewOverride`
+- Backend route dipisah berdasarkan tujuan
+- Shared AI job routes menangani init, polling, dan usage
+- Setiap AI feature punya start route sendiri
+- Model registry tersentralisasi
+- Frontend API calls tersentralisasi
+- Frontend pipeline reuse state dan polling logic
+- Workspace UI reusable lewat `AiFeatureWorkspace`
+- Special tools bisa override preview dengan `previewOverride`
+- Modal bisa dipicu dari feature page hanya dengan `setAppAlert({ type })`
 
-As the number of features grows, consider creating a stronger shared feature registry to reduce repeated edits across:
+Jika fitur makin banyak, pertimbangkan shared feature registry untuk mengurangi edit manual di:
 
 ```txt
 frontend/src/routes.js
@@ -1405,5 +1155,3 @@ backend/domain/ai_features.py
 backend/core/config.py
 backend/core/model_registry.py
 ```
-
-A registry-based approach would make adding future features faster and safer.
