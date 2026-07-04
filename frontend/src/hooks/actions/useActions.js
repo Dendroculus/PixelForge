@@ -143,7 +143,7 @@ export function useActions({
   );
 
   const handleProcess = useCallback(
-    async (overrideFile = null) => {
+    async (overrideFile = null, processOptions = {}) => {
       const fileToUse =
         overrideFile instanceof Blob ? overrideFile : selectedFile;
       if (!fileToUse) return;
@@ -170,7 +170,7 @@ export function useActions({
       localStorage.setItem(storageKeys.IS_PROCESSING, 'true');
 
       try {
-        const data = await apiCallFn(fileToUse, token);
+        const data = await apiCallFn(fileToUse, token, processOptions);
         localStorage.setItem(storageKeys.JOB_ID, data.job_id);
         pollForResult(data.job_id);
       } catch (error) {
