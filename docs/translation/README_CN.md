@@ -1,6 +1,6 @@
 <div align="center">
 
-  [EN](../../README.md) | 中文 | [ID](./README_ID.md)
+  [EN](../../README) | 中文 | [ID](./README_ID.md)
 </div>
 
 <p align="center">
@@ -326,6 +326,9 @@ npm run dev
 
 项目基于 MIT License。详见 [LICENSE](../LICENSE)。
 
+## 📝 开发者文档
+
+- [添加新的 AI 功能](./dev/ADDING_AI_FEATURE_ZH.md)
 
 ## 🙏 致谢
 

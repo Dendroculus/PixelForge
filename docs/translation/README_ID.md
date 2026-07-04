@@ -254,6 +254,10 @@ Jika Anda berencana melakukan perubahan besar, silakan buat issue terlebih dahul
 
 Dilisensikan di bawah MIT License. Lihat file LICENSE untuk informasi lebih lanjut.
 
+## 📝 Dokumentasi Developer
+
+- [Menambahkan Fitur AI Baru](./dev/ADDING_AI_FEATURE_ID.md)
+
 ## 🙏 Ucapan Terima Kasih
 
 * Ekosistem Real-ESRGAN
