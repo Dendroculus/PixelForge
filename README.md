@@ -340,6 +340,9 @@ If you’re planning a bigger change, open an issue first to align on scope.
 Licensed under the MIT License. See [LICENSE](./LICENSE) for details.
 
 
+## 📝 Developer Docs
+
+- [Adding a New AI Feature](docs/ADDING_AI_FEATURE.md)
 
 ## 🙏 Acknowledgements
 
