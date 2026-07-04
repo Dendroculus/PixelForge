@@ -1,10 +1,11 @@
 from fastapi import APIRouter, BackgroundTasks, status, Request
 
 from limiter.rate_limiter import limiter, get_real_client_ip
-from services.job_manager import JobManager
+from services.job.job_initializer import JobInitializer
+from services.job.job_manager import JobManager
 from core.config import settings
 from domain.ai_features import FeatureType
-from services.ai_job_dispatcher import reserve_and_queue_job
+from services.job.job_dispatcher import reserve_and_queue_job
 from api.schemas.ai_tools import (
     InitRequest,
     StartUpscaleRequest,
@@ -37,7 +38,7 @@ async def init_feature(
         settings.UPSCALE_DAILY_USAGE_LIMIT,
     )
 
-    return await JobManager.initialize_job(
+    return await JobInitializer.initialize_job(
         cf_turnstile_response=payload.cf_turnstile_response,
         filename=payload.filename,
         feature=feature,

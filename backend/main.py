@@ -25,7 +25,7 @@ from database.db_pool import (
     close_db_pool,
 )
 
-from services.storage import StorageService
+from services.azure.storage import StorageService
 
 
 # --- Environment Validation ---

@@ -4,7 +4,7 @@ import io
 import logging
 import urllib.parse
 import time
-from services.storage import StorageService
+from services.azure.storage import StorageService
 from core.config import settings
 from utils.storage_utils import get_result_filename
 from core.model_registry import ModelRegistry

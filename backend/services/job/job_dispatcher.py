@@ -3,7 +3,7 @@ from typing import Callable, Any
 from fastapi import BackgroundTasks, Request
 
 from limiter.rate_limiter import get_real_client_ip
-from services.job_manager import JobManager
+from services.job.job_manager import JobManager
 from domain.ai_features import FeatureType, FEATURE_DISPLAY_NAMES
 
 
