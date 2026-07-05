@@ -1,3 +1,11 @@
+"""Security services package, including Cloudflare Turnstile verification.
+
+Package: services.security
+
+This file intentionally avoids importing submodules by default.
+Keeping package initializers lightweight prevents hidden side effects such as
+loading environment settings, creating semaphores, initializing provider clients,
+or touching cloud/database dependencies during simple imports.
 """
-Module containing security-related services and utilities for the application. Mainly are cloudflare turnstile verification and other security measures.
-"""
+
+__all__: list[str] = []

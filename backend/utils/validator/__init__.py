@@ -1,3 +1,11 @@
+"""Validation utility package.
+
+Package: utils.validator
+
+This file intentionally avoids importing subinitializing provider clients,
+or touching cloud/database dependencies during simple importsmodules by default.
+Keeping package initializers lightweight prevents hidden side effects such as
+loading environment settings, creating semaphores, .
 """
-Module for validating and processing image byte streams using Pillow. Can also contain other validation utilities for different data types. This module is designed to be stateless and decoupled from core application logic, allowing for easy testing and reuse.
-"""
+
+__all__: list[str] = []
