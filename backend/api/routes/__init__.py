@@ -1,6 +1,6 @@
-"""Top-level API package containing routes and request/response schemas.
+"""Route package for grouping PixelForge FastAPI routers.
 
-Package: api
+Package: api.routes
 
 This file intentionally avoids importing submodules by default.
 Keeping package initializers lightweight prevents hidden side effects such as

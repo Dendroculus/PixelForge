@@ -1,3 +1,23 @@
+"""Shared AI job workflow routes.
+
+This module owns the routes that are common to all AI tools:
+
+    - ``POST /{feature}/init``:
+      validates bot protection, checks usage quota, creates a job ID, and
+      returns secure Azure upload URL metadata.
+
+    - ``GET /result/{job_id}``:
+      polls Azure-backed job state and returns whether the result is still
+      processing, ready, or failed.
+
+    - ``GET /usage``:
+      returns the current usage status for a feature and client.
+
+Feature-specific ``/start`` routes live in ``api.routes.ai_tools`` because
+starting a job may require tool-specific arguments such as upscale scale or
+object removal mask filenames.
+"""
+
 import re
 
 from fastapi import APIRouter, HTTPException, Request, status
@@ -17,10 +37,18 @@ JOB_ID_RE = re.compile(r"^[a-f0-9]{32}$")
 
 
 def get_feature_limit(feature: FeatureType) -> int:
-    """
-    Return the configured daily limit for a supported AI feature.
+    """Return the configured 24-hour usage limit for a supported AI feature.
 
-    FeatureType already prevents unsupported feature names from reaching this point.
+    ``FeatureType`` restricts route input to known features, so this lookup can
+    safely depend on the central settings mapping.
+
+    Args:
+        feature:
+            Supported AI feature name.
+
+    Returns:
+        int:
+            Configured usage limit for the requested feature.
     """
     return settings.FEATURE_LIMITS[feature]
 
@@ -32,8 +60,26 @@ async def init_feature(
     request: Request,
     payload: InitRequest,
 ):
-    """
-    Initializes an AI processing job.
+    """Initialize an AI processing job and return secure upload metadata.
+
+    This endpoint does not run the AI model. It prepares a job by validating
+    Turnstile, checking usage limits, generating a safe job filename, and
+    returning a time-limited Azure upload URL.
+
+    Args:
+        feature:
+            AI feature being initialized.
+        request:
+            Current FastAPI request, used to resolve the client IP.
+        payload:
+            Initialization request containing the original filename and
+            Turnstile token.
+
+    Returns:
+        dict:
+            Job metadata containing ``job_id``, ``safe_filename``, and an
+            ``upload_url``. Object removal jobs also include mask upload
+            metadata.
     """
     daily_limit = get_feature_limit(feature)
 
@@ -49,8 +95,26 @@ async def init_feature(
 @router.get("/result/{job_id}")
 @limiter.limit(settings.POLL_RATE_LIMIT)
 async def get_result(request: Request, job_id: str):
-    """
-    Polls the storage service for the completion status of a specific job.
+    """Return the processing status for a specific AI job.
+
+    The status is inferred from Azure Blob Storage:
+        - failed marker exists -> ``failed``
+        - result blob exists -> ``ready``
+        - neither exists -> ``processing``
+
+    Args:
+        request:
+            Current FastAPI request, required by the rate limiter.
+        job_id:
+            Hexadecimal job identifier generated during initialization.
+
+    Raises:
+        HTTPException:
+            Raised with HTTP 400 when the job ID format is invalid.
+
+    Returns:
+        dict:
+            Processing state. Ready jobs include a signed result URL.
     """
     if not job_id or not JOB_ID_RE.fullmatch(job_id):
         raise HTTPException(
@@ -81,8 +145,17 @@ async def get_usage(
     request: Request,
     feature: FeatureType = "upscale",
 ):
-    """
-    Retrieves the current 24-hour usage count for a supported AI feature.
+    """Return the current 24-hour usage status for a feature.
+
+    Args:
+        request:
+            Current FastAPI request, used to resolve the client IP.
+        feature:
+            Feature whose usage should be checked. Defaults to ``upscale``.
+
+    Returns:
+        dict:
+            Usage status containing remaining uses and optional reset timestamp.
     """
     client_ip = get_real_client_ip(request)
     limit = get_feature_limit(feature)

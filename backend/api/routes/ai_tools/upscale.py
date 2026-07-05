@@ -1,3 +1,11 @@
+"""Image upscaling start route.
+
+This module exposes the endpoint that starts a previously initialized image
+upscaling job. The route accepts job metadata and the requested upscale factor,
+then delegates queue registration and background execution to shared job
+services.
+"""
+
 from fastapi import APIRouter, BackgroundTasks, Request, status
 
 from api.schemas.ai_tools import StartUpscaleRequest
@@ -16,8 +24,20 @@ async def start_upscale(
     payload: StartUpscaleRequest,
     bg_tasks: BackgroundTasks,
 ):
-    """
-    Queues an image upscaling job.
+    """Reserve capacity and queue an image upscaling job.
+
+    Args:
+        request:
+            Current FastAPI request, used by the limiter and dispatcher.
+        payload:
+            Upscale job metadata, including the uploaded filename and requested
+            scale value.
+        bg_tasks:
+            FastAPI background task container used to schedule processing.
+
+    Returns:
+        dict:
+            Accepted job response containing a status message and ``job_id``.
     """
     return await reserve_and_queue_job(
         "upscale",

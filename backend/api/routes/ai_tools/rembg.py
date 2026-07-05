@@ -1,3 +1,11 @@
+"""Background removal start route.
+
+This module exposes the endpoint that starts a previously initialized
+background removal job. It intentionally contains only HTTP-layer concerns;
+queue reservation, quota enforcement, and AI execution are handled by the
+shared job services.
+"""
+
 from fastapi import APIRouter, BackgroundTasks, Request, status
 
 from api.schemas.ai_tools import StartRembgRequest
@@ -16,8 +24,19 @@ async def start_rembg(
     payload: StartRembgRequest,
     bg_tasks: BackgroundTasks,
 ):
-    """
-    Queues a background removal job.
+    """Reserve capacity and queue a background removal job.
+
+    Args:
+        request:
+            Current FastAPI request, used by the limiter and dispatcher.
+        payload:
+            Job metadata returned by the initialization endpoint.
+        bg_tasks:
+            FastAPI background task container used to schedule processing.
+
+    Returns:
+        dict:
+            Accepted job response containing a status message and ``job_id``.
     """
     return await reserve_and_queue_job(
         "rembg",
