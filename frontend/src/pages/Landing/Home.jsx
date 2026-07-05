@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { NavLinks } from '@/data/navConfig';
 import { SHOWCASES } from '@/config';
@@ -69,11 +69,12 @@ export default function HomeHub() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="w-full max-w-5xl mx-auto mb-16 relative z-10"
         >
-          <div className="flex md:grid md:grid-cols-3 gap-4 sm:gap-6 overflow-x-auto md:overflow-visible snap-x snap-mandatory px-4 md:px-0 pb-4 md:pb-0 hide-scrollbar [scrollbar-width:none] [-ms-overflow-style:none]">
+          <div className="flex md:flex-wrap md:justify-center gap-4 sm:gap-6 overflow-x-auto md:overflow-visible snap-x snap-mandatory px-4 md:px-0 pb-4 md:pb-0 hide-scrollbar [scrollbar-width:none] [-ms-overflow-style:none]">
+            {' '}
             {Object.entries(showcases).map(([key, data]) => (
               <div
                 key={key}
-                className="min-w-[85%] sm:min-w-[60%] md:min-w-0 snap-center flex flex-col items-center"
+                className="min-w-[85%] sm:min-w-[60%] md:min-w-0 md:basis-[calc((100%-3rem)/3)] md:max-w-76 snap-center flex flex-col items-center"
               >
                 <div className="mb-3 px-3 py-1 rounded-full bg-white/60 backdrop-blur border border-white shadow-sm flex items-center gap-2">
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]" />
