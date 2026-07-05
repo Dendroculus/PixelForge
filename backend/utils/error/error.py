@@ -1,17 +1,26 @@
+"""Custom exception classes used by PixelForge.
+
+These exceptions provide named failure types for upstream AI provider errors and
+configuration problems. Higher layers can catch these specific classes instead
+of relying on generic ``Exception`` messages.
 """
-Custom exceptions for handling errors related to the Replicate API. This module defines specific error classes to represent different failure scenarios when interacting with the Replicate API, such as rate limits, timeouts, and unknown errors. These exceptions can be used to provide more informative error handling in the application. These errors are made to avoid generic error messages and to provide more context about the nature of the failure when interacting with the Replicate API.
-"""
+
+
 class MissingEnvironmentVariableError(Exception):
     """Raised when a required environment variable is missing."""
 
+
 class ReplicateError(Exception):
-    """Base error for replicate failures."""
+    """Base class for Replicate provider failures."""
+
 
 class ReplicateRateLimitError(ReplicateError):
-    """Raised when replicate API rate limit is exceeded."""
+    """Raised when the Replicate API rate limit is exceeded."""
+
 
 class ReplicateTimeoutError(ReplicateError):
-    """Raised when replicate request times out."""
+    """Raised when a Replicate request times out."""
+
 
 class ReplicateUnknownError(ReplicateError):
-    """Raised for unexpected replicate failures."""
+    """Raised for unexpected Replicate provider failures."""

@@ -1,30 +1,40 @@
+"""Development script for resetting usage counters.
+
+This script truncates the ``ip_usage_hourly`` table so local developers can
+reset feature quota state while testing. It is intentionally guarded by an
+environment check and should never be used in production or staging.
+
+Run from the backend directory with a development environment configured.
+"""
+
 import asyncio
 import logging
-import sys
 import os
+import sys
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.config import settings
-from database.db_pool import init_db_pool, get_db_pool, close_db_pool
+from database.db_pool import close_db_pool, get_db_pool, init_db_pool
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 TABLE_TO_TRUNCATE = "ip_usage_hourly"
 
+
 async def reset_usage_limits() -> None:
-    """
-    Connects to the database and executes a TRUNCATE command on the usage table.
-    
-    Strictly enforces an environment check to prevent accidental execution 
-    in production or staging environments.
-    
+    """Truncate the usage table in a development environment.
+
     Raises:
-        SystemExit: If executed outside the 'development' environment or 
-                    if the database pool fails to initialize.
+        SystemExit:
+            Exits with code 1 when the environment is not allowed, the database
+            pool cannot be acquired, or truncation fails.
     """
     if settings.ENVIRONMENT.lower() != "dev":
-        logger.error("Security Halt: Destructive scripts are only permitted in the 'development' environment.")
+        logger.error(
+            "Security Halt: Destructive scripts are only permitted in the 'dev' environment."
+        )
         sys.exit(1)
 
     try:
@@ -36,7 +46,9 @@ async def reset_usage_limits() -> None:
             sys.exit(1)
 
         async with pool.acquire() as conn:
-            await conn.execute(f"TRUNCATE TABLE {TABLE_TO_TRUNCATE} RESTART IDENTITY CASCADE;")
+            await conn.execute(
+                f"TRUNCATE TABLE {TABLE_TO_TRUNCATE} RESTART IDENTITY CASCADE;"
+            )
 
         logger.info("Developer usage limits successfully reset.")
 

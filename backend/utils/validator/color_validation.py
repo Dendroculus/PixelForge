@@ -1,29 +1,34 @@
+"""Color/grayscale validation helpers.
+
+The color restoration feature should receive grayscale or black-and-white
+images. These helpers estimate whether an image contains significant color data
+by comparing RGB channel differences on non-transparent pixels.
+"""
+
 import io
+
 import numpy as np
 from PIL import Image
+
 from core.config import settings
+
 
 def calculate_color_ratio(
     rgb: np.ndarray,
     valid_mask: np.ndarray,
 ) -> float:
-    """
-    Calculates the ratio of colored pixels within the valid image area.
-
-    A pixel is considered "colored" when the difference between its
-    maximum and minimum RGB channel values exceeds the configured
-    COLOR_DIFF_THRESHOLD.
+    """Calculate the ratio of colored pixels within valid image pixels.
 
     Args:
-        rgb (np.ndarray):
-            RGB image data with shape (height, width, 3).
-        valid_mask (np.ndarray):
-            Boolean mask indicating which pixels should be analyzed.
+        rgb:
+            RGB image array with shape ``(height, width, 3)``.
+        valid_mask:
+            Boolean mask selecting pixels that should be analyzed.
 
     Returns:
         float:
-            Ratio of colored pixels to valid pixels.
-            Returns 0.0 if no valid pixels exist.
+            Ratio of colored pixels to valid pixels. Returns ``0.0`` when no
+            valid pixels exist.
     """
     valid_pixel_count = np.sum(valid_mask)
 
@@ -45,33 +50,23 @@ def calculate_color_ratio(
 
 
 def validate_grayscale_image(file_bytes: bytes) -> bool:
-    """
-    Validates whether an uploaded image is effectively grayscale.
+    """Return whether image bytes are effectively grayscale.
 
-    This mirrors the frontend validation logic:
-
-    - Converts the image to RGBA.
-    - Ignores nearly transparent pixels (alpha < ALPHA_THRESHOLD).
-    - Marks a pixel as colored when the difference between its
-      highest and lowest RGB channel exceeds COLOR_DIFF_THRESHOLD.
-    - Rejects the image if at least COLOR_PIXEL_RATIO_THRESHOLD
-      of valid pixels are considered colored.
-
-    Examples:
-        - Pure black-and-white images -> True
-        - Grayscale photos -> True
-        - Colored photos -> False
-        - Corrupted/unreadable files -> False
+    The check mirrors frontend validation:
+        - convert image to RGBA
+        - ignore nearly transparent pixels
+        - mark pixels as colored when RGB channel spread exceeds the configured
+          threshold
+        - reject images when colored pixel ratio reaches the configured limit
 
     Args:
-        file_bytes (bytes):
+        file_bytes:
             Raw uploaded image bytes.
 
     Returns:
         bool:
-            True if the image passes grayscale validation.
-            False if the image contains significant color data
-            or cannot be processed.
+            ``True`` when the image is effectively grayscale, otherwise
+            ``False``.
     """
     try:
         with Image.open(io.BytesIO(file_bytes)) as img:

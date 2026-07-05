@@ -1,75 +1,65 @@
+"""Central AI job lifecycle manager.
+
+``JobManager`` coordinates queue reservation, usage counters, storage cleanup,
+failure markers, quota refunds, and feature-specific execution. Route handlers
+and dispatch helpers should call this service instead of directly invoking AI
+feature services.
+"""
+
 import logging
+
 from fastapi import HTTPException, status
 
+from core.config import settings
 from limiter.usage_service import UsageService
-from services.job.queue_service import QueueService
-from services.azure.storage import StorageService
-from services.ai.features.upscale import ai_upscaler
 from services.ai.features.bg_remover import bg_remover
 from services.ai.features.color_restorer import color_restorer
 from services.ai.features.object_remover import object_remover
-
-from core.config import settings
+from services.ai.features.upscale import ai_upscaler
+from services.azure.storage import StorageService
+from services.job.queue_service import QueueService
 
 logger = logging.getLogger(__name__)
 
 
 class JobManager:
-    """
-    Central service responsible for managing AI processing jobs.
-
-    Responsibilities:
-    - Validate Turnstile verification before job creation.
-    - Check and enforce daily usage limits.
-    - Generate safe filenames and upload URLs.
-    - Reserve and release queue slots.
-    - Handle AI feature execution lifecycle.
-    - Cleanup failed jobs and refund usage limits when needed.
-
-    Supported features:
-    - upscale
-    - rembg (background removal)
-    - colorrestore
-    """
+    """Service responsible for managing AI processing jobs."""
 
     @classmethod
     async def check_register_and_reserve(
         cls,
         job_id: str,
         client_ip: str,
-        feature: str
+        feature: str,
     ) -> None:
-        """
-        Register a job into the queue and reserve processing capacity.
+        """Reserve a queue slot and usage quota for a job.
 
         Flow:
-        1. Reserve queue slot.
-        2. Validate feature usage limit.
-        3. Refund queue slot if limit validation fails.
-        4. Increment daily usage counter.
+            1. Reserve queue capacity.
+            2. Check feature usage limit.
+            3. Release queue capacity if limit fails.
+            4. Increment usage after successful reservation.
 
         Args:
             job_id:
-                Unique identifier for the job.
-
+                Unique job identifier.
             client_ip:
-                Client IP address.
-
+                Client identifier used for usage tracking.
             feature:
                 AI feature being processed.
 
         Raises:
             HTTPException:
-                When daily usage limit is exceeded.
+                Raised when quota is exceeded or queue reservation fails.
         """
         await QueueService.reserve_slot(job_id)
 
         limit = settings.FEATURE_LIMITS[feature]
-        
+
         is_allowed = await UsageService.check_daily_limit(
             client_ip,
             limit_24h=limit,
-            feature=feature
+            feature=feature,
         )
 
         if not is_allowed:
@@ -77,12 +67,12 @@ class JobManager:
 
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="LIMIT_REACHED"
+                detail="LIMIT_REACHED",
             )
 
         await UsageService.increment_daily_limit(
             client_ip,
-            feature=feature
+            feature=feature,
         )
 
     @classmethod
@@ -91,39 +81,31 @@ class JobManager:
         job_id: str,
         safe_filename: str,
         client_ip: str,
-        feature: str
+        feature: str,
     ) -> None:
-        """
-        Handle failed jobs.
-
-        Actions:
-        - Mark job as failed in storage.
-        - Refund user usage quota.
+        """Mark a job as failed and refund usage quota.
 
         Args:
             job_id:
                 Failed job identifier.
-
             safe_filename:
-                Stored uploaded filename.
-
+                Uploaded filename associated with the job.
             client_ip:
-                Client identifier for usage tracking.
-
+                Client identifier used for usage tracking.
             feature:
-                Failed AI feature.
+                Failed feature name.
         """
         logger.warning(
             "Job %s failed for feature %s. Initializing cleanup and client limit refund.",
             job_id,
-            feature
+            feature,
         )
 
         await StorageService.mark_job_failed(job_id)
 
         await UsageService.decrement_daily_limit(
             client_ip,
-            feature=feature
+            feature=feature,
         )
 
     @classmethod
@@ -133,52 +115,40 @@ class JobManager:
         safe_filename: str,
         client_ip: str,
         feature: str,
-        task_runner
+        task_runner,
     ) -> None:
-        """
-        Execute an AI processing task with shared lifecycle handling.
-
-        Handles:
-        - File size validation.
-        - AI task execution.
-        - Uploaded file cleanup.
-        - Failure handling.
-        - Queue slot release.
+        """Execute a feature task with shared lifecycle handling.
 
         Args:
             job_id:
                 Current job identifier.
-
             safe_filename:
                 Uploaded file stored name.
-
             client_ip:
-                Client identifier for usage tracking.
-
+                Client identifier used for usage tracking.
             feature:
-                AI feature name.
-
+                Feature name being executed.
             task_runner:
-                Async callable that performs the AI operation.
+                Async callable that performs the feature-specific AI work.
         """
         try:
             blob_size = await StorageService.get_blob_size(
                 settings.UPLOAD_CONTAINER,
-                safe_filename
+                safe_filename,
             )
 
             if blob_size > settings.MAX_FILE_SIZE_BYTES:
                 logger.warning(
                     "Oversized upload detected: Job %s (%s bytes). Aborting.",
                     job_id,
-                    blob_size
+                    blob_size,
                 )
 
                 await cls._handle_job_failure(
                     job_id,
                     safe_filename,
                     client_ip,
-                    feature
+                    feature,
                 )
 
                 return
@@ -187,7 +157,7 @@ class JobManager:
 
             await StorageService.delete_azure_blob(
                 settings.UPLOAD_CONTAINER,
-                safe_filename
+                safe_filename,
             )
 
             if not success:
@@ -195,7 +165,7 @@ class JobManager:
                     job_id,
                     safe_filename,
                     client_ip,
-                    feature
+                    feature,
                 )
 
         except Exception as e:
@@ -203,14 +173,14 @@ class JobManager:
                 "%s task critical failure job=%s: %s",
                 feature.capitalize(),
                 job_id,
-                e
+                e,
             )
 
             await cls._handle_job_failure(
                 job_id,
                 safe_filename,
                 client_ip,
-                feature
+                feature,
             )
 
         finally:
@@ -223,33 +193,15 @@ class JobManager:
         safe_filename: str,
         model_type: str,
         scale: int,
-        client_ip: str
+        client_ip: str,
     ) -> None:
-        """
-        Execute image upscaling process.
-
-        Args:
-            job_id:
-                Current job identifier.
-
-            safe_filename:
-                Uploaded image filename.
-
-            model_type:
-                Selected AI upscaling model.
-
-            scale:
-                Upscaling multiplier.
-
-            client_ip:
-                Client identifier.
-        """
+        """Execute an image upscaling job."""
         async def _run():
             return await ai_upscaler.run_upscale(
                 safe_filename=safe_filename,
                 job_id=job_id,
                 model_type=model_type,
-                scale=scale
+                scale=scale,
             )
 
         await cls._process_feature(
@@ -257,7 +209,7 @@ class JobManager:
             safe_filename,
             client_ip,
             "upscale",
-            _run
+            _run,
         )
 
     @classmethod
@@ -265,25 +217,13 @@ class JobManager:
         cls,
         job_id: str,
         safe_filename: str,
-        client_ip: str
+        client_ip: str,
     ) -> None:
-        """
-        Execute background removal process.
-
-        Args:
-            job_id:
-                Current job identifier.
-
-            safe_filename:
-                Uploaded image filename.
-
-            client_ip:
-                Client identifier.
-        """
+        """Execute a background-removal job."""
         async def _run():
             return await bg_remover.run_removal(
                 safe_filename=safe_filename,
-                job_id=job_id
+                job_id=job_id,
             )
 
         await cls._process_feature(
@@ -291,7 +231,7 @@ class JobManager:
             safe_filename,
             client_ip,
             "rembg",
-            _run
+            _run,
         )
 
     @classmethod
@@ -299,25 +239,13 @@ class JobManager:
         cls,
         job_id: str,
         safe_filename: str,
-        client_ip: str
+        client_ip: str,
     ) -> None:
-        """
-        Execute black-and-white image color restoration process.
-
-        Args:
-            job_id:
-                Current job identifier.
-
-            safe_filename:
-                Uploaded image filename.
-
-            client_ip:
-                Client identifier.
-        """
+        """Execute a color-restoration job."""
         async def _run():
             return await color_restorer.run_restore(
                 safe_filename=safe_filename,
-                job_id=job_id
+                job_id=job_id,
             )
 
         await cls._process_feature(
@@ -325,9 +253,9 @@ class JobManager:
             safe_filename,
             client_ip,
             "colorrestore",
-            _run
+            _run,
         )
-        
+
     @classmethod
     async def process_object_remove(
         cls,
@@ -336,9 +264,7 @@ class JobManager:
         mask_filename: str,
         client_ip: str,
     ) -> None:
-        """
-        Execute object removal process.
-        """
+        """Execute an object-removal job and clean up its mask upload."""
         async def _run():
             return await object_remover.run_object_remove(
                 safe_filename=safe_filename,

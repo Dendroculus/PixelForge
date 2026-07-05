@@ -1,14 +1,36 @@
+"""Central configuration for the PixelForge backend.
+
+This module defines all runtime settings used by the API, service layer,
+storage integration, usage limiter, image validation, and AI provider clients.
+
+Configuration is loaded from environment variables and the local ``.env`` file
+through Pydantic Settings. Keep this module focused on declarative settings and
+small derived properties. Avoid opening network connections, initializing
+database pools, or constructing provider clients here.
+"""
+
 import os
-from typing import List, FrozenSet, Dict
+from typing import Dict, FrozenSet, List
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    """
-    Central application configuration.
+    """Application settings loaded from environment variables.
 
-    Loads values from environment variables and .env file.
+    The defaults are intended for local development where safe. Secret values
+    and deployment-specific values must be provided through environment
+    variables or a local ``.env`` file.
+
+    Attributes are grouped by concern:
+        - Environment and security
+        - Logging
+        - Storage
+        - Rate and usage limits
+        - Database pool configuration
+        - Image processing thresholds
+        - Validation thresholds
+        - Image format mapping
     """
 
     model_config = SettingsConfigDict(
@@ -28,7 +50,7 @@ class Settings(BaseSettings):
     REPLICATE_API_TOKEN: str
     ALLOWED_ORIGINS: str
     ALLOW_TURNSTILE_TEST_BYPASS: bool = False
-    
+
     # --- Logging ---
     LOG_LEVEL: str = "INFO"
     LOG_TO_FILE: bool = False
@@ -37,27 +59,29 @@ class Settings(BaseSettings):
     LOG_MAX_BYTES: int = 10_485_760
     LOG_BACKUP_COUNT: int = 5
 
-
     @property
     def cors_origins_list(self) -> List[str]:
-        """Convert comma-separated origins into a list."""
+        """Return configured CORS origins as a clean list.
+
+        Returns:
+            list[str]:
+                Comma-separated origins from ``ALLOWED_ORIGINS`` with empty
+                values removed.
+        """
         return [
             origin.strip()
             for origin in (self.ALLOWED_ORIGINS or "").split(",")
             if origin.strip()
         ]
 
-
     # --- Storage ---
     UPLOAD_CONTAINER: str = "uploads"
     RESULT_CONTAINER: str = "results"
-
 
     # --- Rate Limits ---
     UPLOAD_RATE_LIMIT: str = "5/minute"
     POLL_RATE_LIMIT: str = "60/minute"
     FEEDBACK_RATE_LIMIT: str = "3/hour"
-
 
     # --- Feature Limits ---
     UPSCALE_DAILY_USAGE_LIMIT: int = 3
@@ -70,6 +94,13 @@ class Settings(BaseSettings):
 
     @property
     def FEATURE_LIMITS(self) -> Dict[str, int]:
+        """Map feature names to their 24-hour usage limits.
+
+        Returns:
+            dict[str, int]:
+                Feature-to-limit mapping consumed by job initialization and
+                usage status endpoints.
+        """
         return {
             "upscale": self.UPSCALE_DAILY_USAGE_LIMIT,
             "rembg": self.REMBG_DAILY_USAGE_LIMIT,
@@ -92,7 +123,6 @@ class Settings(BaseSettings):
     AZURE_SWEEP_INTERVAL_SECONDS: int = 300
     DB_SWEEP_INTERVAL_SECONDS: int = 43200
 
-
     # --- Image Processing ---
     MAX_FILE_SIZE_MB: int = 10
     MAX_MEGAPIXELS: int = 3
@@ -105,21 +135,18 @@ class Settings(BaseSettings):
 
     @property
     def MAX_FILE_SIZE_BYTES(self) -> int:
-        """Convert MB limit into bytes."""
+        """Return the upload size limit in bytes."""
         return self.MAX_FILE_SIZE_MB * 1024 * 1024
-
 
     @property
     def MAX_PIXELS(self) -> int:
-        """Convert megapixel limit into total pixels."""
+        """Return the upload resolution limit in total pixels."""
         return self.MAX_MEGAPIXELS * 1_000_000
-
 
     # --- Validation Thresholds ---
     COLOR_DIFF_THRESHOLD: int = 35
     COLOR_PIXEL_RATIO_THRESHOLD: float = 0.05
     ALPHA_THRESHOLD: int = 20
-
 
     # --- Format Mapping ---
     FORMAT_MAP: Dict[str, str] = {
@@ -131,6 +158,9 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+# Replicate's SDK reads this token from the environment. Assigning it here keeps
+# the SDK-compatible environment value synchronized with Pydantic settings.
 os.environ["REPLICATE_API_TOKEN"] = settings.REPLICATE_API_TOKEN
 
 ALLOWED_EXTENSIONS: FrozenSet[str] = frozenset(

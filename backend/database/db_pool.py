@@ -1,27 +1,38 @@
+"""PostgreSQL connection pool lifecycle for PixelForge.
+
+This module owns the process-wide asyncpg pool used by repositories and
+services. The application lifespan initializes the pool on startup and closes it
+during shutdown.
+
+It also ensures the usage tracking table and index exist, allowing the backend
+to bootstrap local development and deployment databases consistently.
+"""
+
 import asyncio
 import logging
+
 import asyncpg
+
 from core.config import settings
 
 logger = logging.getLogger(__name__)
 
-# Global database connection pool instance
+# Global database connection pool instance.
 _pool: asyncpg.pool.Pool | None = None
 
 
 async def init_db_pool() -> None:
-    """
-    Initializes the PostgreSQL connection pool.
+    """Initialize the PostgreSQL connection pool.
 
     Workflow:
-    - Prevent duplicate pool initialization.
-    - Retry connection creation with exponential backoff.
-    - Create required database tables/indexes.
-    - Store active pool globally.
+        1. Return early if the pool already exists.
+        2. Retry pool creation with exponential backoff.
+        3. Ensure required usage tracking schema exists.
+        4. Store the active pool for repository access.
 
     Raises:
         Exception:
-            Re-raises the final initialization failure after retries.
+            Re-raises the final initialization failure after all retries.
     """
     global _pool
 
@@ -84,24 +95,16 @@ async def init_db_pool() -> None:
                 _pool = None
 
             if attempt == settings.INIT_MAX_RETRIES:
-                logger.exception(
-                    "Failed to initialize database."
-                )
+                logger.exception("Failed to initialize database.")
                 raise
 
-            # Exponential backoff between retries
             await asyncio.sleep(
                 settings.INIT_BASE_DELAY_SECONDS * (2 ** (attempt - 1))
             )
 
 
 async def close_db_pool() -> None:
-    """
-    Closes the active database connection pool.
-
-    Used during application shutdown to release
-    database connections cleanly.
-    """
+    """Close the active PostgreSQL connection pool, if one exists."""
     global _pool
 
     if _pool is not None:
@@ -111,12 +114,12 @@ async def close_db_pool() -> None:
         logger.info("Database pool closed.")
 
 
-def get_db_pool() -> asyncpg.pool.Pool | None: 
-    """
-    Returns the active database connection pool.
+def get_db_pool() -> asyncpg.pool.Pool | None:
+    """Return the active PostgreSQL connection pool.
 
     Returns:
-    asyncpg.pool.Pool | None:
-            Current pool instance or None if not initialized.
+        asyncpg.pool.Pool | None:
+            Current pool instance, or ``None`` if the pool has not been
+            initialized yet.
     """
     return _pool

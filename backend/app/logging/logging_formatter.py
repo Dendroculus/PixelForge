@@ -1,4 +1,12 @@
+"""Custom logging formatter for PixelForge.
+
+The default logger names are useful for machines but can be noisy for humans.
+This module maps internal module paths into short component labels so logs stay
+readable during local development and production debugging.
+"""
+
 import logging
+
 
 LOGGER_DISPLAY_NAMES = {
     "app.factory": "app",
@@ -23,22 +31,40 @@ LOGGER_DISPLAY_NAMES = {
 
 
 class PixelForgeFormatter(logging.Formatter):
-    """
-    Pretty formatter for PixelForge logs.
+    """Formatter that adds a readable ``component`` field to log records.
 
-    Converts internal logger names like:
-        uvicorn.error
-
-    Into readable component names like:
-        server
+    Examples:
+        ``uvicorn.error`` becomes ``server``.
+        ``services.azure.storage`` becomes ``azure-storage``.
+        Unknown names fall back to the original logger name.
     """
 
     def format(self, record: logging.LogRecord) -> str:
+        """Attach the component label before formatting the record.
+
+        Args:
+            record:
+                Standard logging record.
+
+        Returns:
+            str:
+                Formatted log message.
+        """
         record.component = self._get_component_name(record.name)
         return super().format(record)
 
     @staticmethod
     def _get_component_name(logger_name: str) -> str:
+        """Convert a module logger name into a concise component label.
+
+        Args:
+            logger_name:
+                Raw logger name from ``logging.getLogger(__name__)``.
+
+        Returns:
+            str:
+                Human-readable component name.
+        """
         if logger_name in LOGGER_DISPLAY_NAMES:
             return LOGGER_DISPLAY_NAMES[logger_name]
 
@@ -61,6 +87,12 @@ class PixelForgeFormatter(logging.Formatter):
 
 
 def build_log_formatter() -> PixelForgeFormatter:
+    """Build the standard PixelForge log formatter.
+
+    Returns:
+        PixelForgeFormatter:
+            Formatter with timestamp, severity, component, and message fields.
+    """
     return PixelForgeFormatter(
         fmt=(
             "%(asctime)s | %(levelname)-8s | "

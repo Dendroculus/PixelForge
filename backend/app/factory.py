@@ -1,3 +1,13 @@
+"""FastAPI application factory for PixelForge.
+
+This module owns top-level application construction. It configures logging,
+validates critical environment settings, creates the FastAPI instance, installs
+middleware, and registers routers.
+
+Keeping application creation in a factory makes startup behavior explicit and
+helps tests create isolated app instances when needed.
+"""
+
 import logging
 
 from fastapi import FastAPI
@@ -13,6 +23,12 @@ logger = logging.getLogger(__name__)
 
 
 def validate_environment() -> None:
+    """Validate critical environment settings before application startup.
+
+    Raises:
+        ValueError:
+            Raised when required CORS configuration is missing or unsafe.
+    """
     if not settings.ALLOWED_ORIGINS:
         raise ValueError(
             "CRITICAL: ALLOWED_ORIGINS must be defined in the environment."
@@ -25,6 +41,12 @@ def validate_environment() -> None:
 
 
 def create_app() -> FastAPI:
+    """Create and configure the PixelForge FastAPI application.
+
+    Returns:
+        FastAPI:
+            Fully configured FastAPI application instance.
+    """
     configure_logging()
 
     logger.info(

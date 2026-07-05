@@ -1,3 +1,13 @@
+"""Application logging configuration for PixelForge.
+
+This module centralizes logging setup for console output, optional rotating file
+logs, Uvicorn logger integration, and third-party logger noise reduction.
+
+The application factory calls ``configure_logging()`` during startup before the
+FastAPI app is created, ensuring every later component uses the same formatter
+and log-level policy.
+"""
+
 import logging
 import sys
 
@@ -19,6 +29,15 @@ NOISY_LOGGERS = {
 
 
 def _get_log_level() -> int:
+    """Resolve the configured logging level.
+
+    Invalid or unsupported values fall back to ``logging.INFO`` so a bad
+    environment value does not break application startup.
+
+    Returns:
+        int:
+            Standard library logging level constant.
+    """
     return getattr(
         logging,
         settings.LOG_LEVEL.upper(),
@@ -27,6 +46,16 @@ def _get_log_level() -> int:
 
 
 def _create_console_handler(log_level: int) -> logging.Handler:
+    """Create the stdout logging handler.
+
+    Args:
+        log_level:
+            Minimum log level handled by the console handler.
+
+    Returns:
+        logging.Handler:
+            Configured stream handler using the PixelForge formatter.
+    """
     console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(log_level)
     console_handler.setFormatter(build_log_formatter())
@@ -35,6 +64,18 @@ def _create_console_handler(log_level: int) -> logging.Handler:
 
 
 def _create_file_handler(log_level: int) -> logging.Handler:
+    """Create the optional rotating file logging handler.
+
+    The log directory is created automatically when file logging is enabled.
+
+    Args:
+        log_level:
+            Minimum log level handled by the file handler.
+
+    Returns:
+        logging.Handler:
+            Configured rotating file handler.
+    """
     log_dir = Path(settings.LOG_DIR)
     log_dir.mkdir(
         parents=True,
@@ -56,6 +97,12 @@ def _create_file_handler(log_level: int) -> logging.Handler:
 
 
 def _configure_uvicorn_loggers(log_level: int) -> None:
+    """Route Uvicorn logs through the root logger configuration.
+
+    Args:
+        log_level:
+            Log level applied to Uvicorn loggers.
+    """
     for logger_name in (
         "uvicorn",
         "uvicorn.error",
@@ -69,11 +116,18 @@ def _configure_uvicorn_loggers(log_level: int) -> None:
 
 
 def _silence_noisy_loggers() -> None:
+    """Reduce verbosity from third-party libraries."""
     for logger_name, level in NOISY_LOGGERS.items():
         logging.getLogger(logger_name).setLevel(level)
 
 
 def configure_logging() -> None:
+    """Configure application-wide logging.
+
+    This function is intentionally idempotent for normal app startup: it clears
+    existing root handlers before installing PixelForge handlers. That prevents
+    duplicate logs during local reloads or repeated application factory calls.
+    """
     log_level = _get_log_level()
 
     root_logger = logging.getLogger()
