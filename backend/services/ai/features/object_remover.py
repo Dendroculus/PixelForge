@@ -1,3 +1,10 @@
+"""Object removal AI feature service.
+
+Object removal differs from the other AI tools because the remote model needs
+both a source image and a mask image. This service extends the shared image
+pipeline by loading the mask from Azure and passing both streams to the model.
+"""
+
 import io
 
 from core.config import settings
@@ -8,11 +15,21 @@ from services.azure.storage import StorageService
 
 
 class ObjectRemover(ImagePipelineService):
-    """
-    Service for object removal using image + mask inpainting.
-    """
+    """Service for object removal using source image and mask inpainting."""
 
-    def __init__(self, provider: BaseAIProvider = None,max_concurrent_remote_jobs: int = settings.MAX_CONCURRENT_JOBS):
+    def __init__(
+        self,
+        provider: BaseAIProvider = None,
+        max_concurrent_remote_jobs: int = settings.MAX_CONCURRENT_JOBS,
+    ):
+        """Initialize the object removal service.
+
+        Args:
+            provider:
+                Optional AI provider implementation.
+            max_concurrent_remote_jobs:
+                Maximum concurrent remote AI jobs for this service instance.
+        """
         super().__init__(
             model_type="objectremove",
             provider=provider,
@@ -25,6 +42,21 @@ class ObjectRemover(ImagePipelineService):
         mask_filename: str,
         job_id: str,
     ) -> bool:
+        """Run object removal for an uploaded image and mask.
+
+        Args:
+            safe_filename:
+                Sanitized source image filename.
+            mask_filename:
+                Sanitized mask image filename.
+            job_id:
+                Current job identifier.
+
+        Returns:
+            bool:
+                ``True`` when the result is saved successfully, otherwise
+                ``False``.
+        """
         return await self.run(
             safe_filename,
             job_id,
@@ -32,6 +64,18 @@ class ObjectRemover(ImagePipelineService):
         )
 
     async def _process_with_ai(self, image_stream: io.BytesIO, **kwargs) -> str:
+        """Execute the object-removal model with image and mask streams.
+
+        Args:
+            image_stream:
+                Prepared source image stream.
+            **kwargs:
+                Must include ``mask_filename``.
+
+        Returns:
+            str:
+                Remote result URL returned by the provider.
+        """
         mask_filename = kwargs["mask_filename"]
 
         mask_bytes = await StorageService.get_upload_bytes(mask_filename)

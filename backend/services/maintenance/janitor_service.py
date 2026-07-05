@@ -1,3 +1,10 @@
+"""Background janitor service for storage and usage cleanup.
+
+The janitor loop runs for the lifetime of the FastAPI application. It sweeps
+expired Azure result files frequently and removes old usage rows less often
+according to configured intervals.
+"""
+
 import asyncio
 import logging
 
@@ -9,9 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 async def database_janitor_loop() -> None:
-    """
-    Periodically removes expired Azure files and expired usage records.
-    """
+    """Continuously remove expired Azure files and usage records."""
     db_cleanup_counter = 0
 
     loop_ratio = max(

@@ -1,21 +1,33 @@
-import httpx
+"""Discord webhook helpers for PixelForge notifications.
+
+This module builds Discord-compatible payloads and sends them to the configured
+webhook endpoint. It is currently used for public feedback submissions.
+"""
+
 import logging
-from core.config import settings
 from datetime import datetime, timezone
+
+import httpx
+
+from core.config import settings
 
 logger = logging.getLogger(__name__)
 
+
 def build_feedback_payload(name: str, email: str, message: str) -> dict:
-    """
-    Constructs a highly-formatted payload for Discord webhook based on user feedback.
-    
+    """Build a Discord embed payload for a feedback submission.
+
     Args:
-        name (str): The name of the user submitting feedback.
-        email (str): The email address of the user.
-        message (str): The feedback message provided by the user.
-        
+        name:
+            Name submitted by the user.
+        email:
+            Email address submitted by the user.
+        message:
+            Feedback message content.
+
     Returns:
-        dict: A dictionary formatted according to Discord's webhook structure, ready to be sent as a
+        dict:
+            Discord webhook payload.
     """
     return {
         "username": "PixelForge Support",
@@ -23,33 +35,42 @@ def build_feedback_payload(name: str, email: str, message: str) -> dict:
         "embeds": [
             {
                 "title": "📬 User Feedback Ticket",
-                "color": 6514681, 
+                "color": 6514681,
                 "fields": [
                     {
                         "name": "👤 Name",
                         "value": f"**{name}**",
-                        "inline": True   
+                        "inline": True,
                     },
                     {
                         "name": "✉️ Email",
-                        "value": f"[{email}](mailto:{email})", 
-                        "inline": True
+                        "value": f"[{email}](mailto:{email})",
+                        "inline": True,
                     },
                     {
                         "name": "📝 Message",
-                        "value": f"> {message}", 
-                        "inline": False  
+                        "value": f"> {message}",
+                        "inline": False,
                     },
                 ],
                 "footer": {
                     "text": "PixelForge System Automated Alert",
                 },
-                "timestamp": datetime.now(timezone.utc).isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat(),
             }
         ],
     }
-    
+
+
 async def send_discord_message(payload: dict, email: str) -> None:
+    """Send a prepared payload to the configured Discord webhook.
+
+    Args:
+        payload:
+            Discord webhook JSON payload.
+        email:
+            Email address used only for logging context.
+    """
     if not settings.DISCORD_WEBHOOK_URL:
         logger.warning("DISCORD_WEBHOOK_URL is missing. Skipping Discord notification.")
         return
