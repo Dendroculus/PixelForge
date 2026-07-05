@@ -1,3 +1,11 @@
+"""Top-level API package containing routes and request/response schemas.
+
+Package: api
+
+This file intentionally avoids importing submodules by default.
+Keeping package initializers lightweight prevents hidden side effects such as
+loading environment settings, creating semaphores, initializing provider clients,
+or touching cloud/database dependencies during simple imports.
 """
-Package for API routes. This package contains all RESTful API endpoints for the application. Each module within this package corresponds to a specific set of related routes, such as user management, authentication, or data retrieval. The routes defined here will handle incoming HTTP requests, process them according to the application's logic, and return appropriate responses to the client. Mainly for those ai related features.
-"""
+
+__all__: list[str] = []

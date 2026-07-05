@@ -1,3 +1,11 @@
+"""Notification delivery package.
+
+Package: services.notification
+
+This file intentionally avoids importing submodules by default.
+Keeping package initializers lightweight prevents hidden side effects such as
+loading environment settings, creating semaphores, initializing provider clients,
+or touching cloud/database dependencies during simple imports.
 """
-Module for Notification utilities. This module provides functions for sending notifications via various channels (e.g., email, SMS, push notifications) and managing notification templates. It is designed to be easily integrated into the application and supports asynchronous operations for improved performance. Currently it focuses on discord webhooks for user feedback notifications, but can be extended to support other notification channels in the future.
-"""
+
+__all__: list[str] = []

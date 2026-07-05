@@ -1,3 +1,11 @@
+"""Route package for grouping PixelForge FastAPI routers.
+
+Package: api.routes
+
+This file intentionally avoids importing submodules by default.
+Keeping package initializers lightweight prevents hidden side effects such as
+loading environment settings, creating semaphores, initializing provider clients,
+or touching cloud/database dependencies during simple imports.
 """
-This module is responsible for registering the routers for all the API routes in the application. It imports the router from the `api.routes.router` module and includes it in the FastAPI application instance.
-"""
+
+__all__: list[str] = []

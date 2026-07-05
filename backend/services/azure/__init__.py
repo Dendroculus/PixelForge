@@ -1,4 +1,11 @@
+"""Azure Blob Storage service package.
+
+Package: services.azure
+
+This file intentionally avoids importing submodules by default.
+Keeping package initializers lightweight prevents hidden side effects such as
+loading environment settings, creating semaphores, initializing provider clients,
+or touching cloud/database dependencies during simple imports.
 """
-Azure service module for the backend. Mainly used for Azure Blob Storage interactions and other Azure-related services.
-This module provides a unified interface for Azure services, allowing the backend to interact with Azure resources seamlessly
-"""
+
+__all__: list[str] = []

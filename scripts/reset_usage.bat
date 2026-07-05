@@ -29,7 +29,7 @@ if not exist "%RESET_SCRIPT%" (
 
 if exist "%BACKEND_PY%" (
   cd /d "%BACKEND%"
-  "%BACKEND_PY%" scripts\_reset_usage.py
+  "%BACKEND_PY%" scripts\reset_usage.py
 ) else (
   echo [WARN] backend venv not found. Falling back to system Python.
   cd /d "%BACKEND%"

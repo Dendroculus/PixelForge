@@ -1,3 +1,11 @@
+"""Operational routes such as health checks.
+
+Package: api.routes.ops
+
+This file intentionally avoids importing submodules by default.
+Keeping package initializers lightweight prevents hidden side effects such as
+loading environment settings, creating semaphores, initializing provider clients,
+or touching cloud/database dependencies during simple imports.
 """
-This module is responsible for registering the routers related to the operations (ops) endpoints of the API. For eg health check, system status, etc.
-"""
+
+__all__: list[str] = []

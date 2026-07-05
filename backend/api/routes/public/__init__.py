@@ -1,3 +1,11 @@
+"""Public non-AI routes such as feedback submission.
+
+Package: api.routes.public
+
+This file intentionally avoids importing submodules by default.
+Keeping package initializers lightweight prevents hidden side effects such as
+loading environment settings, creating semaphores, initializing provider clients,
+or touching cloud/database dependencies during simple imports.
 """
-This module is responsible for registering the routers for the public API endpoints.
-"""
+
+__all__: list[str] = []

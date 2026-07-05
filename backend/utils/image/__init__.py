@@ -1,3 +1,11 @@
+"""Image utility package.
+
+Package: utils.image
+
+This file intentionally avoids importing submodules by default.
+Keeping package initializers lightweight prevents hidden side effects such as
+loading environment settings, creating semaphores, initializing provider clients,
+or touching cloud/database dependencies during simple imports.
 """
-Module for image related utility functions. This module provides pure, stateless functions for processing, validating, and transforming image byte streams using Pillow. It is decoupled from core application logic for easy testing and reuse.
-"""
+
+__all__: list[str] = []

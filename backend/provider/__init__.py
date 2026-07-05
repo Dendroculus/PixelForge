@@ -1,6 +1,6 @@
-"""Rate limiting and usage-quota package.
+"""AI provider abstraction package.
 
-Package: limiter
+Package: provider
 
 This file intentionally avoids importing submodules by default.
 Keeping package initializers lightweight prevents hidden side effects such as

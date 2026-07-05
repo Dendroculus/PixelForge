@@ -1,3 +1,11 @@
+"""Reusable image AI pipeline package.
+
+Package: services.ai.pipeline
+
+This file intentionally avoids importing submodules by default.
+Keeping package initializers lightweight prevents hidden side effects such as
+loading environment settings, creating semaphores, initializing provider clients,
+or touching cloud/database dependencies during simple imports.
 """
-This package contains the pipeline services for AI features, including color restoration and image upscaling. Each service is designed to handle specific AI tasks, leveraging the shared image pipeline for efficient processing.
-"""
+
+__all__: list[str] = []
