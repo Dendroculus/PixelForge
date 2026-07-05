@@ -1,29 +1,36 @@
-"""
-Core Security Module
+"""Upload sanitization helpers for PixelForge.
 
-Provides robust defenses against malicious file uploads, including chunked
-streaming limits, magic number MIME type validation, and strict CPU concurrency 
-controls for image processing.
+This module provides a legacy/direct upload sanitization path. It protects the
+backend from invalid or malicious image uploads by combining:
+
+    - chunked streaming with an explicit byte limit
+    - magic-number MIME validation
+    - Pillow structure validation
+    - resolution limits
+    - controlled CPU concurrency for image normalization
+
+The current direct-to-Azure flow may bypass this module for some endpoints, but
+the functions remain useful for routes that accept ``UploadFile`` directly.
 """
 
-import io
-import uuid
-import logging
 import asyncio
+import io
+import logging
 import os
-import filetype
+import uuid
 from typing import Tuple
 
+import filetype
 from fastapi import HTTPException, UploadFile, status
 from PIL import UnidentifiedImageError
 
-from core.config import settings, ALLOWED_MIME_TYPES
+from core.config import ALLOWED_MIME_TYPES, settings
 from services.azure.storage_utils import get_upload_filename
 from utils.image.image_utils import (
+    encode_image,
     load_and_validate_structure,
-    validate_resolution,
     normalize_image,
-    encode_image
+    validate_resolution,
 )
 
 logger = logging.getLogger(__name__)
@@ -33,36 +40,44 @@ _sanitize_semaphore = asyncio.Semaphore(max(1, _SANITIZE_CPU_CONCURRENCY))
 
 
 async def _read_file_with_limit(file: UploadFile) -> bytes:
-    """
-    Streams an uploaded file into memory in discrete chunks.
-    
-    Acts as the first line of defense by immediately checking file magic numbers 
-    (MIME types) and enforcing strict byte limits to prevent Out-Of-Memory (OOM) attacks.
+    """Read and validate an uploaded file without exceeding memory limits.
+
+    The first chunk is used for MIME signature detection. Remaining chunks are
+    read incrementally so oversized uploads can be rejected as soon as they
+    exceed the configured maximum size.
 
     Args:
-        file: The FastAPI UploadFile object.
+        file:
+            FastAPI uploaded file object.
 
     Raises:
         HTTPException:
-            - 400 error if the file is completely empty.
-            - 415 error if the actual file signature doesn't match allowed image types.
-            - 413 error if the streamed bytes exceed the configured maximum.
+            - 400 when the upload is empty.
+            - 415 when the file signature is not an allowed image MIME type.
+            - 413 when the upload exceeds ``MAX_FILE_SIZE_BYTES``.
 
     Returns:
-        bytes: The fully validated raw byte string.
+        bytes:
+            Complete validated file bytes.
     """
     file_bytes = bytearray()
     chunk_size = 1024 * 1024
 
     initial_chunk = await file.read(2048)
     if not initial_chunk:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Uploaded file is empty.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file is empty.",
+        )
 
     kind = filetype.guess(initial_chunk)
     detected_mime = kind.mime if kind else "application/octet-stream"
 
     if detected_mime not in ALLOWED_MIME_TYPES:
-        raise HTTPException(status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE, detail="Unsupported media type.")
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail="Unsupported media type.",
+        )
 
     file_bytes.extend(initial_chunk)
 
@@ -74,71 +89,79 @@ async def _read_file_with_limit(file: UploadFile) -> bytes:
         file_bytes.extend(chunk)
 
         if len(file_bytes) > settings.MAX_FILE_SIZE_BYTES:
-            logger.warning("Upload aborted: File exceeded %sMB limit.", settings.MAX_FILE_SIZE_MB)
+            logger.warning(
+                "Upload aborted: File exceeded %sMB limit.",
+                settings.MAX_FILE_SIZE_MB,
+            )
             raise HTTPException(
                 status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                detail=f"File exceeds the {settings.MAX_FILE_SIZE_MB}MB limit."
+                detail=f"File exceeds the {settings.MAX_FILE_SIZE_MB}MB limit.",
             )
 
     return bytes(file_bytes)
 
 
 def _process_image_cpu(file_bytes: bytes) -> Tuple[str, str, bytes]:
-    """
-    Synchronous, CPU-bound pipeline that delegates heavy lifting to image utilities.
-    Handles structure validation, resolution checks, and encoding.
+    """Validate, normalize, and encode image bytes on a worker thread.
 
     Args:
-        file_bytes: The raw byte string of the image.
+        file_bytes:
+            Raw image bytes from an uploaded file.
 
     Raises:
-        HTTPException: 400 or 422 error if the image data is corrupted or invalid.
+        HTTPException:
+            Raised when image data is invalid, unsupported, oversized, or
+            cannot be safely processed.
 
     Returns:
-        Tuple[str, str, bytes]: The generated Job ID, the secure filename, and the clean image bytes.
+        tuple[str, str, bytes]:
+            Generated job ID, safe upload filename, and normalized image bytes.
     """
     try:
         img, ext = load_and_validate_structure(file_bytes)
         validate_resolution(img)
         clean_img, final_ext = normalize_image(img, ext)
         output_stream = encode_image(clean_img, final_ext)
-        
+
         job_id = uuid.uuid4().hex
         safe_filename = get_upload_filename(job_id, final_ext)
-        
+
         return job_id, safe_filename, output_stream.getvalue()
-        
+
     except HTTPException:
         raise
     except UnidentifiedImageError as e:
         logger.warning("Invalid file uploaded.")
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="FILE INVALID.") from e
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="FILE INVALID.",
+        ) from e
     except Exception as e:
         logger.error("Image processing failed: %s", e, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Image processing failed due to file corruption or invalid data."
+            detail="Image processing failed due to file corruption or invalid data.",
         ) from e
 
 
 async def process_and_sanitize_image(file: UploadFile) -> Tuple[str, str, io.BytesIO]:
-    """
-    Asynchronous entry point for legacy/direct image sanitization.
-    
-    Orchestrates chunked reading and safely offloads the CPU-bound Pillow 
-    operations to a background thread, throttled by a strict semaphore to 
-    prevent thread starvation on the async event loop.
+    """Sanitize an uploaded image and return a safe in-memory stream.
 
     Args:
-        file: The FastAPI UploadFile object.
+        file:
+            FastAPI uploaded file object.
 
     Returns:
-        Tuple[str, str, io.BytesIO]: The Job ID, secure filename, and encoded memory stream.
+        tuple[str, str, io.BytesIO]:
+            Generated job ID, safe filename, and normalized image stream.
     """
     try:
         file_bytes = await _read_file_with_limit(file)
         async with _sanitize_semaphore:
-            job_id, safe_filename, output_bytes = await asyncio.to_thread(_process_image_cpu, file_bytes)
+            job_id, safe_filename, output_bytes = await asyncio.to_thread(
+                _process_image_cpu,
+                file_bytes,
+            )
         return job_id, safe_filename, io.BytesIO(output_bytes)
     finally:
         await file.close()

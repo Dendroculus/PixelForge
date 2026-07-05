@@ -1,7 +1,18 @@
+"""Usage quota service for PixelForge features.
+
+This service implements 24-hour feature usage accounting on top of
+``UsageRepository``. Usage is tracked per ``client_ip:feature`` key so each AI
+tool can have independent limits.
+
+The service intentionally fails open for some database read failures to avoid
+blocking all users during transient database issues. Write failures are logged
+but do not interrupt already accepted processing.
+"""
+
 import logging
 
-from database.db_pool import get_db_pool
 from core.config import settings
+from database.db_pool import get_db_pool
 from repository.usage_repo import UsageRepository
 
 
@@ -13,27 +24,23 @@ WINDOW_MS = WINDOW_HOURS * 60 * 60 * 1000
 
 
 class UsageService:
-    """
-    Handles feature usage tracking and daily limit enforcement.
-
-    Responsible for:
-    - Checking client usage limits.
-    - Incrementing usage counters.
-    - Refunding usage after failed jobs.
-    - Providing usage status.
-    - Cleaning expired usage records.
-    """
+    """Feature usage tracking and daily limit enforcement service."""
 
     @staticmethod
     def _get_feature_key(ip_address: str, feature: str) -> str:
-        """
-        Creates a unique usage tracking key.
+        """Build the database usage key for a client and feature.
 
-        Combines client IP and feature name so each feature
-        maintains an independent usage counter.
+        Args:
+            ip_address:
+                Client identifier.
+            feature:
+                Feature name.
+
+        Returns:
+            str:
+                Combined usage key.
         """
         return f"{ip_address}:{feature}"
-
 
     @classmethod
     async def check_daily_limit(
@@ -42,20 +49,19 @@ class UsageService:
         limit_24h: int,
         feature: str,
     ) -> bool:
-        """
-        Checks whether a client can use a feature.
+        """Check whether a client still has quota for a feature.
 
         Args:
             ip_address:
                 Client identifier.
             limit_24h:
-                Maximum allowed usage within the window.
+                Maximum allowed usage in the rolling 24-hour window.
             feature:
                 AI feature being checked.
 
         Returns:
             bool:
-                True if usage is available.
+                ``True`` when usage is available, otherwise ``False``.
         """
         if limit_24h <= 0:
             return False
@@ -88,18 +94,19 @@ class UsageService:
             )
             return True
 
-
     @classmethod
     async def increment_daily_limit(
         cls,
         ip_address: str,
         feature: str,
     ) -> None:
-        """
-        Records successful feature usage.
+        """Record one accepted feature usage.
 
-        Increments the usage counter after a job
-        has passed validation.
+        Args:
+            ip_address:
+                Client identifier.
+            feature:
+                Feature whose counter should be incremented.
         """
         pool = get_db_pool()
 
@@ -123,18 +130,19 @@ class UsageService:
                 "Database error during usage increment."
             )
 
-
     @classmethod
     async def decrement_daily_limit(
         cls,
         ip_address: str,
         feature: str,
     ) -> None:
-        """
-        Refunds usage after a failed job.
+        """Refund one feature usage after a failed job.
 
-        Used when processing fails after usage
-        has already been reserved.
+        Args:
+            ip_address:
+                Client identifier.
+            feature:
+                Feature whose counter should be decremented.
         """
         pool = get_db_pool()
 
@@ -158,7 +166,6 @@ class UsageService:
                 "Database error during usage refund."
             )
 
-
     @classmethod
     async def get_usage_status(
         cls,
@@ -166,16 +173,19 @@ class UsageService:
         limit_24h: int,
         feature: str,
     ) -> dict:
-        """
-        Returns current usage state for a feature.
+        """Return remaining usage and reset information for a feature.
 
-        Calculates:
-        - Remaining available usage.
-        - Next reset timestamp when limit is reached.
+        Args:
+            ip_address:
+                Client identifier.
+            limit_24h:
+                Maximum allowed usage in the rolling 24-hour window.
+            feature:
+                Feature being queried.
 
         Returns:
             dict:
-                Usage remaining and reset information.
+                ``uses_remaining`` and optional ``reset_timestamp``.
         """
         if limit_24h <= 0:
             return {
@@ -241,14 +251,9 @@ class UsageService:
                 "reset_timestamp": None,
             }
 
-
     @classmethod
     async def run_database_cleanup(cls) -> int:
-        """
-        Removes expired usage records.
-
-        Uses configured retention period to clean
-        old tracking data.
+        """Delete expired usage records from the database.
 
         Returns:
             int:

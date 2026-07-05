@@ -1,10 +1,18 @@
+"""AI model registry for PixelForge.
+
+The registry is the single source of truth for model identifiers and
+model-specific input conventions. Feature services ask this class for model
+IDs, default parameters, and input key names instead of hard-coding provider
+details throughout the pipeline.
+"""
+
 from typing import Dict, List
+
 from core.config import settings
 
+
 class ModelRegistry:
-    """
-    Registry for available AI models and their configuration.
-    """
+    """Registry of supported AI models and provider-specific configuration."""
 
     _MODELS = {
         "general": {
@@ -28,12 +36,42 @@ class ModelRegistry:
 
     @classmethod
     def get_replicate_id(cls, model_type: str) -> str:
+        """Return the Replicate model identifier for a registered model.
+
+        Args:
+            model_type:
+                Internal model key such as ``general`` or ``rembg``.
+
+        Raises:
+            ValueError:
+                Raised when ``model_type`` is not registered.
+
+        Returns:
+            str:
+                Fully qualified Replicate model identifier.
+        """
         if model_type not in cls._MODELS:
             raise ValueError(f"Model type '{model_type}' is not registered.")
         return cls._MODELS[model_type]["replicate_id"]
 
     @classmethod
     def get_params(cls, model_type: str, scale: int = settings.DEFAULT_SCALE) -> Dict:
+        """Build provider input parameters for a registered model.
+
+        Args:
+            model_type:
+                Internal model key.
+            scale:
+                Requested upscale factor. Used by the general upscaling model.
+
+        Raises:
+            ValueError:
+                Raised when ``model_type`` is not registered.
+
+        Returns:
+            dict:
+                Provider-specific parameter dictionary.
+        """
         if model_type not in cls._MODELS:
             raise ValueError(f"Model type '{model_type}' is not registered.")
 
@@ -52,16 +90,45 @@ class ModelRegistry:
 
     @classmethod
     def get_input_key(cls, model_type: str) -> str:
+        """Return the image input field expected by a model.
+
+        Args:
+            model_type:
+                Internal model key.
+
+        Raises:
+            ValueError:
+                Raised when ``model_type`` is not registered.
+
+        Returns:
+            str:
+                Input key name used in the provider payload.
+        """
         if model_type not in cls._MODELS:
             raise ValueError(f"Model type '{model_type}' is not registered.")
         return cls._MODELS[model_type].get("input_key", "image")
 
     @classmethod
     def list_models(cls) -> List[str]:
+        """Return the registered internal model keys."""
         return list(cls._MODELS.keys())
-    
+
     @classmethod
     def get_mask_key(cls, model_type: str) -> str:
+        """Return the mask input field expected by a model.
+
+        Args:
+            model_type:
+                Internal model key.
+
+        Raises:
+            ValueError:
+                Raised when ``model_type`` is not registered.
+
+        Returns:
+            str:
+                Mask key name used in the provider payload.
+        """
         if model_type not in cls._MODELS:
             raise ValueError(f"Model type '{model_type}' is not registered.")
         return cls._MODELS[model_type].get("mask_key", "mask")
