@@ -1,5 +1,17 @@
+/**
+ * Core file-state hook for client-side workspaces.
+ *
+ * Owns selected file state, object URL creation/cleanup, result blobs, reset
+ * handlers, and upload input integration.
+ */
+
 import { useState, useCallback, useEffect } from 'react';
 
+/**
+ * Manage selected file, preview URL, result blob, and workspace reset state.
+ *
+ * @returns {object} Hook state and handlers.
+ */
 export function useWorkspaceFile(inputRef) {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');

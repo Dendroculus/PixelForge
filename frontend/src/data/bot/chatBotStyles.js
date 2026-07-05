@@ -1,3 +1,10 @@
+/**
+ * Shared style tokens for the FAQ chatbot UI.
+ *
+ * Centralizes repeated Tailwind class groups so chatbot components remain easier
+ * to read and update.
+ */
+
 export const WIDGET_STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
 

@@ -1,3 +1,10 @@
+/**
+ * Watermark editor workspace page.
+ *
+ * Lets users add text or image watermarks, position them interactively over a
+ * preview, and export a processed image.
+ */
+
 import { useEffect, useMemo } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { AppConfig, FontFamilies, WatermarkColors } from '@/config';
@@ -19,6 +26,11 @@ import WatermarkPreviewOverlay from '@/components/Workspace/display/WatermarkPre
 import { useWatermark } from '@/hooks/workspace/Watermark/useWatermark';
 import { generateSafeFilename } from '@/utils/file/fileUtils';
 
+/**
+ * Render the watermark editor workspace.
+ *
+ * @returns {JSX.Element} Rendered UI.
+ */
 export default function WatermarkAdder() {
   const { refs, workspaceFile, state, actions } = useWatermark();
   const {

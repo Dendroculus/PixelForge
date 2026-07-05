@@ -1,3 +1,12 @@
+/**
+ * Color restoration workspace page.
+ *
+ * This page wires the generic AI feature workspace to the color restoration
+ * pipeline. It requires grayscale input, displays feature-specific controls,
+ * simulates progress while backend processing is active, and delegates shared
+ * upload/result UI to `AiFeatureWorkspace`.
+ */
+
 import { useState } from 'react';
 import AiFeatureWorkspace from '@/components/Workspace/AiFeatureWorkspace';
 import ColorRestoreControls from '@/components/Workspace/controls/AiFeatures/ColorRestoreControls';
@@ -5,6 +14,11 @@ import { useColorRestorePipeline } from '@/hooks/pipeline/useColorRestorePipelin
 import { useSimulatedProgress } from '@/hooks/workspace/Core/useSimulatedProgress';
 import { marketingProps } from '@/data/feature/colorRestoreMarketing';
 
+/**
+ * Render the AI color restoration tool.
+ *
+ * @returns {JSX.Element} Color restoration workspace.
+ */
 export default function ColorRestoration() {
   const [progress, setProgress] = useState(0);
 

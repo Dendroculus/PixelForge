@@ -1,3 +1,10 @@
+/**
+ * FAQ chatbot content configuration.
+ *
+ * Contains the categorized questions, quick actions, and accent metadata used by
+ * the PixelForge helper chatbot.
+ */
+
 export const FAQ_DATA = [
   {
     id: 'getting-started',

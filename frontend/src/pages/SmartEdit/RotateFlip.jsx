@@ -1,3 +1,10 @@
+/**
+ * Rotate and flip workspace page.
+ *
+ * Provides client-side rotation/flip controls, preview transforms, reset behavior,
+ * and downloadable transformed output.
+ */
+
 import { useMemo, useRef, useCallback } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { AppConfig } from '@/config';
@@ -15,6 +22,11 @@ import { useWorkspaceFile } from '@/hooks/workspace/Core/useWorkspaceFile';
 import { useRotateFlip } from '@/hooks/workspace/Editor/useRotateFlip';
 import { generateSafeFilename } from '@/utils/file/fileUtils';
 
+/**
+ * Render the rotate/flip workspace.
+ *
+ * @returns {JSX.Element} Rendered UI.
+ */
 export default function RotateFlip() {
   const fileInputRef = useRef(null);
 

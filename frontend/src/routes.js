@@ -1,5 +1,18 @@
+/**
+ * Lazy route registry for the PixelForge frontend.
+ *
+ * Each entry maps a URL path to a lazily imported page component. Keeping route
+ * definitions in this file lets the root app render routes generically while
+ * preserving code-splitting for large tool pages.
+ */
+
 import React from 'react';
 
+/**
+ * Application route definitions consumed by App.jsx.
+ *
+ * @type {{ path: string, component: React.LazyExoticComponent<React.ComponentType> }[]}
+ */
 const routes = [
   {
     path: '/',

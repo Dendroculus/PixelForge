@@ -1,3 +1,11 @@
+/**
+ * Generic AI workspace pipeline hook.
+ *
+ * Owns the shared state and handlers used by AI feature pages, including file
+ * selection, session restoration, Turnstile reset, cancellation, usage limits,
+ * alerts, and result lifecycle.
+ */
+
 import { useState, useRef, useCallback } from 'react';
 import { saveFileToIDB } from '@/utils/storage/idb';
 import { clearAppSession } from '@/utils/storage/session';
@@ -8,6 +16,11 @@ import {
   migrateStorageKeys,
 } from '@/utils/storage/storageKeys';
 
+/**
+ * Create shared AI workspace pipeline state and handlers.
+ *
+ * @returns {object} Hook state and handlers.
+ */
 export function usePipeline(
   setProgress,
   usePipelineActions,

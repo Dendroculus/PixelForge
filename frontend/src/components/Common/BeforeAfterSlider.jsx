@@ -1,6 +1,18 @@
+/**
+ * Interactive before/after image comparison component.
+ *
+ * Used on landing and marketing sections to show the visible difference between
+ * an original image and the processed PixelForge result.
+ */
+
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 
+/**
+ * Render a draggable before/after comparison slider.
+ *
+ * @returns {JSX.Element} Rendered UI.
+ */
 const BeforeAfterSlider = ({ beforeImage, afterImage, altText = "Before and after comparison" }) => {
   const [sliderPosition, setSliderPosition] = useState(50);
 

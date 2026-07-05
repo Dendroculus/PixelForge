@@ -1,3 +1,10 @@
+/**
+ * Header copy configuration for route-aware page headers.
+ *
+ * Maps frontend routes to the title, subtitle, and presentation metadata rendered
+ * by the global header.
+ */
+
 export const headerConfig = {
   // AI Features
   '/': {

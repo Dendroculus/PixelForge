@@ -1,3 +1,10 @@
+/**
+ * Marketing copy for the Background Remover feature page.
+ *
+ * Defines the feature highlights and step-by-step instructions shown beside the
+ * AI workspace.
+ */
+
 export const marketingProps = {
     subtitle: 'Flawless background removal powered by state-of-the-art vision AI.',
     features: [

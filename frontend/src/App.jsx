@@ -1,3 +1,13 @@
+/**
+ * Root application shell for PixelForge.
+ *
+ * Responsibilities:
+ * - Own the browser router.
+ * - Render persistent layout chrome such as navigation, global header, footer,
+ *   legal modals, and FAQ chatbot.
+ * - Lazily render page routes with lightweight suspense loaders.
+ */
+
 import { useState, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
@@ -11,12 +21,24 @@ import NotFound from './pages/Special/NotFound';
 import AppModals from './components/Common/AppModals';
 import FaqChatbotWidget from './pages/Special/FaqChatbotWidget';
 
+/**
+ * Generic fallback shown while non-workspace pages are loading.
+ *
+ * @returns {JSX.Element} Centered loading spinner.
+ */
 const PageLoader = () => (
   <div className="flex-1 flex items-center justify-center min-h-75 w-full z-10">
     <div className="w-10 h-10 border-4 border-slate-300 border-t-slate-800 rounded-full animate-spin" />
   </div>
 );
 
+/**
+ * Workspace-shaped fallback used for heavier tool pages.
+ *
+ * This keeps the layout stable while feature bundles are being downloaded.
+ *
+ * @returns {JSX.Element} Skeleton-like workspace loading panel.
+ */
 const WorkspaceLoader = () => (
   <div className="w-full flex-1">
     <section className="flex-1 w-full max-w-6xl mx-auto px-4 pt-6 pb-16">
@@ -27,6 +49,11 @@ const WorkspaceLoader = () => (
   </div>
 );
 
+/**
+ * Main PixelForge application component.
+ *
+ * @returns {JSX.Element} Fully routed application shell.
+ */
 export default function App() {
   const [modalState, setModalState] = useState({
     isOpen: false,

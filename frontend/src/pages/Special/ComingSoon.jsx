@@ -1,6 +1,18 @@
+/**
+ * Coming soon placeholder page.
+ *
+ * Provides a polished landing state for tools or routes that are planned but not
+ * available yet.
+ */
+
 import { Link } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 
+/**
+ * Render the coming-soon placeholder page.
+ *
+ * @returns {JSX.Element} Rendered UI.
+ */
 export default function ComingSoon() {
   const shouldReduceMotion = useReducedMotion();
 

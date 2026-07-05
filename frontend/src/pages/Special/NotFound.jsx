@@ -1,5 +1,17 @@
+/**
+ * Fallback 404 page.
+ *
+ * Shown when the user navigates to an unknown route and provides a link back to
+ * the PixelForge home page.
+ */
+
 import { Link } from 'react-router-dom';
 
+/**
+ * Render the fallback page for unknown routes.
+ *
+ * @returns {JSX.Element} Rendered UI.
+ */
 export default function NotFound() {
   return (
     <div className="w-full flex flex-col relative z-10">

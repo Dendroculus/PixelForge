@@ -1,3 +1,10 @@
+/**
+ * Legal modal content used by the footer.
+ *
+ * Stores privacy, terms, and policy copy rendered inside the shared application
+ * modal component.
+ */
+
 export const legalModalData = {
   privacy: {
     title: "Privacy Policy",

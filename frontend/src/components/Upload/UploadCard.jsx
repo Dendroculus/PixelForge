@@ -1,7 +1,19 @@
+/**
+ * Reusable upload card component.
+ *
+ * Provides the standard PixelForge image-upload entry point, including drag/click
+ * affordances, helper text, and active-file state styling.
+ */
+
 import PropTypes from 'prop-types';
 import { useFileUpload } from '@/hooks/client/useFileUpload';
 import { AcceptableImageMimeTypes } from '@/utils/file/fileUtils';
 
+/**
+ * Render the standard upload card and hidden file input.
+ *
+ * @returns {JSX.Element} Rendered UI.
+ */
 export default function UploadCard({
   inputId,
   inputRef: externalRef,

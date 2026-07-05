@@ -1,3 +1,10 @@
+/**
+ * Marketing copy for the Image Upscaler feature page.
+ *
+ * Defines the feature highlights and step-by-step instructions shown beside the
+ * AI workspace.
+ */
+
 export const marketingProps = {
     subtitle: 'Advanced AI upscaling optimized for photos and digital art.',
     features: [

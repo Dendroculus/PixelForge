@@ -1,3 +1,11 @@
+/**
+ * Interactive mask canvas for object removal.
+ *
+ * Displays the uploaded image and lets users paint a mask that marks the object
+ * area to remove. The parent page reads the generated mask blob before starting
+ * the AI job.
+ */
+
 import {
   forwardRef,
   useCallback,
@@ -8,6 +16,11 @@ import {
 } from 'react';
 import PropTypes from 'prop-types';
 
+/**
+ * Render the object-removal mask editor canvas.
+ *
+ * @returns {JSX.Element} Rendered UI.
+ */
 const ObjectRemoveMaskCanvas = forwardRef(function ObjectRemoveMaskCanvas(
   {
     imageUrl,

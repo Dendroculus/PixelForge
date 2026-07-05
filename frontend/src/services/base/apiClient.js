@@ -1,13 +1,30 @@
+/**
+ * Low-level HTTP client for PixelForge API calls.
+ *
+ * Centralizes backend URL resolution, JSON response handling, direct Azure upload
+ * requests, AI job initialization/start flows, and usage polling helpers.
+ */
+
 const apiUrl =
   import.meta.env.VITE_API_BASE_URL ||
   (import.meta.env.DEV ? 'http://127.0.0.1:8000/api' : '');
 
 const DEBUG_API = import.meta.env.DEV && import.meta.env.VITE_DEBUG_API === 'true';
 
+/**
+ * Log API debug information only when debug mode is enabled.
+ *
+ * @returns {void}
+ */
 export const debugLog = (...args) => {
   if (DEBUG_API) console.log(...args);
 };
 
+/**
+ * Normalize backend HTTP responses and throw useful application errors.
+ *
+ * @returns {Promise<object>} Parsed JSON response body.
+ */
 const handleApiResponse = async (response, defaultErrorMsg) => {
   if (response.status === 429) throw new Error('LIMIT_REACHED');
 
@@ -32,6 +49,11 @@ const handleApiResponse = async (response, defaultErrorMsg) => {
   return response.json();
 };
 
+/**
+ * Upload a file blob directly to an Azure SAS URL.
+ *
+ * @returns {Promise<Response>} Azure upload response.
+ */
 const uploadToAzure = async (uploadUrl, blob, contentType = 'application/octet-stream') => {
   const azureResponse = await fetch(uploadUrl, {
     method: 'PUT',
