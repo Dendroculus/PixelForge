@@ -1,6 +1,6 @@
 <div align="center">
 
-  EN | [中文](./docs/translation/README_CN.md) | [ID](./docs/translation/README_ID.md)
+  EN | [中文](./docs/translation/landing/README_CN.md) | [ID](./docs/translation/landing/README_ID.md)
 </div>
 
 <p align="center">
@@ -69,7 +69,16 @@ The system is designed to handle real-world constraints such as rate limits, lon
   <video src="https://github.com/user-attachments/assets/68491a17-057d-49cf-b1a2-03cbc2f5f9ca">
 </details>
 
-4. 🎛️ **Image Editor** — brightness, contrast, saturation, blur, vignette
+4. 🎨 **Object Remover (AI)** — brush over unwanted objects and erase them cleanly
+
+<details>
+  <summary><b>🎥 Click to watch the preview </b></summary>
+  <br>
+  <video src="https://github.com/user-attachments/assets/3c68ed8b-dad1-4f88-b1d7-873455ecd3ee">
+</details>
+
+
+5. 🎛️ **Image Editor** — brightness, contrast, saturation, blur, vignette
 
 <details>
   <summary><b>🎥 Click to watch the preview </b></summary>
@@ -77,7 +86,7 @@ The system is designed to handle real-world constraints such as rate limits, lon
   <video src="https://github.com/user-attachments/assets/a2e1db98-212e-4801-afa5-3d0d548925df">
 </details>
 
-5. 📐 **Resize Image** — custom size, aspect lock, presets
+6. 📐 **Resize Image** — custom size, aspect lock, presets
 
 <details>
   <summary><b>🎥 Click to watch the preview </b></summary>
@@ -85,7 +94,7 @@ The system is designed to handle real-world constraints such as rate limits, lon
   <video src="https://github.com/user-attachments/assets/169353e7-1916-44e5-bfe0-5075bbf4fa8e">
 </details>
 
-6. 🔄 **Rotate & Flip** — quick transform controls
+7. 🔄 **Rotate & Flip** — quick transform controls
 
 <details>
   <summary><b>🎥 Click to watch the preview </b></summary>
@@ -93,7 +102,7 @@ The system is designed to handle real-world constraints such as rate limits, lon
   <video src="https://github.com/user-attachments/assets/a1dda108-f6dd-4a7c-9002-6db21ef25d49">
 </details>
 
-7. 🗜️ **Compress Image** — reduce size with quality control
+8. 🗜️ **Compress Image** — reduce size with quality control
 
 <details>
   <summary><b>🎥 Click to watch the preview </b></summary>
@@ -101,7 +110,7 @@ The system is designed to handle real-world constraints such as rate limits, lon
   <video src="https://github.com/user-attachments/assets/25a7f82c-8550-4e0e-8d4c-9a4420d646d9">
 </details>
 
-8. 🔁 **Convert Format** — PNG / JPG / WEBP
+9. 🔁 **Convert Format** — PNG / JPG / WEBP
 
 <details>
   <summary><b>🎥 Click to watch the preview </b></summary>
@@ -109,7 +118,7 @@ The system is designed to handle real-world constraints such as rate limits, lon
   <video src="https://github.com/user-attachments/assets/3d353e7a-b614-4bdc-b549-e8a092a41621">
 </details>
 
-9. 🧹 **Remove Metadata** — clean EXIF data
+10. 🧹 **Remove Metadata** — clean EXIF data
 
 <details>
   <summary><b>🎥 Click to watch the preview </b></summary>
@@ -117,7 +126,7 @@ The system is designed to handle real-world constraints such as rate limits, lon
   <video src="https://github.com/user-attachments/assets/3b06be04-1020-4b0e-aad8-7aff77e76f58">
 </details>
 
-10. 🎯 **Color Palette Extractor** — draggable sampling points
+11. 🎯 **Color Palette Extractor** — draggable sampling points
 
 <details>
   <summary><b>🎥 Click to watch the preview </b></summary>
@@ -125,7 +134,7 @@ The system is designed to handle real-world constraints such as rate limits, lon
   <video src="https://github.com/user-attachments/assets/da8a8267-428f-4c02-8abb-4029305511d6">
 </details>
 
-11. 🏷️ **Add Watermark** — text/image with live preview
+12. 🏷️ **Add Watermark** — text/image with live preview
 
 <details>
   <summary><b>🎥 Click to watch the preview </b></summary>
@@ -133,7 +142,7 @@ The system is designed to handle real-world constraints such as rate limits, lon
   <video src="https://github.com/user-attachments/assets/928bb069-7643-4a0c-b6e5-1056706547f6">
 </details>
 
-12. ✂️ **Crop Image** — freeform or preset aspect ratios
+13. ✂️ **Crop Image** — freeform or preset aspect ratios
 
 <details>
   <summary><b>🎥 Click to watch the preview </b></summary>
@@ -141,7 +150,7 @@ The system is designed to handle real-world constraints such as rate limits, lon
   <video src="https://github.com/user-attachments/assets/717edf23-64d5-4673-bffa-21b10fec7ca9">
 </details>
 
-13. 🤖 **Chatbot** — Interactive FAQ assistant for quick answers and guided platform help
+14. 🤖 **Chatbot** — Interactive FAQ assistant for quick answers and guided platform help
 
 <details>
   <summary><b>🎥 Click to watch the preview </b></summary>
@@ -149,28 +158,28 @@ The system is designed to handle real-world constraints such as rate limits, lon
   <video src="https://github.com/user-attachments/assets/90083dfb-915a-43f1-a2b3-d9fbefc10bdd">
 </details>
 
-14. 📝 **Feedback System** — user input for improvements and bug reports
+15. 📝 **Feedback System** — user input for improvements and bug reports
 
 
 ### B) Platform & System Capabilities
 
-15. 🛡️ **Turnstile Verification** — bot protection layer  
-16. 📊 **Usage Limits** — per-feature daily caps  
-17. 🚦 **Rate Limiting** — controlled API flow  
-18. ⚙️ **Async Job Queue** — safe background processing  
-19. 🔄 **Status Polling** — processing / ready / failed  
-20. 💾 **Session Persistence** — IndexedDB + localStorage  
-21. 🔁 **Session Restore** — recover after refresh  
-22. ⏳ **Expiration Handling** — results & drafts lifecycle  
-23. 🧽 **Azure Cleanup** — expired result janitor  
-24. 🧹 **DB Cleanup** — usage data maintenance  
-25. 🔑 **Signed URLs** — secure upload & access  
-26. 🔍 **File Validation** — type, size, spoof detection  
-27. 🏷️ **Filename Sanitization** — safe file handling  
-28. 🧩 **Workspace System** — reusable UI shell  
-29. 📢 **Modal System** — legal & alert handling  
-30. 🆚 **Comparison Slider** — before/after preview  
-31. 🎬 **Progress UX** — staged loading feedback  
+16. 🛡️ **Turnstile Verification** — bot protection layer  
+17. 📊 **Usage Limits** — per-feature daily caps  
+18. 🚦 **Rate Limiting** — controlled API flow  
+19. ⚙️ **Async Job Queue** — safe background processing  
+20. 🔄 **Status Polling** — processing / ready / failed  
+21. 💾 **Session Persistence** — IndexedDB + localStorage  
+22. 🔁 **Session Restore** — recover after refresh  
+23. ⏳ **Expiration Handling** — results & drafts lifecycle  
+24. 🧽 **Azure Cleanup** — expired result janitor  
+25. 🧹 **DB Cleanup** — usage data maintenance  
+26. 🔑 **Signed URLs** — secure upload & access  
+27. 🔍 **File Validation** — type, size, spoof detection  
+28. 🏷️ **Filename Sanitization** — safe file handling  
+29. 🧩 **Workspace System** — reusable UI shell  
+30. 📢 **Modal System** — legal & alert handling  
+31. 🆚 **Comparison Slider** — before/after preview  
+33. 🎬 **Progress UX** — staged loading feedback  
 
 ## 🧠 Architecture Highlights
 PixelForge is designed to balance performance, cost, and reliability while working with external AI APIs that have strict rate and concurrency limits. Key architectural decisions include:
@@ -224,7 +233,7 @@ The frontend handles all lightweight transformations directly in the browser for
 
 ## 🏗️ Architecture & Stack
 
-<img src="./docs/TECH_STACKS.png" width="45%" alt="Tech Stacks">
+<img src="./docs/assets/TECH_STACKS.png" width="45%" alt="Tech Stacks">
 
 <div style="max-width: 760px; line-height: 1.65;">
 
@@ -244,6 +253,7 @@ PixelForge uses a split architecture:
 
 </div>
 
+For more details, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 
 ## ⚙️ Environment Variables
@@ -326,14 +336,14 @@ npm run dev
 - **PostgreSQL** (usage limits & retention windows)
 - **Cloudflare Turnstile** (bot protection)
 
-
-
 ## 🤝 Contributing
 
 PRs and improvements are welcome.  
 If you’re planning a bigger change, open an issue first to align on scope.
 
-
+For contributing guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).  
+Please follow our [Code of Conduct](CODE_OF_CONDUCT.md).  
+For security issues, please see our [Security Policy](SECURITY.md).
 
 ## 📜 License
 
@@ -342,6 +352,7 @@ Licensed under the MIT License. See [LICENSE](./LICENSE) for details.
 
 ## 📝 Developer Docs
 
+How to add a new AI feature to PixelForge:
 - [Adding a New AI Feature](docs/ADDING_AI_FEATURE.md)
 
 ## 🙏 Acknowledgements
