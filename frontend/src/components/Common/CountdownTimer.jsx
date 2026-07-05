@@ -1,6 +1,18 @@
+/**
+ * Countdown display component.
+ *
+ * Shows a live remaining-time label until a reset timestamp is reached, then
+ * fires an optional expiration callback for limit/usage UI refreshes.
+ */
+
 import { useState, useEffect, useRef } from 'react';
 import PropTypes from 'prop-types';
 
+/**
+ * Render a live countdown until the provided reset timestamp expires.
+ *
+ * @returns {JSX.Element} Rendered UI.
+ */
 export default function CountdownTimer({ targetTimestamp, onExpire, isWarning = false }) {
   const hasExpiredRef = useRef(false);
   const onExpireRef = useRef(onExpire);

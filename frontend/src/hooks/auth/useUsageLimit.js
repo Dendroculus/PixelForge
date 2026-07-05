@@ -1,3 +1,10 @@
+/**
+ * Usage-limit hook for feature quota UI.
+ *
+ * Fetches, refreshes, and locally adjusts the remaining daily usage count for a
+ * specific AI feature.
+ */
+
 import { useState, useCallback, useEffect } from 'react';
 import { AppConfig as config, FEATURE_LIMITS } from '@/config';
 
@@ -5,6 +12,11 @@ const apiUrl =
   import.meta.env.VITE_API_BASE_URL ||
   (import.meta.env.DEV ? 'http://127.0.0.1:8000/api' : '');
 
+/**
+ * Manage usage-limit state for a specific PixelForge feature.
+ *
+ * @returns {object} Hook state and handlers.
+ */
 export function useUsageLimit(feature = 'upscale') {
   const maxLimit = FEATURE_LIMITS[feature] ?? FEATURE_LIMITS.default;
 

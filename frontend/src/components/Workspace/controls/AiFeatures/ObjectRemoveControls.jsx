@@ -1,6 +1,18 @@
+/**
+ * Control panel for the Object Remover AI workflow.
+ *
+ * Renders the action buttons, progress state, Turnstile widget mount point, and
+ * cancel/process controls used by the object removal page.
+ */
+
 import PropTypes from 'prop-types';
 import BaseToolControls from './BaseToolControls';
 
+/**
+ * Render Object Remover action controls and progress feedback.
+ *
+ * @returns {JSX.Element} Rendered UI.
+ */
 export default function ObjectRemoveControls(props) {
   const getProgressText = () => {
     if (props.progress < 30) return 'Uploading image and mask...';

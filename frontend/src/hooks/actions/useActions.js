@@ -1,7 +1,19 @@
+/**
+ * Shared action hook for AI processing workflows.
+ *
+ * Coordinates client-side upload preparation, backend job start calls, polling,
+ * result handling, cancellation, and error state for AI tools.
+ */
+
 import { useCallback, useState, useEffect, useRef } from 'react';
 import { apiService } from '@/services/apiService';
 import { clearAppSession } from '@/utils/storage/session';
 
+/**
+ * Create shared AI action handlers for upload, processing, polling, and cancellation.
+ *
+ * @returns {object} Hook state and handlers.
+ */
 export function useActions({
   setJobId,
   setProgress,

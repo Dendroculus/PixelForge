@@ -1,3 +1,12 @@
+/**
+ * Image upscaling workspace page.
+ *
+ * This page wires the shared AI feature workspace to the upscale pipeline. It
+ * owns page-level progress state, exposes scale controls, simulates progress
+ * during backend processing, and delegates common upload/result UI to
+ * `AiFeatureWorkspace`.
+ */
+
 import { useState } from 'react';
 import AiFeatureWorkspace from '@/components/Workspace/AiFeatureWorkspace';
 import UpscaleControls from '@/components/Workspace/controls/AiFeatures/UpscaleControls';
@@ -5,6 +14,11 @@ import { useUpscalePipeline } from '@/hooks/pipeline/useUpscalePipeline';
 import { useSimulatedProgress } from '@/hooks/workspace/Core/useSimulatedProgress';
 import { marketingProps } from '@/data/feature/upscaleMarketing';
 
+/**
+ * Render the AI image upscaling tool.
+ *
+ * @returns {JSX.Element} Upscale workspace.
+ */
 export default function UpscaleWorkspace() {
   const [progress, setProgress] = useState(0);
 

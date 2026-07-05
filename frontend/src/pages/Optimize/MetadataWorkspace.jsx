@@ -1,3 +1,10 @@
+/**
+ * Metadata removal workspace page.
+ *
+ * Lets users upload an image, remove embedded metadata client-side, preview the
+ * cleaned result, and download the sanitized file.
+ */
+
 import { useMetadataProcessor } from '@/hooks/workspace/Utility/useMetadataProcessor';
 import { useObjectUrlCleanup } from '@/hooks/workspace/Core/useObjectUrlCleanup';
 import { useMemo } from 'react';
@@ -6,6 +13,11 @@ import ToolStateWrapper from '@/components/Layout/Tool/ToolStateWrapper';
 const formatKey = (key) =>
   key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
 
+/**
+ * Render the metadata removal workspace.
+ *
+ * @returns {JSX.Element} Rendered UI.
+ */
 export default function MetadataWorkspace() {
   const {
     selectedFile,

@@ -1,3 +1,11 @@
+/**
+ * Frontend runtime configuration for PixelForge.
+ *
+ * This module centralizes client-side constants used across tools, workspaces,
+ * marketing showcases, storage keys, watermark controls, and validation UI. Keep
+ * only browser-safe values here; secrets must stay on the backend.
+ */
+
 import logoIcon from './assets/PixelForge.png';
 import logoTextBlack from './assets/PixelForgeAI_BlackText.png';
 import logoTextWhite from './assets/PixelForgeAI_WhiteText.png';

@@ -1,3 +1,10 @@
+/**
+ * Image resizing workspace page.
+ *
+ * Lets users resize images client-side with optional aspect-ratio locking, live
+ * dimension preview, and downloadable resized output.
+ */
+
 import { useMemo, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { AppConfig } from '@/config';
@@ -17,6 +24,11 @@ import { useWorkspaceFile } from '@/hooks/workspace/Core/useWorkspaceFile';
 import { useImageResize } from '@/hooks/workspace/Editor/useImageResize';
 import { generateSafeFilename } from '@/utils/file/fileUtils';
 
+/**
+ * Render the image resizing workspace.
+ *
+ * @returns {JSX.Element} Rendered UI.
+ */
 export default function ResizeImage() {
   const fileInputRef = useRef(null);
 

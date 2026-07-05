@@ -1,3 +1,15 @@
+/**
+ * Reusable empty-state component for tool workspaces.
+ *
+ * Displays a consistent placeholder when no image or result is currently active
+ * inside a workspace panel.
+ */
+
+/**
+ * Render a reusable empty state for workspace panels.
+ *
+ * @returns {JSX.Element} Rendered UI.
+ */
 export default function EmptyWorkspaceState() {
   return (
     <div className="px-4 text-center">

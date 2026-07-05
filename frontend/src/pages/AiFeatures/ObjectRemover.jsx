@@ -1,3 +1,11 @@
+/**
+ * Object removal workspace page.
+ *
+ * This page combines the shared AI feature workspace with an interactive mask
+ * canvas. Users upload an image, brush the unwanted object area, and submit both
+ * the source image and generated mask to the object removal pipeline.
+ */
+
 import { useRef, useState } from 'react';
 import AiFeatureWorkspace from '@/components/Workspace/AiFeatureWorkspace';
 import ObjectRemoveControls from '@/components/Workspace/controls/AiFeatures/ObjectRemoveControls';
@@ -15,6 +23,11 @@ const BRUSH_PRESETS = [
   { label: 'Wide', value: 64 },
 ];
 
+/**
+ * Render the AI object removal tool.
+ *
+ * @returns {JSX.Element} Object removal workspace.
+ */
 export default function ObjectRemover() {
   const [progress, setProgress] = useState(0);
   const [hasMask, setHasMask] = useState(false);
@@ -53,6 +66,9 @@ export default function ObjectRemover() {
     'objectremove',
   );
 
+  /**
+   * Extract the current mask from the canvas and start object removal.
+   */
   const handleObjectRemove = async () => {
     const maskBlob = await maskCanvasRef.current?.getMaskBlob();
 
@@ -64,12 +80,20 @@ export default function ObjectRemover() {
     handleProcess(null, { maskBlob });
   };
 
+  /**
+   * Cancel processing and clear any active mask state.
+   */
   const handleObjectRemoveCancel = async () => {
     setHasMask(false);
     maskCanvasRef.current?.clearMask();
     await handleCancel();
   };
 
+  /**
+   * Reset mask state whenever a new source image is selected.
+   *
+   * @param {File} file Source image selected by the user.
+   */
   const handleObjectRemoveFileSelect = async (file) => {
     setHasMask(false);
     await handleFileSelect(file);

@@ -1,3 +1,10 @@
+/**
+ * Image editor workspace page.
+ *
+ * Provides client-side filter controls, live canvas previews, reset behavior, and
+ * final export for brightness/contrast/saturation-style edits.
+ */
+
 import { useRef } from 'react';
 import { AppConfig } from '@/config';
 
@@ -17,6 +24,11 @@ import ImageEditorFilters from '@/components/Workspace/controls/Editor/ImageEdit
 import { useWorkspaceFile } from '@/hooks/workspace/Core/useWorkspaceFile';
 import { useImageEditor } from '@/hooks/workspace/Editor/useImageEditor';
 
+/**
+ * Render the client-side image editor workspace.
+ *
+ * @returns {JSX.Element} Rendered UI.
+ */
 export default function ImageEditor() {
   const fileInputRef = useRef(null);
   const workspaceFile = useWorkspaceFile(fileInputRef);

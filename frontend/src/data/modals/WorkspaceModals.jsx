@@ -1,3 +1,10 @@
+/**
+ * Workspace alert and modal content resolver.
+ *
+ * Maps workspace alert types to user-facing modal messages, including limits,
+ * validation warnings, processing errors, and storage/session notices.
+ */
+
 import { useEffect } from 'react';
 import PropTypes from 'prop-types';
 import AppModals from '@/components/Common/AppModals';
@@ -5,6 +12,11 @@ import CountdownTimer from '@/components/Common/CountdownTimer';
 import { AppConfig as config } from '@/config';
 import { makeStorageKeys } from '@/utils/storage/storageKeys';
 
+/**
+ * Render workspace-specific modal content for the active alert type.
+ *
+ * @returns {JSX.Element} Rendered UI.
+ */
 export default function WorkspaceModals({
   appAlert,
   setAppAlert,

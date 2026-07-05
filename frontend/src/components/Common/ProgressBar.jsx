@@ -1,3 +1,10 @@
+/**
+ * Reusable progress bar for AI and client-side processing flows.
+ *
+ * Converts numeric progress into an accessible visual indicator and optional
+ * status text.
+ */
+
 import PropTypes from 'prop-types';
 
 function getStatusLabel(progress) {
@@ -9,6 +16,11 @@ function getStatusLabel(progress) {
   return "Finalizing download...";
 }
 
+/**
+ * Render a horizontal progress indicator with optional status text.
+ *
+ * @returns {JSX.Element} Rendered UI.
+ */
 export default function ProgressBar({ progress, customText }) {
   const displayText = customText || getStatusLabel(progress);
 

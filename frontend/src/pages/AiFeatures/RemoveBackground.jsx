@@ -1,3 +1,12 @@
+/**
+ * Background removal workspace page.
+ *
+ * This page wires the shared AI feature workspace to the background removal
+ * pipeline. It provides feature-specific controls, a transparent-checkerboard
+ * empty state, simulated progress, and download naming for no-background
+ * results.
+ */
+
 import { useState } from 'react';
 import AiFeatureWorkspace from '@/components/Workspace/AiFeatureWorkspace';
 import RemoveBgControls from '@/components/Workspace/controls/AiFeatures/RemoveBgControls';
@@ -5,6 +14,11 @@ import { useRemBGPipeline } from '@/hooks/pipeline/useRemBGPipeline';
 import { useSimulatedProgress } from '@/hooks/workspace/Core/useSimulatedProgress';
 import { marketingProps } from '@/data/feature/remBgMarketing';
 
+/**
+ * Render the AI background removal tool.
+ *
+ * @returns {JSX.Element} Background removal workspace.
+ */
 export default function RemoveBG() {
   const [progress, setProgress] = useState(0);
 

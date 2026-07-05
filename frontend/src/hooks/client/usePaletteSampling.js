@@ -1,3 +1,10 @@
+/**
+ * Client-side palette sampling hook.
+ *
+ * Builds and caches a canvas representation of an image, then samples selected
+ * points to produce palette colors.
+ */
+
 import { useCallback, useRef, useState } from 'react';
 
 function clamp(v, min, max) {
@@ -16,6 +23,11 @@ function rgbToHex(r, g, b) {
   );
 }
 
+/**
+ * Provide palette sampling helpers for image-based color picking.
+ *
+ * @returns {object} Hook state and handlers.
+ */
 export default function usePaletteSampling({ previewUrl, setError }) {
   const canvasRef = useRef(null);
   const cachedUrlRef = useRef(null);

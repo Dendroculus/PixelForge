@@ -1,9 +1,21 @@
+/**
+ * Workspace session persistence hook.
+ *
+ * Restores previously selected files/results from browser storage and cleans up
+ * stale session state when saved jobs expire.
+ */
+
 import { useEffect, useRef } from 'react';
 import { loadFileFromIDB } from '@/utils/storage/idb';
 import { clearAppSession } from '@/utils/storage/session';
 import { AppConfig as config } from '@/config';
 import { isExpired } from '@/utils/time';
 
+/**
+ * Restore and clean up saved workspace session state.
+ *
+ * @returns {object} Hook state and handlers.
+ */
 export function useSessionPersistence({
   setSelectedFile,
   setPreviewUrl,

@@ -1,3 +1,10 @@
+/**
+ * Marketing copy for the Color Restoration feature page.
+ *
+ * Defines the feature highlights and step-by-step instructions shown beside the
+ * AI workspace.
+ */
+
 export const marketingProps = {
   subtitle: 'Bring black-and-white photos to life with modern AI color restoration.',
   features: [

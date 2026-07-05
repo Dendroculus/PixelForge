@@ -1,3 +1,10 @@
+/**
+ * Marketing copy for the Object Remover feature page.
+ *
+ * Defines the feature highlights and step-by-step instructions shown beside the
+ * AI workspace.
+ */
+
 export const marketingProps = {
   subtitle:
     'Remove unwanted objects from photos with intelligent AI inpainting.',
