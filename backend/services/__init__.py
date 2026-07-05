@@ -1,3 +1,11 @@
+"""Service layer package for AI, storage, jobs, maintenance, security, and notification workflows.
+
+Package: services
+
+This file intentionally avoids importing submodules by default.
+Keeping package initializers lightweight prevents hidden side effects such as
+loading environment settings, creating semaphores, initializing provider clients,
+or touching cloud/database dependencies during simple imports.
 """
-This package contains all the services used in the backend of the application. Such as currently, job services, azure storage services, ai services and cloudflare turnstile verification services. Each service is responsible for a specific domain of functionality, and they are designed to be modular and reusable across the application.
-"""
+
+__all__: list[str] = []

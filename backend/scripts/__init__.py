@@ -1,11 +1,11 @@
-"""
-Administrative and Development Scripts Module.
+"""Developer and maintenance scripts package.
 
-This package contains standalone CLI utilities for database maintenance, 
-usage resets, and developer productivity. Scripts within this module 
-are explicitly designed to execute outside the main FastAPI application 
-lifecycle.
+Package: scripts
 
-By requiring direct terminal invocation rather than HTTP exposure, 
-these scripts ensure maximum security for destructive operations.
+This file intentionally avoids importing submodules by default.
+Keeping package initializers lightweight prevents hidden side effects such as
+loading environment settings, creating semaphores, initializing provider clients,
+or touching cloud/database dependencies during simple imports.
 """
+
+__all__: list[str] = []

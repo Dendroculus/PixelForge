@@ -1,3 +1,11 @@
+"""Core package for configuration, model registry, and security helpers.
+
+Package: core
+
+This file intentionally avoids importing submodules by default.
+Keeping package initializers lightweight prevents hidden side effects such as
+loading environment settings, creating semaphores, initializing provider clients,
+or touching cloud/database dependencies during simple imports.
 """
-Core module for the image upscaler backend. This module provides shared utilities,
-"""
+
+__all__: list[str] = []

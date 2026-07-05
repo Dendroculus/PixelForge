@@ -1,3 +1,11 @@
+"""Application composition package: factory, lifecycle, middleware, and router registration.
+
+Package: app
+
+This file intentionally avoids importing submodules by default.
+Keeping package initializers lightweight prevents hidden side effects such as
+loading environment settings, creating semaphores, initializing provider clients,
+or touching cloud/database dependencies during simple imports.
 """
-This package contains application factory and app initialization code.
-"""
+
+__all__: list[str] = []

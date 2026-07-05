@@ -1,6 +1,6 @@
-"""Rate limiting and usage-quota package.
+"""Domain package for stable business/domain definitions.
 
-Package: limiter
+Package: domain
 
 This file intentionally avoids importing submodules by default.
 Keeping package initializers lightweight prevents hidden side effects such as
