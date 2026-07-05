@@ -1,3 +1,13 @@
+"""HTTP request logging middleware.
+
+This module logs one structured line per completed request, including client IP,
+HTTP method, request path, response status code, and elapsed duration.
+
+The middleware intentionally logs after ``call_next`` returns so the status code
+and execution time reflect the actual response produced by downstream route
+handlers.
+"""
+
 import logging
 import time
 
@@ -12,14 +22,26 @@ logger = logging.getLogger("app.request")
 
 
 class RequestLoggingMiddleware(BaseHTTPMiddleware):
-    """
-    Middleware to log incoming requests and their response times.
-    """  
+    """Log completed HTTP requests and response times."""
+
     async def dispatch(
         self,
         request: Request,
         call_next,
     ) -> Response:
+        """Process a request and log its final response metadata.
+
+        Args:
+            request:
+                Incoming HTTP request.
+            call_next:
+                Starlette callback that passes the request to the next
+                middleware or route handler.
+
+        Returns:
+            Response:
+                Response produced by the downstream application.
+        """
         start_time = time.perf_counter()
 
         response = await call_next(request)
