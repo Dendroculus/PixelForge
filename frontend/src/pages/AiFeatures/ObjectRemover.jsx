@@ -4,7 +4,7 @@ import ObjectRemoveControls from '@/components/Workspace/controls/AiFeatures/Obj
 import ObjectRemoveMaskCanvas from '@/components/Workspace/display/ObjectRemoveMaskCanvas';
 import { useObjectRemovePipeline } from '@/hooks/pipeline/useObjectRemovePipeline';
 import { useSimulatedProgress } from '@/hooks/workspace/Core/useSimulatedProgress';
-import { marketingProps } from '@/data/feature/remBgMarketing';
+import { marketingProps } from '@/data/feature/objectRemoverMarketing';
 
 const BRUSH_MIN = 8;
 const BRUSH_MAX = 96;

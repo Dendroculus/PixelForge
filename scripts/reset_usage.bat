@@ -13,27 +13,28 @@ if not defined ROOT (
   exit /b 1
 )
 
+set "fileName=reset_usage.py"
 set "BACKEND=%ROOT%\backend"
 set "SCRIPTS=%BACKEND%\scripts"
 set "BACKEND_PY=%BACKEND%\venv\Scripts\python.exe"
-set "RESET_SCRIPT=%SCRIPTS%\_reset_usage.py"
+set "RESET_SCRIPT=%SCRIPTS%\%fileName%"
 
 echo [INFO] Project root: %ROOT%
 echo [INFO] Script: %RESET_SCRIPT%
 
 if not exist "%RESET_SCRIPT%" (
-  echo [ERROR] backend\scripts\_reset_usage.py not found.
+  echo [ERROR] backend\scripts\%fileName% not found.
   pause
   exit /b 1
 )
 
 if exist "%BACKEND_PY%" (
   cd /d "%BACKEND%"
-  "%BACKEND_PY%" scripts\reset_usage.py
+  "%BACKEND_PY%" "scripts\%fileName%"
 ) else (
   echo [WARN] backend venv not found. Falling back to system Python.
   cd /d "%BACKEND%"
-  py scripts\_reset_usage.py
+  py "scripts\%fileName%"
 )
 
 pause

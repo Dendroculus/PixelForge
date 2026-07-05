@@ -79,7 +79,12 @@ export const SHOWCASES = {
       label: "Color Restorer",
       before: "/demo/res_color_before.jpg",
       after: "/demo/res_color_after.png"
-    }
+    },
+    objectremove: {
+      label: "Object Remover",
+      before: "/demo/object_remove_before.png",
+      after: "/demo/object_remove_after.png"
+    },
 };
 
 export const FontFamilies = [
