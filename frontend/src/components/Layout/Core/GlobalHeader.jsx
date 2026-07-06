@@ -7,7 +7,7 @@
 
 import { useLocation } from 'react-router-dom';
 import Header from './Header';
-import { headerConfig } from '@/data/headerConfig';
+import { headerConfig } from '@/content/navigation/headerConfig';
 
 /**
  * Render the route-specific global header content.

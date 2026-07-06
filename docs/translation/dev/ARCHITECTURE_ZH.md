@@ -128,9 +128,14 @@ PixelForge/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   ├── data/
+│   │   ├── content/
+│   │   │   ├── bot/
+│   │   │   ├── feature/
+│   │   │   ├── modals/
+│   │   │   └── navigation/
 │   │   ├── hooks/
 │   │   ├── pages/
+│   │   ├── routes/
 │   │   ├── services/
 │   │   ├── utils/
 │   │   ├── App.jsx
@@ -160,13 +165,19 @@ PixelForge/
 - FAQ 聊天机器人组件
 - 懒加载页面的 Suspense loader
 
-路由集中定义在：
+Routes 按类别分组在：
+
+```txt
+frontend/src/routes/
+```
+
+根 route 文件仍然保留为 facade：
 
 ```txt
 frontend/src/routes.js
 ```
 
-每个路由都会懒加载对应页面组件，以减小初始 bundle 体积。
+`App.jsx` 只导入这个 facade，而 facade 会组合来自不同类别的 route arrays，例如 AI features、smart edit tools、optimize tools、utilities、landing pages 和 special pages。每个 route 仍然使用 lazy import 加载对应 page component，以减小 initial bundle size。
 
 ---
 

@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { NavLinks } from '@/data/navConfig';
+import { NavLinks } from '@/content/navigation/navConfig';
 import { SHOWCASES } from '@/config';
 
 import AmbientBackground from '@/components/Landing/AmbientBackground';

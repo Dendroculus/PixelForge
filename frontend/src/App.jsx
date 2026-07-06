@@ -11,7 +11,7 @@
 import { useState, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 
-import { legalModalData } from './data/modals/legalModalData';
+import { legalModalData } from './content/modals/legalModalData';
 import routes from './routes';
 
 import Navbar from './components/Layout/Core/NavBar';

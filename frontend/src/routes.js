@@ -1,83 +1,42 @@
 /**
- * Lazy route registry for the PixelForge frontend.
+ * Root route facade for the PixelForge frontend.
  *
- * Each entry maps a URL path to a lazily imported page component. Keeping route
- * definitions in this file lets the root app render routes generically while
- * preserving code-splitting for large tool pages.
+ * This file keeps App.jsx simple by exporting one combined route registry,
+ * while the actual route definitions are split into category-specific files
+ * inside `src/routes/`.
+ *
+ * Route category files:
+ * - landing.routes.js: landing/home routes
+ * - aiFeature.routes.js: AI-powered image tools
+ * - smartEdit.routes.js: browser-based editing tools
+ * - optimize.routes.js: compression, conversion, and metadata tools
+ * - utility.routes.js: supporting utility tools
+ * - special.routes.js: fallback and special-purpose pages
  */
 
-import React from 'react';
+import landingRoutes from './routes/landing.routes';
+import aiFeatureRoutes from './routes/aiFeature.routes';
+import smartEditRoutes from './routes/smartEdit.routes';
+import optimizeRoutes from './routes/optimize.routes';
+import utilityRoutes from './routes/utility.routes';
+import specialRoutes from './routes/special.routes';
 
 /**
- * Application route definitions consumed by App.jsx.
+ * Combined application route registry consumed by App.jsx.
  *
- * @type {{ path: string, component: React.LazyExoticComponent<React.ComponentType> }[]}
+ * Keep this file as the only public route import for the app shell.
+ * Add new routes inside the matching category file, then expose them here
+ * through the spread merge below.
+ *
+ * @type {{ path: string, component: import('react').LazyExoticComponent<import('react').ComponentType> }[]}
  */
 const routes = [
-  {
-    path: '/',
-    component: React.lazy(() => import('./pages/Landing/Home')),
-  },
-  {
-    path: '/upscale',
-    component: React.lazy(() => import('./pages/AiFeatures/UpscaleImage')),
-  },
-  {
-    path: '/remove-bg',
-    component: React.lazy(() => import('./pages/AiFeatures/RemoveBackground')),
-  },
-  {
-    path: '/color-restoration',
-    component: React.lazy(() => import('./pages/AiFeatures/ColorRestoration')),
-  },
-  {
-    path: '/object-remove',
-    component: React.lazy(() => import('./pages/AiFeatures/ObjectRemover')),
-  },
-  {
-    path: '/image-editor',
-    component: React.lazy(() => import('./pages/SmartEdit/ImageEditor')),
-  },
-  {
-    path: '/resize-image',
-    component: React.lazy(() => import('./pages/SmartEdit/ResizeImage')),
-  },
-  {
-    path: '/crop-image',
-    component: React.lazy(() => import('./pages/SmartEdit/CropImage')),
-  },
-  {
-    path: '/rotate-flip',
-    component: React.lazy(() => import('./pages/SmartEdit/RotateFlip')),
-  },
-  {
-    path: '/watermark-adder',
-    component: React.lazy(() => import('./pages/Utilities/WatermarkAdder')),
-  },
-  {
-    path: '/compress-image',
-    component: React.lazy(() => import('./pages/Optimize/CompressImage')),
-  },
-  {
-    path: '/convert-format',
-    component: React.lazy(() => import('./pages/Optimize/ConvertFormat')),
-  },
-  {
-    path: '/metadata',
-    component: React.lazy(() => import('./pages/Optimize/MetadataWorkspace')),
-  },
-  {
-    path: '/color-palette',
-    component: React.lazy(() => import('./pages/Utilities/ColorPalette')),
-  },
-  {
-    path: '/coming-soon',
-    component: React.lazy(() => import('./pages/Special/ComingSoon')),
-  },
-  {
-    path: '*',
-    component: React.lazy(() => import('./pages/Special/NotFound')),
-  },
+  ...landingRoutes,
+  ...aiFeatureRoutes,
+  ...smartEditRoutes,
+  ...optimizeRoutes,
+  ...utilityRoutes,
+  ...specialRoutes,
 ];
 
 export default routes;

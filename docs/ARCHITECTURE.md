@@ -122,9 +122,14 @@ PixelForge/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   ├── data/
+│   │   ├── content/
+│   │   │   ├── bot/
+│   │   │   ├── feature/
+│   │   │   ├── modals/
+│   │   │   └── navigation/
 │   │   ├── hooks/
 │   │   ├── pages/
+│   │   ├── routes/
 │   │   ├── services/
 │   │   ├── utils/
 │   │   ├── App.jsx
@@ -154,13 +159,19 @@ The frontend is organized around reusable workspace components and feature-speci
 - FAQ chatbot widget
 - Suspense loaders for lazy pages
 
-Routes are defined centrally in:
+Routes are grouped by category under:
+
+```txt
+frontend/src/routes/
+```
+
+The root route file remains as a facade:
 
 ```txt
 frontend/src/routes.js
 ```
 
-Each route lazily imports its page component to keep initial bundle size smaller.
+`App.jsx` imports only the facade, while the facade combines categorized route arrays such as AI features, smart edit tools, optimize tools, utilities, landing pages, and special pages. Each route still lazily imports its page component to keep the initial bundle size smaller.
 
 ---
 
