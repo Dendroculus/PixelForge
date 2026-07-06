@@ -284,7 +284,7 @@ VITE_TURNSTILE_SITE_KEY=0x4AAAAAACxEYGPTmGZUjctK
 > 本地测试时，请保持 API base URL 指向本地后端。  
 > 部署时，请切换为托管后的 API 端点（例如：`https://your-domain/app/api`）。
 
-
+需要配置外部服务？请查看 [SETUP.md](../dev/SETUP_ZH.md)，其中提供了 Azure Blob Storage、Replicate、Cloudflare Turnstile、PostgreSQL、Discord Webhook 和环境变量的分步配置说明。
 
 ## 🚀 本地开发
 

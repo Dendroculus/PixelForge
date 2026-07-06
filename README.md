@@ -282,9 +282,11 @@ VITE_API_BASE_URL=http://127.0.0.1:8000/api
 VITE_TURNSTILE_SITE_KEY=0x4AAAAAACxEYGPTmGZUjctK
 ```
 
+Need help setting up external services? See [SETUP.md](./SETUP.md) for step-by-step instructions on configuring Azure Blob Storage, Replicate, Cloudflare Turnstile, PostgreSQL, Discord webhooks, and environment variables.
+
+
 > For local testing, keep API base URL at local backend.  
 > For deployment, switch to your hosted API endpoint (example: `https://your-domain/app/api`).
-
 
 
 ## 🚀 Local Development
@@ -314,8 +316,6 @@ cd frontend
 npm install
 npm run dev
 ```
-
-
 
 ## 🔒 Security Notes
 

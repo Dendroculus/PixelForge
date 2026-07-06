@@ -286,6 +286,7 @@ VITE_TURNSTILE_SITE_KEY=0x4AAAAAACxEYGPTmGZUjctK
 > Untuk deployment, ganti ke endpoint API hosted Anda (contoh: `https://your-domain/app/api`).
 
 
+Butuh bantuan menyiapkan layanan eksternal? Lihat [SETUP.md](../dev/SETUP_ID.md) untuk panduan langkah demi langkah dalam mengonfigurasi Azure Blob Storage, Replicate, Cloudflare Turnstile, PostgreSQL, Discord webhook, dan environment variables.
 
 ## 🚀 Local Development
 
