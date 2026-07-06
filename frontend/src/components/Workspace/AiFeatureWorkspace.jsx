@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import WorkspaceLayout from '../Layout/Tool/WorkspaceLayout';
 import UploadDropzone from '@/components/Upload/UploadDropzone';
 import ResultViewer from '@/components/Workspace/display/ResultViewer/ResultViewer';
-import WorkspaceModals from '@/data/modals/WorkspaceModals';
+import WorkspaceModals from '@/content/modals/WorkspaceModals';
 import WorkspaceLimitCard from './cards/WorkspaceLimitCard';
 import WorkspaceMarketing from './cards/WorkspaceMarketing';
 import StagedFileCard from './cards/StagedFileCard';
@@ -42,7 +42,12 @@ export default function AiFeatureWorkspace({
 }) {
   const [isResultLoaded, setIsResultLoaded] = useState(false);
 
-  const showLimitCard = !selectedFile && !isProcessing && !jobId && !isLoading && usesRemaining <= 0;
+  const showLimitCard =
+    !selectedFile &&
+    !isProcessing &&
+    !jobId &&
+    !isLoading &&
+    usesRemaining <= 0;
   const showLoadingCard = !selectedFile && !isProcessing && !jobId && isLoading;
 
   let rightPanelContent = null;
@@ -72,8 +77,18 @@ export default function AiFeatureWorkspace({
     rightPanelContent = emptyState || (
       <div className="text-center px-4">
         <div className="w-16 h-16 rounded-full bg-white/50 flex items-center justify-center mx-auto mb-3 shadow-sm border border-white">
-          <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          <svg
+            className="w-8 h-8 text-slate-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={1.5}
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
           </svg>
         </div>
         <p className="text-sm font-medium text-slate-400">Workspace is empty</p>
@@ -104,7 +119,10 @@ export default function AiFeatureWorkspace({
 
                 {!selectedFile ? (
                   <div className="flex flex-col flex-1 justify-center pb-4">
-                    <UploadDropzone onFileSelect={onFileSelect} requireGrayscale={requireGrayscale} />
+                    <UploadDropzone
+                      onFileSelect={onFileSelect}
+                      requireGrayscale={requireGrayscale}
+                    />
                     {!isProcessing && !jobId && (
                       <div className="text-center mt-5 text-sm font-medium text-slate-500">
                         Free Uses Remaining:{' '}
@@ -144,11 +162,8 @@ export default function AiFeatureWorkspace({
                 )}
               </div>
             }
-            
             rightPanel={
-              <div className={rightPanelClassName}>
-                {rightPanelContent}
-              </div>
+              <div className={rightPanelClassName}>{rightPanelContent}</div>
             }
           />
         )}
@@ -156,7 +171,10 @@ export default function AiFeatureWorkspace({
         <div className="mt-6 flex items-center justify-center gap-4 text-xs text-slate-600 font-medium">
           <span>Supports:</span>
           {supportsList.map((fmt) => (
-            <span key={fmt} className="px-2 py-0.5 rounded bg-white/40 border border-white/50 text-slate-600 font-mono">
+            <span
+              key={fmt}
+              className="px-2 py-0.5 rounded bg-white/40 border border-white/50 text-slate-600 font-mono"
+            >
               .{fmt.toLowerCase()}
             </span>
           ))}
@@ -164,7 +182,11 @@ export default function AiFeatureWorkspace({
       </section>
 
       <WorkspaceMarketing {...marketingProps} />
-      <WorkspaceModals appAlert={appAlert} setAppAlert={setAppAlert} featureName={featureName} />
+      <WorkspaceModals
+        appAlert={appAlert}
+        setAppAlert={setAppAlert}
+        featureName={featureName}
+      />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FAQ_DATA } from '@/data/bot/chatBotdata';
+import { FAQ_DATA } from '@/content/bot/chatBotdata';
 
 /**
  * Manages state and interaction flow for the FAQ chatbot widget.

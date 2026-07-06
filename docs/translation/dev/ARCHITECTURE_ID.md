@@ -128,9 +128,14 @@ PixelForge/
 ├── frontend/
 │   ├── src/
 │   │   ├── components/
-│   │   ├── data/
+│   │   ├── content/
+│   │   │   ├── bot/
+│   │   │   ├── feature/
+│   │   │   ├── modals/
+│   │   │   └── navigation/
 │   │   ├── hooks/
 │   │   ├── pages/
+│   │   ├── routes/
 │   │   ├── services/
 │   │   ├── utils/
 │   │   ├── App.jsx
@@ -160,13 +165,19 @@ Frontend disusun di sekitar komponen workspace yang reusable dan halaman feature
 - FAQ chatbot widget
 - Suspense loader untuk halaman lazy-loaded
 
-Routes didefinisikan secara terpusat di:
+Routes dikelompokkan berdasarkan kategori di:
+
+```txt
+frontend/src/routes/
+```
+
+File route root tetap dipertahankan sebagai facade:
 
 ```txt
 frontend/src/routes.js
 ```
 
-Setiap route melakukan lazy import terhadap page component untuk menjaga initial bundle size lebih kecil.
+`App.jsx` hanya mengimpor facade tersebut, sementara facade menggabungkan route array dari kategori seperti AI features, smart edit tools, optimize tools, utilities, landing pages, dan special pages. Setiap route tetap menggunakan lazy import terhadap page component agar initial bundle size lebih kecil.
 
 ---
 

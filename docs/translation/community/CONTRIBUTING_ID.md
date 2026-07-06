@@ -178,7 +178,7 @@ Saat mengubah kode frontend:
 - Letakkan UI yang reusable di `components/`.
 - Letakkan workflow logic yang reusable di `hooks/`.
 - Letakkan API call di `services/`.
-- Letakkan konstanta dan konten di `data/` atau `config.js`.
+- Letakkan konten UI di `content/`, konfigurasi navigasi di `content/navigation/`, dan konfigurasi runtime di `config.js`.
 - Hindari duplikasi pola UI workspace.
 - Perhatikan aksesibilitas untuk button, input, label, dan interaksi keyboard.
 - Gunakan dokumentasi komponen dan hook yang bermakna untuk logic non-trivial.

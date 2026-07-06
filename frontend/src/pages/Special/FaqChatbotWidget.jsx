@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { IMAGES as img } from '@/config';
-import { FAQ_DATA, QUICK_ACTIONS, CAT_ACCENT } from '@/data/bot/chatBotdata';
-import { WIDGET_STYLES } from '@/data/bot/chatBotStyles';
+import { FAQ_DATA, QUICK_ACTIONS, CAT_ACCENT } from '@/content/bot/chatBotdata';
+import { WIDGET_STYLES } from '@/content/bot/chatBotStyles';
 import { useFaqChatBot } from '@/hooks/bot/useFaqChatBot';
 import ChatbotHeader from '@/components/Bot/ChatbotHeader';
 import HomeView from '@/components/Bot/HomeView';

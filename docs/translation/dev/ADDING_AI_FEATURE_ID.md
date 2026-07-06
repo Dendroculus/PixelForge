@@ -430,9 +430,9 @@ frontend/src/hooks/actions/use<Feature>Actions.js
 frontend/src/hooks/pipeline/use<Feature>Pipeline.js
 frontend/src/components/Workspace/controls/AiFeatures/<Feature>Controls.jsx
 frontend/src/pages/AiFeatures/<Feature>Page.jsx
-frontend/src/data/feature/<feature>Marketing.jsx
-frontend/src/routes.js
-frontend/src/data/navConfig.js
+frontend/src/content/feature/<feature>Marketing.jsx
+frontend/src/routes/aiFeature.routes.js
+frontend/src/content/navigation/navConfig.js
 frontend/src/config.js
 ```
 
@@ -442,7 +442,7 @@ Untuk fitur dengan custom UI, mask canvas, atau upload tambahan, cek juga:
 frontend/src/services/base/apiClient.js
 frontend/src/components/Workspace/AiFeatureWorkspace.jsx
 frontend/src/components/Workspace/display/<Feature>CustomEditor.jsx
-frontend/src/data/modals/WorkspaceModals.jsx
+frontend/src/content/modals/WorkspaceModals.jsx
 ```
 
 ---
@@ -583,7 +583,7 @@ import AiFeatureWorkspace from '@/components/Workspace/AiFeatureWorkspace';
 import CartoonizeControls from '@/components/Workspace/controls/AiFeatures/CartoonizeControls';
 import { useCartoonizePipeline } from '@/hooks/pipeline/useCartoonizePipeline';
 import { useSimulatedProgress } from '@/hooks/workspace/Core/useSimulatedProgress';
-import { marketingProps } from '@/data/feature/cartoonizeMarketing';
+import { marketingProps } from '@/content/feature/cartoonizeMarketing';
 
 export default function CartoonizeImage() {
   const [progress, setProgress] = useState(0);
@@ -651,7 +651,7 @@ export default function CartoonizeImage() {
 }
 ```
 
-### 6.7 Create `frontend/src/data/feature/cartoonizeMarketing.jsx`
+### 6.7 Create `frontend/src/content/feature/cartoonizeMarketing.jsx`
 
 ```jsx
 export const marketingProps = {
@@ -687,16 +687,16 @@ export const marketingProps = {
 };
 ```
 
-### 6.8 Update `frontend/src/routes.js`
+### 6.8 Update `frontend/src/routes/aiFeature.routes.js`
 
 ```js
 {
   path: '/cartoonize',
-  component: React.lazy(() => import('./pages/AiFeatures/CartoonizeImage')),
+  component: React.lazy(() => import('../pages/AiFeatures/CartoonizeImage')),
 },
 ```
 
-### 6.9 Update `frontend/src/data/navConfig.js`
+### 6.9 Update `frontend/src/content/navigation/navConfig.js`
 
 ```js
 {
@@ -1111,9 +1111,9 @@ Frontend:
 [ ] hooks/pipeline/use<Feature>Pipeline.js
 [ ] components/Workspace/controls/AiFeatures/<Feature>Controls.jsx
 [ ] pages/AiFeatures/<Feature>Page.jsx
-[ ] data/feature/<feature>Marketing.jsx
-[ ] routes.js
-[ ] data/navConfig.js
+[ ] content/feature/<feature>Marketing.jsx
+[ ] routes/aiFeature.routes.js
+[ ] content/navigation/navConfig.js
 [ ] config.js
 ```
 
@@ -1125,7 +1125,7 @@ Also check:
 [ ] frontend/src/services/base/apiClient.js
 [ ] frontend/src/components/Workspace/AiFeatureWorkspace.jsx
 [ ] frontend/src/components/Workspace/display/<Feature>CustomEditor.jsx
-[ ] frontend/src/data/modals/WorkspaceModals.jsx
+[ ] frontend/src/content/modals/WorkspaceModals.jsx
 ```
 
 ---
@@ -1147,8 +1147,8 @@ PixelForge maintainable karena:
 Jika fitur makin banyak, pertimbangkan shared feature registry untuk mengurangi edit manual di:
 
 ```txt
-frontend/src/routes.js
-frontend/src/data/navConfig.js
+frontend/src/routes/aiFeature.routes.js
+frontend/src/content/navigation/navConfig.js
 frontend/src/config.js
 frontend/src/services/apiService.js
 backend/domain/ai_features.py

@@ -178,7 +178,7 @@ changes
 - 将可复用 UI 放在 `components/`。
 - 将可复用 workflow logic 放在 `hooks/`。
 - 将 API call 放在 `services/`。
-- 将常量与内容放在 `data/` 或 `config.js`。
+- 将 UI 内容放在 `content/`，导航配置放在 `content/navigation/`，runtime 配置放在 `config.js`。
 - 避免重复 workspace UI pattern。
 - 注意 button、input、label 与键盘交互的可访问性。
 - 对非简单逻辑添加有意义的 component 或 hook 文档。
