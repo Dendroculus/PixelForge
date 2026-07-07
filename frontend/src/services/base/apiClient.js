@@ -2,11 +2,13 @@
  * Low-level HTTP client for PixelForge API calls.
  *
  * Centralizes backend URL resolution, JSON response handling, direct Azure upload
- * requests, AI job initialization/start flows, and usage polling helpers.
+ * requests, AI job initialization/start flows, runtime limits, and usage polling
+ * helpers.
  */
 
 const apiUrl =
   import.meta.env.VITE_API_BASE_URL ||
+  import.meta.env.VITE_API_URL ||
   (import.meta.env.DEV ? 'http://127.0.0.1:8000/api' : '');
 
 const DEBUG_API = import.meta.env.DEV && import.meta.env.VITE_DEBUG_API === 'true';
@@ -40,7 +42,10 @@ const handleApiResponse = async (response, defaultErrorMsg) => {
         detail = errData.detail;
       }
     } catch (e) {
-      console.warn(`[API Error] Failed to parse error JSON (Status: ${response.status}):`, e);
+      console.warn(
+        `[API Error] Failed to parse error JSON (Status: ${response.status}):`,
+        e,
+      );
     }
 
     throw new Error(detail);
@@ -54,7 +59,11 @@ const handleApiResponse = async (response, defaultErrorMsg) => {
  *
  * @returns {Promise<Response>} Azure upload response.
  */
-const uploadToAzure = async (uploadUrl, blob, contentType = 'application/octet-stream') => {
+const uploadToAzure = async (
+  uploadUrl,
+  blob,
+  contentType = 'application/octet-stream',
+) => {
   const azureResponse = await fetch(uploadUrl, {
     method: 'PUT',
     headers: {
@@ -75,6 +84,17 @@ const uploadToAzure = async (uploadUrl, blob, contentType = 'application/octet-s
 export const apiClient = {
   apiUrl,
 
+  async get(endpoint) {
+    debugLog(`[GET] -> ${apiUrl}${endpoint}`);
+
+    const res = await fetch(`${apiUrl}${endpoint}`, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+
+    return handleApiResponse(res, 'Request failed');
+  },
+
   async post(endpoint, body) {
     debugLog(`[POST] -> ${apiUrl}${endpoint}`);
 
@@ -85,6 +105,10 @@ export const apiClient = {
     });
 
     return handleApiResponse(res, 'Request failed');
+  },
+
+  async getRuntimeLimits() {
+    return this.get('/limits');
   },
 
   async executeAiJob(feature, file, turnstileToken, additionalPayload = {}) {

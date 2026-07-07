@@ -1,14 +1,18 @@
 """Background removal AI feature service.
 
 This module implements the background-removal feature on top of the shared
-``ImagePipelineService`` template. It provides feature-specific preprocessing
-and postprocessing while leaving storage, provider execution, result download,
-and result persistence to the base pipeline.
+``ImagePipelineService`` template.
 
-Pipeline behavior:
-    - Input images are downscaled when they exceed the configured pixel limit.
-    - AI output is compressed to WEBP to preserve transparency efficiently.
-    - Preprocessing/postprocessing failures fall back gracefully where possible.
+Background removal now relies on the shared base pipeline for input safety:
+
+    - uploaded byte-size validation,
+    - uploaded resolution validation,
+    - generic input downscaling before provider execution,
+    - final generated-result size enforcement.
+
+The feature-specific responsibility in this module is only output normalization:
+background-removal results are encoded as optimized PNG so transparency is
+preserved and the bytes match the standard ``.png`` result filename.
 """
 
 import asyncio
@@ -20,7 +24,6 @@ from PIL import Image
 from core.config import settings
 from provider.ai_provider import BaseAIProvider
 from services.ai.pipeline.image_pipeline_service import ImagePipelineService
-from utils.image.image_utils import smart_downscale
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +36,7 @@ class BackgroundRemover(ImagePipelineService):
         provider: BaseAIProvider = None,
         max_concurrent_remote_jobs: int = settings.MAX_CONCURRENT_JOBS,
     ):
-        """Initialize the background removal service.
+        """Initialize the background-removal service.
 
         Args:
             provider:
@@ -64,47 +67,8 @@ class BackgroundRemover(ImagePipelineService):
         """
         return await self.run(safe_filename, job_id)
 
-    def _preprocess_sync(self, raw_bytes: bytes) -> io.BytesIO:
-        """Prepare uploaded image bytes for the remote background-removal model.
-
-        Args:
-            raw_bytes:
-                Raw uploaded image bytes.
-
-        Returns:
-            io.BytesIO:
-                Prepared image stream for model input.
-        """
-        with Image.open(io.BytesIO(raw_bytes)) as img:
-            img = smart_downscale(img, settings.MAX_PIXELS)
-            out_stream = io.BytesIO()
-            img.save(out_stream, format=img.format or "JPEG")
-            out_stream.seek(0)
-            return out_stream
-
-    async def preprocess_input(self, raw_bytes: bytes, **kwargs) -> io.BytesIO:
-        """Run CPU-bound preprocessing outside the event loop.
-
-        Args:
-            raw_bytes:
-                Raw uploaded image bytes.
-
-        Returns:
-            io.BytesIO:
-                Prepared image stream. Falls back to the original bytes when
-                preprocessing fails.
-        """
-        try:
-            loop = asyncio.get_running_loop()
-            return await loop.run_in_executor(None, self._preprocess_sync, raw_bytes)
-        except Exception as e:
-            logger.error("Preprocessing failed: %s", e)
-            stream = io.BytesIO(raw_bytes)
-            stream.seek(0)
-            return stream
-
     def _postprocess_sync(self, result_bytes: bytes) -> bytes:
-        """Compress remote AI output to WEBP.
+        """Encode remote background-removal output as optimized PNG.
 
         Args:
             result_bytes:
@@ -112,30 +76,43 @@ class BackgroundRemover(ImagePipelineService):
 
         Returns:
             bytes:
-                WEBP-encoded result bytes.
+                PNG-encoded output bytes with transparency preserved when
+                present.
         """
         with Image.open(io.BytesIO(result_bytes)) as img:
+            img.load()
+
+            if img.mode not in ("RGBA", "LA"):
+                img = img.convert("RGBA")
+
             out_stream = io.BytesIO()
-            img.save(out_stream, format="WEBP", quality=90, method=4)
+            img.save(
+                out_stream,
+                format="PNG",
+                optimize=True,
+                compress_level=9,
+            )
             return out_stream.getvalue()
 
     async def postprocess_output(self, result_bytes: bytes, **kwargs) -> bytes:
-        """Run output compression outside the event loop.
+        """Run output normalization outside the event loop.
 
         Args:
             result_bytes:
                 Raw output bytes returned by the AI provider.
+            **kwargs:
+                Unused feature hook arguments.
 
         Returns:
             bytes:
-                Compressed output bytes, or the original output if compression
-                fails.
+                PNG-encoded output bytes. If normalization fails, the raw
+                provider output is returned and the shared pipeline will still
+                apply final size enforcement.
         """
         try:
-            loop = asyncio.get_running_loop()
-            return await loop.run_in_executor(None, self._postprocess_sync, result_bytes)
+            return await asyncio.to_thread(self._postprocess_sync, result_bytes)
         except Exception as e:
-            logger.error("Postprocessing failed: %s", e)
+            logger.error("Background-removal postprocessing failed: %s", e)
             return result_bytes
 
 

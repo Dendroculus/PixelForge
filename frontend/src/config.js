@@ -12,16 +12,27 @@ import logoTextWhite from './assets/PixelForgeAI_WhiteText.png';
 import logoFullBlack from './assets/PixelForgeAI_Black.png';
 import logoFullWhite from './assets/PixelForgeAI.png';
 import logoSvg from './assets/PixelForge.svg';
-import PixelForgeChatbot from './assets/PixelForgeChatbot.png'
+import PixelForgeChatbot from './assets/PixelForgeChatbot.png';
 
 export const AppConfig = {
+  // Fallback limits only. Runtime validation should prefer GET /api/limits.
   MAX_FILE_SIZE_MB: 10,
+  MAX_MEGAPIXELS: 3,
+  MAX_PIXELS: 3_000_000,
+  MAX_RESULT_FILE_SIZE_MB: 15,
+
   COMPRESS_MAX_SIZE_MB: 15,
-  ALLOWED_EXTENSIONS: ["jpg", "jpeg", "png", "webp"],
+  ALLOWED_EXTENSIONS: ['jpg', 'jpeg', 'png', 'webp'],
+
   RESULT_EXPIRATION_TIME: 10 * 60 * 1000, // 10 minutes
   DAY_MS: 24 * 60 * 60 * 1000, // 24 hours
-  API_URL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api',
-  UPLOAD_DRAFT_EXPIRATION_TIME: 10 * 60 * 1000 // 10 minutes
+
+  API_URL:
+    import.meta.env.VITE_API_BASE_URL ||
+    import.meta.env.VITE_API_URL ||
+    'http://127.0.0.1:8000/api',
+
+  UPLOAD_DRAFT_EXPIRATION_TIME: 10 * 60 * 1000, // 10 minutes
 };
 
 export const STORAGE_KEYS = {
@@ -34,7 +45,8 @@ export const STORAGE_KEYS = {
   ALERT: 'pf_alert',
   UPSCALE_HISTORY: 'pf_upscale_history',
   UPLOAD_TIMESTAMP: 'pf_upload_timestamp',
-  FEEDBACK_LIMIT: 'pf_feedback_limit'
+  FEEDBACK_LIMIT: 'pf_feedback_limit',
+  RUNTIME_LIMITS: 'pf_runtime_limits',
 };
 
 export const IMAGES = {
@@ -44,7 +56,7 @@ export const IMAGES = {
   darkLogo: logoFullBlack,
   lightLogo: logoFullWhite,
   svg: logoSvg,
-  chatbotIcon: PixelForgeChatbot
+  chatbotIcon: PixelForgeChatbot,
 };
 
 export const FEATURE_LIMITS = {
@@ -73,36 +85,57 @@ export const CROP_ASPECT_RATIOS = [
 ];
 
 export const SHOWCASES = {
-    upscale: {
-      label: "AI Upscaler",
-      before: "/demo/upscale_before.jpg",
-      after: "/demo/upscale_after.png"
-    },
-    rembg: {
-      label: "Background Remover",
-      before: "/demo/rem_bg_before.jpg",
-      after: "/demo/rem_bg_after.png"
-    },
-    color: {
-      label: "Color Restorer",
-      before: "/demo/res_color_before.jpg",
-      after: "/demo/res_color_after.png"
-    },
-    objectremove: {
-      label: "Object Remover",
-      before: "/demo/object_remove_before.png",
-      after: "/demo/object_remove_after.png"
-    },
+  upscale: {
+    label: 'AI Upscaler',
+    before: '/demo/upscale_before.jpg',
+    after: '/demo/upscale_after.png',
+  },
+  rembg: {
+    label: 'Background Remover',
+    before: '/demo/rem_bg_before.jpg',
+    after: '/demo/rem_bg_after.png',
+  },
+  color: {
+    label: 'Color Restorer',
+    before: '/demo/res_color_before.jpg',
+    after: '/demo/res_color_after.png',
+  },
+  objectremove: {
+    label: 'Object Remover',
+    before: '/demo/object_remove_before.png',
+    after: '/demo/object_remove_after.png',
+  },
 };
 
 export const FontFamilies = [
-  'Inter', 'Poppins', 'Montserrat', 'Roboto', 'Open Sans', 'Lato', 'Nunito', 'Anton', 'Caveat',
-  'Dancing Script', 'Merriweather', 'Oswald', 'Pacifico', 'Playfair Display', 'Raleway', 'Ubuntu', 'Arial', 'Georgia', 'Impact',
+  'Inter',
+  'Poppins',
+  'Montserrat',
+  'Roboto',
+  'Open Sans',
+  'Lato',
+  'Nunito',
+  'Anton',
+  'Caveat',
+  'Dancing Script',
+  'Merriweather',
+  'Oswald',
+  'Pacifico',
+  'Playfair Display',
+  'Raleway',
+  'Ubuntu',
+  'Arial',
+  'Georgia',
+  'Impact',
 ];
 
 export const WatermarkDefaulText = {
   text: 'Your Text Here',
-  charStyles: Array('Your Text Here'.length).fill({ b: true, i: false, u: false }),
+  charStyles: Array('Your Text Here'.length).fill({
+    b: true,
+    i: false,
+    u: false,
+  }),
   fontFamily: 'Inter',
   color: '#ffffff',
   fontSize: 40,
@@ -120,4 +153,11 @@ export const WatermarkDefaultImage = {
   naturalHeight: 1,
 };
 
-export const WatermarkColors = ['#ffffff', '#000000', '#ef4444', '#3b82f6', '#10b981', '#f59e0b'];
+export const WatermarkColors = [
+  '#ffffff',
+  '#000000',
+  '#ef4444',
+  '#3b82f6',
+  '#10b981',
+  '#f59e0b',
+];

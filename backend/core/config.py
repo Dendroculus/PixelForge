@@ -7,6 +7,17 @@ Configuration is loaded from environment variables and the local ``.env`` file
 through Pydantic Settings. Keep this module focused on declarative settings and
 small derived properties. Avoid opening network connections, initializing
 database pools, or constructing provider clients here.
+
+Important design notes:
+    - ``MAX_FILE_SIZE_MB`` controls uploaded input byte size.
+    - ``MAX_MEGAPIXELS`` controls uploaded input resolution.
+    - ``MAX_RESULT_FILE_SIZE_MB`` controls generated AI result byte size.
+    - ``MAX_UPSCALE_OUTPUT_PIXELS`` limits expected upscale output pixels before
+      the expensive remote provider call is made.
+
+Keeping upload limits and generated-result limits separate is intentional. A
+small compressed JPEG can still have high resolution, and an AI-generated PNG
+can be much larger than the uploaded file.
 """
 
 import os
@@ -28,7 +39,7 @@ class Settings(BaseSettings):
         - Storage
         - Rate and usage limits
         - Database pool configuration
-        - Image processing thresholds
+        - Image upload and result processing limits
         - Validation thresholds
         - Image format mapping
     """
@@ -123,24 +134,52 @@ class Settings(BaseSettings):
     AZURE_SWEEP_INTERVAL_SECONDS: int = 300
     DB_SWEEP_INTERVAL_SECONDS: int = 43200
 
-    # --- Image Processing ---
+    # --- Image Upload Limits ---
     MAX_FILE_SIZE_MB: int = 10
     MAX_MEGAPIXELS: int = 3
-    MAX_IMAGE_DIMENSION: int = 4000
-    OPTIMIZATION_TARGET_PIXELS: int = 1_000_000
     MAX_SAFE_PIXELS: int = 25_000_000
+
+    # --- Generated Result Limits ---
+    MAX_RESULT_FILE_SIZE_MB: int = 15
+    MAX_IMAGE_DIMENSION: int = 4000
+    MIN_OUTPUT_DIMENSION: int = 512
+    OUTPUT_SHRINK_STEP: float = 0.90
+
+    # --- AI Processing Limits ---
+    OPTIMIZATION_TARGET_PIXELS: int = 1_000_000
+    MAX_UPSCALE_OUTPUT_PIXELS: int = 9_000_000
     DEFAULT_SCALE: int = 4
     MAX_CONCURRENT_JOBS: int = 5
     MAX_CONCURRENT_CPU_JOBS: int = 4
 
     @property
     def MAX_FILE_SIZE_BYTES(self) -> int:
-        """Return the upload size limit in bytes."""
+        """Return the upload size limit in bytes.
+
+        Returns:
+            int:
+                ``MAX_FILE_SIZE_MB`` converted to bytes.
+        """
         return self.MAX_FILE_SIZE_MB * 1024 * 1024
 
     @property
+    def MAX_RESULT_FILE_SIZE_BYTES(self) -> int:
+        """Return the generated result size limit in bytes.
+
+        AI output is often larger than uploaded input, especially when the
+        result is encoded as PNG after upscaling or background removal. This
+        limit is intentionally separate from ``MAX_FILE_SIZE_BYTES``.
+        """
+        return self.MAX_RESULT_FILE_SIZE_MB * 1024 * 1024
+
+    @property
     def MAX_PIXELS(self) -> int:
-        """Return the upload resolution limit in total pixels."""
+        """Return the upload resolution limit in total pixels.
+
+        Returns:
+            int:
+                ``MAX_MEGAPIXELS`` converted to raw pixel count.
+        """
         return self.MAX_MEGAPIXELS * 1_000_000
 
     # --- Validation Thresholds ---

@@ -1,8 +1,16 @@
 """Image upscaling AI feature service.
 
 This module implements ESRGAN-style upscaling on top of the shared image
-pipeline. It adds CPU-bound preprocessing for model-friendly input sizing and
-postprocessing to cap large outputs before storing them.
+pipeline. Upscaling is intentionally more specialized than normal AI tools
+because scale factors multiply output pixel count:
+
+    - 2x upscale creates roughly 4x more pixels.
+    - 4x upscale creates roughly 16x more pixels.
+
+For that reason, this service overrides shared input preprocessing with
+scale-aware downscaling while still using the shared pipeline for upload
+validation, provider execution, final generated-result size enforcement, and
+storage.
 """
 
 import asyncio
@@ -18,7 +26,7 @@ from utils.image.image_utils import smart_downscale
 
 
 class AIUpscaler(ImagePipelineService):
-    """Service for AI image upscaling with feature-specific image handling."""
+    """Service for AI image upscaling with scale-aware input sizing."""
 
     def __init__(
         self,
@@ -30,9 +38,10 @@ class AIUpscaler(ImagePipelineService):
 
         Args:
             provider:
-                Optional AI provider implementation.
+                Optional AI provider implementation. Defaults to Replicate via
+                the base pipeline.
             max_concurrent_remote_jobs:
-                Maximum concurrent remote AI jobs.
+                Maximum concurrent remote AI jobs for this service instance.
             max_concurrent_cpu_jobs:
                 Maximum concurrent CPU-bound preprocessing/postprocessing jobs.
         """
@@ -58,7 +67,8 @@ class AIUpscaler(ImagePipelineService):
             job_id:
                 Current job identifier.
             model_type:
-                Registered model type to run.
+                Registered model type to run. Invalid values fall back to the
+                general model.
             scale:
                 Requested upscale multiplier.
 
@@ -67,21 +77,72 @@ class AIUpscaler(ImagePipelineService):
                 ``True`` when the result is saved successfully, otherwise
                 ``False``.
         """
-        return await self.run(safe_filename, job_id, model_type=model_type, scale=scale)
+        return await self.run(
+            safe_filename,
+            job_id,
+            model_type=model_type,
+            scale=scale,
+        )
 
     async def preprocess_input(self, raw_bytes: bytes, **kwargs) -> io.BytesIO:
-        """Optimize input image bytes before remote model execution."""
+        """Optimize input image bytes before remote model execution.
+
+        The input target is scale-aware. For example, a 4x upscale multiplies
+        pixel count by 16, so the input is reduced more aggressively than for 2x.
+
+        Args:
+            raw_bytes:
+                Raw uploaded image bytes.
+            **kwargs:
+                Expected to include ``scale`` and optionally ``job_id``.
+
+        Returns:
+            io.BytesIO:
+                Prepared image stream for model input.
+        """
         job_id = kwargs.get("job_id")
+        scale = kwargs.get("scale", settings.DEFAULT_SCALE)
+
         async with self._cpu_semaphore:
-            return await asyncio.to_thread(self._optimize_image_sync, raw_bytes, job_id)
+            return await asyncio.to_thread(
+                self._optimize_image_sync,
+                raw_bytes,
+                job_id,
+                scale,
+            )
 
     async def postprocess_output(self, result_bytes: bytes, **kwargs) -> bytes:
-        """Compress and cap model output size after remote execution."""
+        """Cap model output dimensions after remote execution.
+
+        Final byte-size compression/shrinking is handled by the shared pipeline.
+
+        Args:
+            result_bytes:
+                Raw output bytes returned by the AI provider.
+            **kwargs:
+                Unused feature hook arguments.
+
+        Returns:
+            bytes:
+                PNG-encoded output bytes after dimension capping.
+        """
         async with self._cpu_semaphore:
-            return await asyncio.to_thread(self._compress_output_sync, result_bytes)
+            return await asyncio.to_thread(
+                self._cap_output_dimension_sync,
+                result_bytes,
+            )
 
     def build_model_params(self, **kwargs) -> dict:
-        """Build model parameters for the selected upscale model."""
+        """Build model parameters for the selected upscale model.
+
+        Args:
+            **kwargs:
+                May include ``model_type`` and ``scale``.
+
+        Returns:
+            dict:
+                Provider-specific model parameters.
+        """
         model_type = kwargs.get("model_type", "general")
         scale = kwargs.get("scale", settings.DEFAULT_SCALE)
 
@@ -91,7 +152,18 @@ class AIUpscaler(ImagePipelineService):
             return ModelRegistry.get_params("general", scale=settings.DEFAULT_SCALE)
 
     async def _process_with_ai(self, image_stream: io.BytesIO, **kwargs) -> str:
-        """Run the selected upscaling model through the configured provider."""
+        """Run the selected upscaling model through the configured provider.
+
+        Args:
+            image_stream:
+                Prepared image stream.
+            **kwargs:
+                May include ``model_type`` and ``scale``.
+
+        Returns:
+            str:
+                Remote result URL returned by the provider.
+        """
         model_type = kwargs.get("model_type", "general")
 
         try:
@@ -109,18 +181,49 @@ class AIUpscaler(ImagePipelineService):
         finally:
             image_stream.close()
 
-    def _optimize_image_sync(self, raw_bytes: bytes, job_id: str) -> io.BytesIO:
+    def _get_scale_aware_input_pixel_target(self, scale: int) -> int:
+        """Return a safe input pixel target for the requested upscale factor.
+
+        Args:
+            scale:
+                Requested upscale multiplier.
+
+        Returns:
+            int:
+                Maximum input pixels allowed before sending the image to the
+                remote upscaling model.
+        """
+        safe_scale = max(1, min(int(scale), 4))
+
+        # Output pixels roughly equal input_pixels * scale^2.
+        scale_limited_input_pixels = (
+            settings.MAX_UPSCALE_OUTPUT_PIXELS // (safe_scale * safe_scale)
+        )
+
+        return max(
+            1,
+            min(settings.OPTIMIZATION_TARGET_PIXELS, scale_limited_input_pixels),
+        )
+
+    def _optimize_image_sync(
+        self,
+        raw_bytes: bytes,
+        job_id: str,
+        scale: int,
+    ) -> io.BytesIO:
         """Validate and optimize input image bytes for remote upscaling.
 
         Args:
             raw_bytes:
                 Raw uploaded image bytes.
             job_id:
-                Current job identifier. Present for logging/debug extension.
+                Current job identifier. Kept for logging/debug compatibility.
+            scale:
+                Requested upscale multiplier.
 
         Returns:
             io.BytesIO:
-                Prepared image stream for model input.
+                Prepared image stream for provider input.
         """
         with io.BytesIO(raw_bytes) as img_stream:
             with Image.open(img_stream) as img:
@@ -128,11 +231,13 @@ class AIUpscaler(ImagePipelineService):
 
         with io.BytesIO(raw_bytes) as img_stream:
             with Image.open(img_stream) as img:
+                img.load()
                 save_format = img.format or "JPEG"
 
-                img = smart_downscale(img, settings.OPTIMIZATION_TARGET_PIXELS)
+                target_pixels = self._get_scale_aware_input_pixel_target(scale)
+                img = smart_downscale(img, target_pixels)
 
-                if img.mode in ("RGBA", "P") and save_format != "PNG":
+                if img.mode in ("RGBA", "P") and save_format.upper() != "PNG":
                     img = img.convert("RGB")
 
                 output_stream = io.BytesIO()
@@ -141,32 +246,45 @@ class AIUpscaler(ImagePipelineService):
                 if save_format.upper() in ("JPEG", "JPG"):
                     save_kwargs.update({"quality": 95, "optimize": True})
 
+                if save_format.upper() == "PNG":
+                    save_kwargs.update({"optimize": True, "compress_level": 9})
+
                 img.save(output_stream, **save_kwargs)
                 output_stream.seek(0)
+
                 return output_stream
 
-    def _compress_output_sync(self, raw_bytes: bytes) -> bytes:
-        """Cap and encode AI output bytes as PNG.
+    def _cap_output_dimension_sync(self, raw_bytes: bytes) -> bytes:
+        """Cap AI output dimensions before shared byte-size enforcement.
 
         Args:
             raw_bytes:
-                Output image bytes returned by the AI provider.
+                Raw output bytes returned by the AI provider.
 
         Returns:
             bytes:
-                PNG-encoded output bytes.
+                PNG-encoded bytes after maximum-dimension enforcement.
         """
-        max_dimension = 4096
-
         with io.BytesIO(raw_bytes) as input_stream:
             with Image.open(input_stream) as img:
                 img.load()
 
-                if max(img.size) > max_dimension:
-                    img.thumbnail((max_dimension, max_dimension), Image.Resampling.LANCZOS)
+                if max(img.size) > settings.MAX_IMAGE_DIMENSION:
+                    img.thumbnail(
+                        (
+                            settings.MAX_IMAGE_DIMENSION,
+                            settings.MAX_IMAGE_DIMENSION,
+                        ),
+                        Image.Resampling.LANCZOS,
+                    )
 
                 output_stream = io.BytesIO()
-                img.save(output_stream, format="PNG", optimize=False)
+                img.save(
+                    output_stream,
+                    format="PNG",
+                    optimize=True,
+                    compress_level=9,
+                )
                 return output_stream.getvalue()
 
 

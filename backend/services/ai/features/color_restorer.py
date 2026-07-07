@@ -1,8 +1,17 @@
 """Color restoration AI feature service.
 
 This module implements the color-restoration feature using the shared image
-pipeline. Its main feature-specific responsibility is validating that the input
+pipeline. Its feature-specific responsibility is validating that the uploaded
 image is effectively grayscale before sending it to the remote model.
+
+After grayscale validation succeeds, preprocessing is delegated back to
+``ImagePipelineService`` so color restoration receives the same shared input
+safety as other normal AI tools:
+
+    - uploaded byte-size validation,
+    - uploaded resolution validation,
+    - generic input downscaling before provider execution,
+    - final generated-result size enforcement.
 """
 
 import asyncio
@@ -22,11 +31,12 @@ class ColorRestorer(ImagePipelineService):
         provider: BaseAIProvider = None,
         max_concurrent_remote_jobs: int = settings.MAX_CONCURRENT_JOBS,
     ):
-        """Initialize the color restoration service.
+        """Initialize the color-restoration service.
 
         Args:
             provider:
-                Optional AI provider implementation.
+                Optional AI provider implementation. Defaults to Replicate via
+                the base pipeline.
             max_concurrent_remote_jobs:
                 Maximum concurrent remote AI jobs for this service instance.
         """
@@ -53,11 +63,14 @@ class ColorRestorer(ImagePipelineService):
         return await self.run(safe_filename, job_id)
 
     async def preprocess_input(self, raw_bytes: bytes, **kwargs) -> io.BytesIO:
-        """Validate grayscale input before model execution.
+        """Validate grayscale input, then run shared input preprocessing.
 
         Args:
             raw_bytes:
                 Raw uploaded image bytes.
+            **kwargs:
+                Feature hook arguments forwarded to the shared base
+                preprocessing implementation.
 
         Raises:
             ValueError:
@@ -68,9 +81,7 @@ class ColorRestorer(ImagePipelineService):
             io.BytesIO:
                 Prepared image stream for model input.
         """
-        loop = asyncio.get_running_loop()
-        is_valid_grayscale = await loop.run_in_executor(
-            None,
+        is_valid_grayscale = await asyncio.to_thread(
             validate_grayscale_image,
             raw_bytes,
         )

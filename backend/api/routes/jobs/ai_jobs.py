@@ -13,9 +13,13 @@ This module owns the routes that are common to all AI tools:
     - ``GET /usage``:
       returns the current usage status for a feature and client.
 
+    - ``GET /limits``:
+      returns public upload/result limits so the frontend can validate using
+      backend-owned configuration instead of hardcoded client values.
+
 Feature-specific ``/start`` routes live in ``api.routes.ai_tools`` because
-starting a job may require tool-specific arguments such as upscale scale or
-object removal mask filenames.
+starting a job may require tool-specific arguments such as upscale scale,
+object-removal mask filenames, or future tool-specific payloads.
 """
 
 import re
@@ -51,6 +55,50 @@ def get_feature_limit(feature: FeatureType) -> int:
             Configured usage limit for the requested feature.
     """
     return settings.FEATURE_LIMITS[feature]
+
+
+@router.get("/limits")
+@limiter.limit(settings.POLL_RATE_LIMIT)
+async def get_runtime_limits(request: Request):
+    """Return public upload, resolution, and generated-result limits.
+
+    The frontend uses this endpoint to avoid hardcoding upload size and
+    resolution validation rules. The backend still validates every upload and
+    generated output because frontend validation is only a user-experience
+    improvement and can be bypassed.
+
+    Args:
+        request:
+            Current FastAPI request, required by the rate limiter.
+
+    Returns:
+        dict:
+            Public runtime limits grouped by upload, result, upscale, and usage
+            feature settings.
+    """
+    allowed_extensions = sorted(set(settings.FORMAT_MAP.values()))
+
+    return {
+        "upload": {
+            "max_file_size_mb": settings.MAX_FILE_SIZE_MB,
+            "max_file_size_bytes": settings.MAX_FILE_SIZE_BYTES,
+            "max_megapixels": settings.MAX_MEGAPIXELS,
+            "max_pixels": settings.MAX_PIXELS,
+            "allowed_extensions": allowed_extensions,
+        },
+        "result": {
+            "max_result_file_size_mb": settings.MAX_RESULT_FILE_SIZE_MB,
+            "max_result_file_size_bytes": settings.MAX_RESULT_FILE_SIZE_BYTES,
+            "max_image_dimension": settings.MAX_IMAGE_DIMENSION,
+            "min_output_dimension": settings.MIN_OUTPUT_DIMENSION,
+            "output_shrink_step": settings.OUTPUT_SHRINK_STEP,
+        },
+        "upscale": {
+            "default_scale": settings.DEFAULT_SCALE,
+            "max_output_pixels": settings.MAX_UPSCALE_OUTPUT_PIXELS,
+        },
+        "features": settings.FEATURE_LIMITS,
+    }
 
 
 @router.post("/{feature}/init")

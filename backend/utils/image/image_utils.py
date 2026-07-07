@@ -3,6 +3,13 @@
 This module contains reusable Pillow-based helpers for downscaling, validating,
 normalizing, and encoding image data. These functions are intentionally
 stateless and separate from route/service logic so they are easier to test.
+
+The helpers here protect the AI pipeline from two common image risks:
+    - compressed files with deceptively large resolution
+    - generated AI outputs that become too large after processing
+
+The frontend may run similar validation for user experience, but these backend
+helpers remain the source of truth because browser validation can be bypassed.
 """
 
 import io
@@ -101,11 +108,43 @@ def validate_resolution(img: Image.Image) -> None:
             Raised with HTTP 413 when image resolution is too large.
     """
     width, height = img.size
-    if (width * height) > settings.MAX_PIXELS:
+    total_pixels = width * height
+
+    if total_pixels > settings.MAX_PIXELS:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"Resolution exceeds {settings.MAX_MEGAPIXELS} megapixels.",
+            detail=(
+                f"Resolution exceeds {settings.MAX_MEGAPIXELS} megapixels. "
+                f"Uploaded image is {width}x{height}."
+            ),
         )
+
+
+def validate_image_bytes_resolution(file_bytes: bytes) -> Tuple[int, int, int]:
+    """Validate uploaded image bytes and return width, height, and pixel count.
+
+    This helper is used by the direct-to-Azure AI job flow after the backend
+    downloads the uploaded blob. It prevents small-byte but huge-resolution
+    images from being sent to AI providers.
+
+    Args:
+        file_bytes:
+            Raw uploaded image bytes.
+
+    Raises:
+        HTTPException:
+            Raised when image data is invalid, unsupported, or exceeds the
+            configured resolution limit.
+
+    Returns:
+        tuple[int, int, int]:
+            Image width, height, and total pixel count.
+    """
+    img, _ = load_and_validate_structure(file_bytes)
+    validate_resolution(img)
+
+    width, height = img.size
+    return width, height, width * height
 
 
 def normalize_image(img: Image.Image, ext: str) -> Tuple[Image.Image, str]:
@@ -123,6 +162,7 @@ def normalize_image(img: Image.Image, ext: str) -> Tuple[Image.Image, str]:
     """
     if img.mode in ("RGBA", "LA", "P") and ext in ("png", "webp"):
         return img.convert("RGBA"), ext
+
     return img.convert("RGB"), "jpg"
 
 
@@ -146,3 +186,132 @@ def encode_image(clean_img: Image.Image, ext: str) -> io.BytesIO:
     output_stream.seek(0)
 
     return output_stream
+
+
+def image_has_alpha(img: Image.Image) -> bool:
+    """Return whether an image has transparency that should be preserved.
+
+    Args:
+        img:
+            Pillow image to inspect.
+
+    Returns:
+        bool:
+            ``True`` when the image has an alpha channel or palette
+            transparency metadata.
+    """
+    return (
+        img.mode in ("RGBA", "LA")
+        or (img.mode == "P" and "transparency" in img.info)
+    )
+
+
+def encode_png_under_size(
+    img: Image.Image,
+    max_bytes: int,
+    *,
+    min_dimension: int = settings.MIN_OUTPUT_DIMENSION,
+    shrink_step: float = settings.OUTPUT_SHRINK_STEP,
+) -> bytes:
+    """Encode an image as PNG and shrink it until it fits under max_bytes.
+
+    The output remains PNG because PixelForge result filenames currently use
+    ``.png``. Transparency is preserved for features like background removal.
+
+    Args:
+        img:
+            Pillow image to encode.
+        max_bytes:
+            Maximum encoded byte size.
+        min_dimension:
+            Smallest allowed maximum dimension before giving up.
+        shrink_step:
+            Multiplicative resize factor used after each failed encode attempt.
+
+    Raises:
+        ValueError:
+            Raised when the result cannot be made small enough without going
+            below ``min_dimension``.
+
+    Returns:
+        bytes:
+            PNG-encoded image bytes under ``max_bytes``.
+    """
+    if image_has_alpha(img):
+        working_img = img.convert("RGBA")
+    else:
+        working_img = img.convert("RGB")
+
+    while True:
+        output_stream = io.BytesIO()
+        working_img.save(
+            output_stream,
+            format="PNG",
+            optimize=True,
+            compress_level=9,
+        )
+        result_bytes = output_stream.getvalue()
+
+        if len(result_bytes) <= max_bytes:
+            return result_bytes
+
+        width, height = working_img.size
+
+        if max(width, height) <= min_dimension:
+            raise ValueError("Output exceeds maximum size even after compression.")
+
+        new_width = max(1, int(width * shrink_step))
+        new_height = max(1, int(height * shrink_step))
+
+        logger.warning(
+            "Generated image too large: %.2f MB. Shrinking %sx%s -> %sx%s.",
+            len(result_bytes) / 1024 / 1024,
+            width,
+            height,
+            new_width,
+            new_height,
+        )
+
+        working_img = working_img.resize(
+            (new_width, new_height),
+            Image.Resampling.LANCZOS,
+        )
+
+
+def fit_image_bytes_under_size(
+    image_bytes: bytes,
+    max_bytes: int,
+    *,
+    min_dimension: int = settings.MIN_OUTPUT_DIMENSION,
+    shrink_step: float = settings.OUTPUT_SHRINK_STEP,
+) -> bytes:
+    """Open image bytes and return PNG bytes that fit under max_bytes.
+
+    This function is used after AI generation and before saving to Azure. It
+    prevents oversized AI outputs from failing late or being stored too large.
+
+    Args:
+        image_bytes:
+            Raw encoded image bytes returned by an AI provider or feature
+            postprocessor.
+        max_bytes:
+            Maximum allowed output byte size.
+        min_dimension:
+            Smallest allowed maximum dimension before giving up.
+        shrink_step:
+            Multiplicative resize factor used after each failed encode attempt.
+
+    Returns:
+        bytes:
+            PNG-encoded bytes under ``max_bytes``.
+    """
+    with io.BytesIO(image_bytes) as input_stream:
+        with Image.open(input_stream) as img:
+            img.load()
+
+            return encode_png_under_size(
+                img,
+                max_bytes,
+                min_dimension=min_dimension,
+                shrink_step=shrink_step,
+            )
