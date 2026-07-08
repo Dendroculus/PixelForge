@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion';
 import PropTypes from 'prop-types';
-import { parseWatermarkTextLines } from '@/utils/image/watermarkUtils';
-import { getTextSegmentStyle } from '@/utils/image/watermarkUtils';
+import { parseWatermarkTextLines, getTextSegmentStyle } from '@/utils/image/watermarkUtils';
 
 /**
  * @param {Object} props

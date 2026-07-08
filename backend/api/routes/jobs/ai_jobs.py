@@ -36,6 +36,7 @@ from services.azure.storage_utils import get_result_filename
 from services.job.job_initializer import JobInitializer
 from utils.error import codes
 from utils.error.responses import build_error_payload
+from api.docs import AI_RESULT_RESPONSES, COMMON_ERROR_RESPONSES
 
 router = APIRouter(tags=["ai_jobs"])
 
@@ -59,7 +60,15 @@ def get_feature_limit(feature: FeatureType) -> int:
     return settings.FEATURE_LIMITS[feature]
 
 
-@router.get("/limits")
+@router.get(
+    "/limits",
+    summary="Get runtime limits",
+    description=(
+        "Returns public upload, result, upscale, and feature usage limits. "
+        "The frontend uses this to validate files without hardcoded limits."
+    ),
+    response_description="Runtime limits grouped by upload, result, upscale, and feature usage.",
+)
 @limiter.limit(settings.POLL_RATE_LIMIT)
 async def get_runtime_limits(request: Request):
     """Return public upload, resolution, and generated-result limits.
@@ -103,7 +112,17 @@ async def get_runtime_limits(request: Request):
     }
 
 
-@router.post("/{feature}/init")
+@router.post(
+    "/{feature}/init",
+    summary="Initialize AI job",
+    description=(
+        "Verifies Turnstile, checks usage availability, creates a job ID, "
+        "and returns signed Azure upload metadata. This endpoint does not "
+        "consume usage or run the AI model."
+    ),
+    response_description="Initialized job metadata with signed upload URL.",
+    responses=COMMON_ERROR_RESPONSES,
+)
 @limiter.limit(settings.UPLOAD_RATE_LIMIT)
 async def init_feature(
     feature: FeatureType,
@@ -142,7 +161,16 @@ async def init_feature(
     )
 
 
-@router.get("/result/{job_id}")
+@router.get(
+    "/result/{job_id}",
+    summary="Poll AI job result",
+    description=(
+        "Returns the current state of an AI job. A job may be processing, "
+        "ready with a signed result URL, or failed with a safe error code/message."
+    ),
+    response_description="Current job status.",
+    responses=AI_RESULT_RESPONSES,
+)
 @limiter.limit(settings.POLL_RATE_LIMIT)
 async def get_result(request: Request, job_id: str):
     """Return the processing status for a specific AI job.
@@ -197,7 +225,16 @@ async def get_result(request: Request, job_id: str):
     return {"status": "processing"}
 
 
-@router.get("/usage")
+@router.get(
+    "/usage",
+    summary="Get feature usage status",
+    description=(
+        "Returns the current 24-hour usage status for a specific AI feature "
+        "based on the resolved client IP."
+    ),
+    response_description="Usage status with remaining uses and optional reset timestamp.",
+    responses=COMMON_ERROR_RESPONSES,
+)
 @limiter.limit(settings.POLL_RATE_LIMIT)
 async def get_usage(
     request: Request,

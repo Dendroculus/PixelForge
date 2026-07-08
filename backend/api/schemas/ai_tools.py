@@ -17,6 +17,7 @@ by the service layer.
 
 from pydantic import BaseModel, Field
 
+INITIALIZED_JOB_ID_DESCRIPTION = "Initialized job identifier."
 
 class InitRequest(BaseModel):
     """Payload used to initialize an AI processing job.
@@ -54,7 +55,7 @@ class StartUpscaleRequest(BaseModel):
 
     job_id: str = Field(
         ...,
-        description="Initialized job identifier.",
+        description=INITIALIZED_JOB_ID_DESCRIPTION,
     )
     safe_filename: str = Field(
         ...,
@@ -80,7 +81,7 @@ class StartRembgRequest(BaseModel):
 
     job_id: str = Field(
         ...,
-        description="Initialized job identifier.",
+        description=INITIALIZED_JOB_ID_DESCRIPTION,
     )
     safe_filename: str = Field(
         ...,
@@ -100,7 +101,7 @@ class StartColorRestoreRequest(BaseModel):
 
     job_id: str = Field(
         ...,
-        description="Initialized job identifier.",
+        description=INITIALIZED_JOB_ID_DESCRIPTION,
     )
     safe_filename: str = Field(
         ...,
@@ -126,7 +127,7 @@ class StartObjectRemoveRequest(BaseModel):
 
     job_id: str = Field(
         ...,
-        description="Initialized job identifier.",
+        description=INITIALIZED_JOB_ID_DESCRIPTION,
     )
     safe_filename: str = Field(
         ...,

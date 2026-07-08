@@ -27,7 +27,8 @@ from core.config import settings
 from services.azure.storage_utils import get_marker_filename, parse_azure_credentials
 
 logger = logging.getLogger(__name__)
-
+DEFAULT_FAILURE_CODE = "PROCESSING_FAILED"
+DEFAULT_FAILURE_MESSAGE = "AI processing failed. Please try again with a smaller image."
 
 def _ensure_azure_configured() -> None:
     """Ensure Azure connection settings exist before storage operations.
@@ -298,7 +299,7 @@ class StorageService:
     async def mark_job_failed(
         cls,
         job_id: str,
-        code: str = "PROCESSING_FAILED",
+        code: str = DEFAULT_FAILURE_CODE,
         message: str | None = None,
     ) -> None:
         """Create a JSON failure marker for a job.
@@ -315,9 +316,9 @@ class StorageService:
         secure_job_id = os.path.basename(job_id)
         marker_filename = get_marker_filename(secure_job_id)
         payload = {
-            "code": code or "PROCESSING_FAILED",
+            "code": code or DEFAULT_FAILURE_CODE,
             "message": message
-            or "AI processing failed. Please try again with a smaller image.",
+            or DEFAULT_FAILURE_MESSAGE,
         }
 
         try:
@@ -356,8 +357,8 @@ class StorageService:
 
                 if not raw_payload:
                     return {
-                        "code": "PROCESSING_FAILED",
-                        "message": "AI processing failed. Please try again with a smaller image.",
+                        "code": DEFAULT_FAILURE_CODE,
+                        "message": DEFAULT_FAILURE_MESSAGE,
                     }
 
                 try:
@@ -365,15 +366,15 @@ class StorageService:
                 except (json.JSONDecodeError, UnicodeDecodeError):
                     logger.warning("Invalid failure marker payload for job %s.", secure_job_id)
                     return {
-                        "code": "PROCESSING_FAILED",
-                        "message": "AI processing failed. Please try again with a smaller image.",
+                        "code": DEFAULT_FAILURE_CODE,
+                        "message": DEFAULT_FAILURE_MESSAGE,
                     }
 
                 return {
-                    "code": str(payload.get("code") or "PROCESSING_FAILED"),
+                    "code": str(payload.get("code") or DEFAULT_FAILURE_CODE),
                     "message": str(
                         payload.get("message")
-                        or "AI processing failed. Please try again with a smaller image."
+                        or DEFAULT_FAILURE_MESSAGE
                     ),
                 }
         except Exception as e:

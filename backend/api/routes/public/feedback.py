@@ -15,11 +15,21 @@ from services.notification.discord_webhooks import (
     send_discord_message,
 )
 from services.security.turnstile_service import verify_turnstile
+from api.docs import COMMON_ERROR_RESPONSES
 
 router = APIRouter(tags=["feedback"])
 
 
-@router.post("/feedback")
+@router.post(
+    "/feedback",
+    summary="Submit feedback",
+    description=(
+        "Verifies the Turnstile token, formats user feedback, and queues a "
+        "Discord webhook notification in the background."
+    ),
+    response_description="Feedback submission confirmation.",
+    responses=COMMON_ERROR_RESPONSES,
+)
 @limiter.limit(f"{settings.FEEDBACK_RATE_LIMIT};{settings.FEEDBACK_DAILY_USAGE_LIMIT}/day")
 async def submit_feedback(
     request: Request,

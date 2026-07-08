@@ -15,6 +15,7 @@ Expected workflow:
 from fastapi import APIRouter, BackgroundTasks, Request, status
 
 from api.schemas.ai_tools import StartObjectRemoveRequest
+from api.docs import AI_START_RESPONSES
 from core.config import settings
 from limiter.rate_limiter import limiter
 from services.job.job_dispatcher import reserve_and_queue_job
@@ -23,7 +24,18 @@ from services.job.job_manager import JobManager
 router = APIRouter(tags=["ai_tools"])
 
 
-@router.post("/objectremove/start", status_code=status.HTTP_202_ACCEPTED)
+@router.post(
+    "/objectremove/start",
+    status_code=status.HTTP_202_ACCEPTED,
+    summary="Start object removal job",
+    description=(
+        "Queues a previously initialized object removal job. "
+        "The source image and mask image must already be uploaded to Azure using the signed "
+        "upload URLs returned by the initialization endpoint."
+    ),
+    response_description="Accepted job metadata containing status and job ID.",
+    responses=AI_START_RESPONSES,
+)
 @limiter.limit(settings.UPLOAD_RATE_LIMIT)
 async def start_object_remove(
     request: Request,
