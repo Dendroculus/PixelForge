@@ -368,6 +368,9 @@ Cara menambahkan fitur AI baru ke PixelForge:
 Script testing backend dan AI:
 - [Pengujian PixelForge](../dev/TESTING_ID.md) ([EN](../../TESTING.md), [ZH](../dev/TESTING_ZH.md))
 
+Skrip bantuan developer:
+- [Total Line Counter](scripts/dev/get_total_lines.ps1) — skrip PowerShell Windows interaktif untuk menghitung jumlah baris project berdasarkan folder, ekstensi file, dan bagian project.
+
 > Script PowerShell lokal dan file helper `.bat` ditujukan untuk environment development Windows.
 
 ## 🙏 Acknowledgements

@@ -355,7 +355,6 @@ For security issues, please see our [Security Policy](SECURITY.md).
 
 Licensed under the MIT License. See [LICENSE](./LICENSE) for details.
 
-
 ## 📝 Developer Docs
 
 How to add a new AI feature to PixelForge:
@@ -363,6 +362,9 @@ How to add a new AI feature to PixelForge:
 
 Backend and AI test scripts:
 - [Testing PixelForge](docs/TESTING.md) ([ID](docs/translation/dev/TESTING_ID.md), [ZH](docs/translation/dev/TESTING_ZH.md))
+
+Developer helper scripts:
+- [Total Line Counter](scripts/dev/get_total_lines.ps1) — interactive Windows PowerShell script for counting project lines by folder, extension, and section.
 
 > Local PowerShell scripts and `.bat` helper files are intended for Windows development environments.
 

@@ -365,6 +365,9 @@ npm run dev
 后端与 AI 测试脚本:
 - [PixelForge 测试](../dev/TESTING_ZH.md) ([EN](../../TESTING.md), [ID](../dev/TESTING_ID.md))
 
+开发者辅助脚本：
+- [Total Line Counter](scripts/dev/get_total_lines.ps1) — 交互式 Windows PowerShell 脚本，可按文件夹、文件扩展名和项目区域统计代码行数。
+
 > 本地 PowerShell 脚本和 `.bat` 辅助文件仅面向 Windows 开发环境。
 
 ## 🙏 致谢
