@@ -41,6 +41,13 @@ from core.model_registry import ModelRegistry
 from provider.ai_provider import BaseAIProvider, ReplicateProvider
 from services.azure.storage import StorageService
 from services.azure.storage_utils import get_result_filename
+from utils.error import codes
+from utils.error.error import (
+    ReplicateRateLimitError,
+    ReplicateTimeoutError,
+    ReplicateUnknownError,
+)
+from utils.error.responses import get_default_message
 from utils.image.image_utils import (
     fit_image_bytes_under_size,
     smart_downscale,
@@ -215,6 +222,86 @@ class ImagePipelineService:
                 exc_info=True,
             )
             return failure
+
+    def _failure_from_exception(self, exc: Exception) -> PipelineResult:
+        """Convert an exception into a safe pipeline failure result.
+
+        Args:
+            exc:
+                Exception raised during pipeline execution.
+
+        Returns:
+            PipelineResult:
+                Failed result with a stable code and safe user-facing message.
+        """
+        if isinstance(exc, ReplicateRateLimitError):
+            return PipelineResult.failed(
+                codes.PROVIDER_RATE_LIMITED,
+                get_default_message(codes.PROVIDER_RATE_LIMITED),
+            )
+
+        if isinstance(exc, ReplicateTimeoutError):
+            return PipelineResult.failed(
+                codes.PROVIDER_TIMEOUT,
+                get_default_message(codes.PROVIDER_TIMEOUT),
+            )
+
+        if isinstance(exc, ReplicateUnknownError):
+            return PipelineResult.failed(
+                codes.PROVIDER_FAILED,
+                get_default_message(codes.PROVIDER_FAILED),
+            )
+
+        if isinstance(exc, HTTPException):
+            detail = str(exc.detail or "")
+
+            if exc.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE:
+                return PipelineResult.failed(
+                    codes.IMAGE_TOO_LARGE,
+                    detail or get_default_message(codes.IMAGE_TOO_LARGE),
+                )
+
+            if exc.status_code == status.HTTP_400_BAD_REQUEST:
+                if "unsupported format" in detail.lower():
+                    return PipelineResult.failed(
+                        codes.UNSUPPORTED_FORMAT,
+                        detail or get_default_message(codes.UNSUPPORTED_FORMAT),
+                    )
+
+                return PipelineResult.failed(
+                    codes.INVALID_IMAGE,
+                    detail or get_default_message(codes.INVALID_IMAGE),
+                )
+
+        error_text = str(exc).lower()
+
+        if "payload exceeds maximum size" in error_text:
+            return PipelineResult.failed(
+                codes.UPLOAD_TOO_LARGE,
+                f"The uploaded image exceeds the {settings.MAX_FILE_SIZE_MB}MB limit.",
+            )
+
+        if "already contains color" in error_text:
+            return PipelineResult.failed(
+                codes.INVALID_COLOR_INPUT,
+                get_default_message(codes.INVALID_COLOR_INPUT),
+            )
+
+        if (
+            "output exceeds maximum size" in error_text
+            or ("generated image" in error_text and "too large" in error_text)
+            or "cannot fit" in error_text
+            or ("too large" in error_text and "output" in error_text)
+        ):
+            return PipelineResult.failed(
+                codes.OUTPUT_TOO_LARGE,
+                get_default_message(codes.OUTPUT_TOO_LARGE),
+            )
+
+        return PipelineResult.failed(
+            codes.PROCESSING_FAILED,
+            get_default_message(codes.PROCESSING_FAILED),
+        )
 
     def validate_input_size(self, raw_bytes: bytes) -> None:
         """Reject uploaded payloads larger than the configured upload limit.

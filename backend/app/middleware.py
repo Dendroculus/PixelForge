@@ -1,18 +1,24 @@
 """Middleware and global exception-handler registration.
 
 This module configures cross-cutting HTTP behavior for the FastAPI application:
-request logging, CORS, rate limiter state, and the SlowAPI rate-limit exception
-handler.
+
+    - request logging middleware
+    - CORS middleware
+    - SlowAPI limiter state
+    - PixelForge global exception handlers
+
+Request-time errors are normalized by handlers registered from
+``utils.error.handlers``. Background AI job failures are handled separately by
+``JobManager`` and returned later through the result polling endpoint.
 """
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from slowapi import _rate_limit_exceeded_handler
-from slowapi.errors import RateLimitExceeded
 
 from app.logging.request_logging import RequestLoggingMiddleware
 from core.config import settings
 from limiter.rate_limiter import limiter
+from utils.error.handlers import register_exception_handlers
 
 
 def configure_middleware(app: FastAPI) -> None:
@@ -38,8 +44,4 @@ def configure_middleware(app: FastAPI) -> None:
     )
 
     app.state.limiter = limiter
-
-    app.add_exception_handler(
-        RateLimitExceeded,
-        _rate_limit_exceeded_handler,
-    )
+    register_exception_handlers(app)
