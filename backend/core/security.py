@@ -26,6 +26,8 @@ from PIL import UnidentifiedImageError
 
 from core.config import ALLOWED_MIME_TYPES, settings
 from services.azure.storage_utils import get_upload_filename
+from utils.error import codes
+from utils.error.responses import build_error_payload
 from utils.image.image_utils import (
     encode_image,
     load_and_validate_structure,
@@ -52,9 +54,11 @@ async def _read_file_with_limit(file: UploadFile) -> bytes:
 
     Raises:
         HTTPException:
-            - 400 when the upload is empty.
-            - 415 when the file signature is not an allowed image MIME type.
-            - 413 when the upload exceeds ``MAX_FILE_SIZE_BYTES``.
+            - 400 with ``INVALID_IMAGE`` when the upload is empty.
+            - 415 with ``UNSUPPORTED_FORMAT`` when the file signature is not an
+              allowed image MIME type.
+            - 413 with ``UPLOAD_TOO_LARGE`` when the upload exceeds
+              ``MAX_FILE_SIZE_BYTES``.
 
     Returns:
         bytes:
@@ -67,7 +71,10 @@ async def _read_file_with_limit(file: UploadFile) -> bytes:
     if not initial_chunk:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Uploaded file is empty.",
+            detail=build_error_payload(
+                codes.INVALID_IMAGE,
+                "Uploaded file is empty.",
+            ),
         )
 
     kind = filetype.guess(initial_chunk)
@@ -76,7 +83,10 @@ async def _read_file_with_limit(file: UploadFile) -> bytes:
     if detected_mime not in ALLOWED_MIME_TYPES:
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
-            detail="Unsupported media type.",
+            detail=build_error_payload(
+                codes.UNSUPPORTED_FORMAT,
+                "Unsupported media type.",
+            ),
         )
 
     file_bytes.extend(initial_chunk)
@@ -95,7 +105,10 @@ async def _read_file_with_limit(file: UploadFile) -> bytes:
             )
             raise HTTPException(
                 status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                detail=f"File exceeds the {settings.MAX_FILE_SIZE_MB}MB limit.",
+                detail=build_error_payload(
+                    codes.UPLOAD_TOO_LARGE,
+                    f"File exceeds the {settings.MAX_FILE_SIZE_MB}MB limit.",
+                ),
             )
 
     return bytes(file_bytes)
@@ -134,13 +147,19 @@ def _process_image_cpu(file_bytes: bytes) -> Tuple[str, str, bytes]:
         logger.warning("Invalid file uploaded.")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="FILE INVALID.",
+            detail=build_error_payload(
+                codes.INVALID_IMAGE,
+                "Invalid image data.",
+            ),
         ) from e
     except Exception as e:
         logger.error("Image processing failed: %s", e, exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Image processing failed due to file corruption or invalid data.",
+            detail=build_error_payload(
+                codes.INVALID_IMAGE,
+                "Image processing failed due to file corruption or invalid data.",
+            ),
         ) from e
 
 

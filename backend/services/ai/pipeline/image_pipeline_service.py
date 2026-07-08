@@ -226,6 +226,10 @@ class ImagePipelineService:
     def _failure_from_exception(self, exc: Exception) -> PipelineResult:
         """Convert an exception into a safe pipeline failure result.
 
+        Request-time exceptions are normalized by global FastAPI handlers. This
+        method performs the equivalent conversion for background AI jobs so
+        ``JobManager`` can persist a safe failure marker for result polling.
+
         Args:
             exc:
                 Exception raised during pipeline execution.
@@ -253,24 +257,41 @@ class ImagePipelineService:
             )
 
         if isinstance(exc, HTTPException):
-            detail = str(exc.detail or "")
+            detail = exc.detail
+
+            if isinstance(detail, dict):
+                code = str(detail.get("code") or codes.VALIDATION_ERROR)
+                message = str(detail.get("message") or get_default_message(code))
+                return PipelineResult.failed(code, message)
+
+            detail_text = str(detail or "")
+            detail_lower = detail_text.lower()
 
             if exc.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE:
                 return PipelineResult.failed(
                     codes.IMAGE_TOO_LARGE,
-                    detail or get_default_message(codes.IMAGE_TOO_LARGE),
+                    detail_text or get_default_message(codes.IMAGE_TOO_LARGE),
                 )
 
-            if exc.status_code == status.HTTP_400_BAD_REQUEST:
-                if "unsupported format" in detail.lower():
+            if exc.status_code == status.HTTP_415_UNSUPPORTED_MEDIA_TYPE:
+                return PipelineResult.failed(
+                    codes.UNSUPPORTED_FORMAT,
+                    detail_text or get_default_message(codes.UNSUPPORTED_FORMAT),
+                )
+
+            if exc.status_code in {
+                status.HTTP_400_BAD_REQUEST,
+                status.HTTP_422_UNPROCESSABLE_ENTITY,
+            }:
+                if "unsupported format" in detail_lower:
                     return PipelineResult.failed(
                         codes.UNSUPPORTED_FORMAT,
-                        detail or get_default_message(codes.UNSUPPORTED_FORMAT),
+                        detail_text or get_default_message(codes.UNSUPPORTED_FORMAT),
                     )
 
                 return PipelineResult.failed(
                     codes.INVALID_IMAGE,
-                    detail or get_default_message(codes.INVALID_IMAGE),
+                    detail_text or get_default_message(codes.INVALID_IMAGE),
                 )
 
         error_text = str(exc).lower()

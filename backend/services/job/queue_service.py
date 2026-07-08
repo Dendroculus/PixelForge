@@ -12,6 +12,8 @@ import logging
 from fastapi import HTTPException, status
 
 from core.config import settings
+from utils.error import codes
+from utils.error.responses import build_error_payload
 
 logger = logging.getLogger(__name__)
 
@@ -33,15 +35,19 @@ class QueueService:
 
         Raises:
             HTTPException:
-                Raised with HTTP 400 for duplicate active jobs, or HTTP 503
-                when the process has reached its concurrency limit.
+                Raised with structured ``VALIDATION_ERROR`` for duplicate
+                active jobs, or ``RATE_LIMITED`` when the process has reached
+                its concurrency limit.
         """
         global _pending_jobs, _pending_jobs_lock
 
         if job_id in _active_jobs:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Job already processing.",
+                detail=build_error_payload(
+                    codes.VALIDATION_ERROR,
+                    "Job already processing.",
+                ),
             )
 
         if _pending_jobs_lock is None:
@@ -56,7 +62,10 @@ class QueueService:
 
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    detail="Server busy.",
+                    detail=build_error_payload(
+                        codes.RATE_LIMITED,
+                        "Server busy. Please try again shortly.",
+                    ),
                 )
 
             _pending_jobs += 1

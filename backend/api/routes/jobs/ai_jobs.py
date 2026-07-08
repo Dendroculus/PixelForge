@@ -34,6 +34,8 @@ from limiter.usage_service import UsageService
 from services.azure.storage import StorageService
 from services.azure.storage_utils import get_result_filename
 from services.job.job_initializer import JobInitializer
+from utils.error import codes
+from utils.error.responses import build_error_payload
 
 router = APIRouter(tags=["ai_jobs"])
 
@@ -158,16 +160,21 @@ async def get_result(request: Request, job_id: str):
 
     Raises:
         HTTPException:
-            Raised with HTTP 400 when the job ID format is invalid.
+            Raised with HTTP 400 and a structured ``VALIDATION_ERROR`` payload
+            when the job ID format is invalid.
 
     Returns:
         dict:
-            Processing state. Ready jobs include a signed result URL; failed jobs include a safe code/message.
+            Processing state. Ready jobs include a signed result URL; failed
+            jobs include a safe code/message.
     """
     if not job_id or not JOB_ID_RE.fullmatch(job_id):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid job ID",
+            detail=build_error_payload(
+                codes.VALIDATION_ERROR,
+                "Invalid job ID",
+            ),
         )
 
     failure = await StorageService.get_job_failure(job_id)

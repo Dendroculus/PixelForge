@@ -18,6 +18,8 @@ from services.ai.features.object_remover import object_remover
 from services.ai.features.upscale import ai_upscaler
 from services.azure.storage import StorageService
 from services.job.queue_service import QueueService
+from utils.error import codes
+from utils.error.responses import build_error_payload, get_default_message
 
 logger = logging.getLogger(__name__)
 
@@ -50,7 +52,8 @@ class JobManager:
 
         Raises:
             HTTPException:
-                Raised when quota is exceeded or queue reservation fails.
+                Raised with structured error payloads when quota is exceeded
+                or queue reservation fails.
         """
         await QueueService.reserve_slot(job_id)
 
@@ -67,7 +70,10 @@ class JobManager:
 
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="LIMIT_REACHED",
+                detail=build_error_payload(
+                    codes.RATE_LIMITED,
+                    "Usage limit reached for this feature.",
+                ),
             )
 
         await UsageService.increment_daily_limit(
@@ -82,7 +88,7 @@ class JobManager:
         safe_filename: str,
         client_ip: str,
         feature: str,
-        code: str = "PROCESSING_FAILED",
+        code: str = codes.PROCESSING_FAILED,
         message: str | None = None,
     ) -> None:
         """Mark a job as failed, clean upload leftovers, and refund quota.
@@ -101,10 +107,7 @@ class JobManager:
             message:
                 Safe user-facing explanation for the failure marker.
         """
-        safe_message = (
-            message
-            or "AI processing failed. Please try again with a smaller image."
-        )
+        safe_message = message or get_default_message(code)
 
         logger.warning(
             "Job %s failed for feature %s with code %s. Cleaning up and refunding usage.",
@@ -140,8 +143,8 @@ class JobManager:
                 Success flag, failure code, and failure message. Code/message
                 are only meaningful when success is ``False``.
         """
-        default_code = "PROCESSING_FAILED"
-        default_message = "AI processing failed. Please try again with a smaller image."
+        default_code = codes.PROCESSING_FAILED
+        default_message = get_default_message(default_code)
 
         if hasattr(result, "success"):
             return (
@@ -200,7 +203,7 @@ class JobManager:
                     safe_filename,
                     client_ip,
                     feature,
-                    code="UPLOAD_TOO_LARGE",
+                    code=codes.UPLOAD_TOO_LARGE,
                     message=f"The uploaded image exceeds the {settings.MAX_FILE_SIZE_MB}MB limit.",
                 )
 
@@ -237,8 +240,8 @@ class JobManager:
                 safe_filename,
                 client_ip,
                 feature,
-                code="PROCESSING_FAILED",
-                message="AI processing failed. Please try again with a smaller image.",
+                code=codes.PROCESSING_FAILED,
+                message=get_default_message(codes.PROCESSING_FAILED),
             )
 
         finally:

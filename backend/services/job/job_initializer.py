@@ -14,6 +14,8 @@ from domain.ai_features import FeatureType
 from limiter.usage_service import UsageService
 from services.azure.storage import StorageService
 from services.security.turnstile_service import verify_turnstile
+from utils.error import codes
+from utils.error.responses import build_error_payload
 
 
 class JobInitializer:
@@ -64,8 +66,8 @@ class JobInitializer:
 
         Raises:
             HTTPException:
-                Raised with HTTP 429 when the client has reached the feature
-                usage limit.
+                Raised with HTTP 429 and a structured ``RATE_LIMITED`` payload
+                when the client has reached the feature usage limit.
 
         Returns:
             dict:
@@ -87,7 +89,10 @@ class JobInitializer:
         if not is_allowed:
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail="LIMIT_REACHED",
+                detail=build_error_payload(
+                    codes.RATE_LIMITED,
+                    "Usage limit reached for this feature.",
+                ),
             )
 
         job_id = uuid.uuid4().hex

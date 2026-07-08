@@ -8,9 +8,11 @@ settings.
 import logging
 
 import httpx
-from fastapi import HTTPException
+from fastapi import HTTPException, status
 
 from core.config import settings
+from utils.error import codes
+from utils.error.responses import build_error_payload
 
 logger = logging.getLogger(__name__)
 
@@ -24,8 +26,9 @@ async def verify_turnstile(token: str) -> None:
 
     Raises:
         HTTPException:
-            Raised with HTTP 500 when verification cannot be completed, or
-            HTTP 400 when Cloudflare rejects the token.
+            Raised with a structured ``INTERNAL_ERROR`` payload when
+            verification cannot be completed, or ``AUTH_FAILED`` when
+            Cloudflare rejects the token.
     """
     env = settings.ENVIRONMENT.lower()
     allow_bypass = settings.ALLOW_TURNSTILE_TEST_BYPASS
@@ -52,12 +55,21 @@ async def verify_turnstile(token: str) -> None:
         except Exception as e:
             logger.error("Error reaching Cloudflare Turnstile: %s", e)
             raise HTTPException(
-                status_code=500,
-                detail="Internal server error during bot verification.",
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=build_error_payload(
+                    codes.INTERNAL_ERROR,
+                    "Internal server error during bot verification.",
+                ),
             ) from e
 
     turnstile_data = verify_response.json()
 
     if not turnstile_data.get("success"):
         logger.warning("Turnstile validation failed: %s", turnstile_data.get("error-codes"))
-        raise HTTPException(status_code=400, detail="Bot protection verification failed.")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=build_error_payload(
+                codes.AUTH_FAILED,
+                "Bot protection verification failed.",
+            ),
+        )

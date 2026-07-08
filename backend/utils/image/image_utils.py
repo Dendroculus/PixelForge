@@ -20,6 +20,8 @@ from fastapi import HTTPException, status
 from PIL import Image
 
 from core.config import settings
+from utils.error import codes
+from utils.error.responses import build_error_payload
 
 Image.MAX_IMAGE_PIXELS = settings.MAX_SAFE_PIXELS
 logger = logging.getLogger(__name__)
@@ -71,7 +73,8 @@ def load_and_validate_structure(file_bytes: bytes) -> Tuple[Image.Image, str]:
 
     Raises:
         HTTPException:
-            Raised when image data is invalid or the detected format is not
+            Raised with structured ``INVALID_IMAGE`` or ``UNSUPPORTED_FORMAT``
+            payloads when image data is invalid or the detected format is not
             supported.
 
     Returns:
@@ -87,13 +90,25 @@ def load_and_validate_structure(file_bytes: bytes) -> Tuple[Image.Image, str]:
 
         if not normalized_ext:
             logger.warning("Rejected unsupported format: %s", raw_format)
-            raise HTTPException(status_code=400, detail="Unsupported format.")
+            raise HTTPException(
+                status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                detail=build_error_payload(
+                    codes.UNSUPPORTED_FORMAT,
+                    "Unsupported image format.",
+                ),
+            )
 
         return img, normalized_ext
     except Exception as e:
         if isinstance(e, HTTPException):
             raise
-        raise HTTPException(status_code=400, detail="Invalid image data.") from e
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=build_error_payload(
+                codes.INVALID_IMAGE,
+                "Invalid image data.",
+            ),
+        ) from e
 
 
 def validate_resolution(img: Image.Image) -> None:
@@ -105,7 +120,8 @@ def validate_resolution(img: Image.Image) -> None:
 
     Raises:
         HTTPException:
-            Raised with HTTP 413 when image resolution is too large.
+            Raised with HTTP 413 and ``IMAGE_TOO_LARGE`` when image resolution
+            is too large.
     """
     width, height = img.size
     total_pixels = width * height
@@ -113,9 +129,18 @@ def validate_resolution(img: Image.Image) -> None:
     if total_pixels > settings.MAX_PIXELS:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=(
-                f"Resolution exceeds {settings.MAX_MEGAPIXELS} megapixels. "
-                f"Uploaded image is {width}x{height}."
+            detail=build_error_payload(
+                codes.IMAGE_TOO_LARGE,
+                (
+                    f"Resolution exceeds {settings.MAX_MEGAPIXELS} megapixels. "
+                    f"Uploaded image is {width}x{height}."
+                ),
+                details={
+                    "width": width,
+                    "height": height,
+                    "pixels": total_pixels,
+                    "max_pixels": settings.MAX_PIXELS,
+                },
             ),
         )
 
