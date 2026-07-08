@@ -9,6 +9,9 @@ import { useCallback, useState, useEffect, useRef } from 'react';
 import { apiService } from '@/services/apiService';
 import { clearAppSession } from '@/utils/storage/session';
 
+const DEFAULT_PROCESSING_FAILURE_MESSAGE =
+  'Your image could not be processed. Please try a smaller image or lower upscale setting.';
+
 /**
  * Create shared AI action handlers for upload, processing, polling, and cancellation.
  *
@@ -62,8 +65,12 @@ export function useActions({
 
       const maxAttempts = 120;
       const maxDurationMs = 600000;
+      const alertMessageKey = `${storageKeys.ALERT}_message`;
 
-      const handleFailure = async () => {
+      const handleFailure = async ({
+        type = 'processing_failed',
+        message = DEFAULT_PROCESSING_FAILURE_MESSAGE,
+      } = {}) => {
         await clearAppSession(feature, previewUrl);
 
         setSelectedFile(null);
@@ -75,8 +82,15 @@ export function useActions({
         clearPendingProcess();
         resetTurnstile();
 
-        localStorage.setItem(storageKeys.ALERT, 'dos');
-        setAppAlert({ show: true, type: 'dos' });
+        localStorage.setItem(storageKeys.ALERT, type);
+
+        if (message) {
+          localStorage.setItem(alertMessageKey, message);
+        } else {
+          localStorage.removeItem(alertMessageKey);
+        }
+
+        setAppAlert({ show: true, type, message });
       };
 
       const poll = async () => {
@@ -86,7 +100,10 @@ export function useActions({
           attemptCount > maxAttempts ||
           Date.now() - startedAt > maxDurationMs
         ) {
-          await handleFailure();
+          await handleFailure({
+            message:
+              'Processing took too long and was stopped. Please try a smaller image or lower upscale setting.',
+          });
           return;
         }
 
@@ -94,8 +111,14 @@ export function useActions({
           const result = await apiService.pollResult(id);
 
           if (result.failed) {
-            console.error('Processing failed:', result.message);
-            await handleFailure();
+            const message = result.message || DEFAULT_PROCESSING_FAILURE_MESSAGE;
+
+            console.error('Processing failed:', message);
+
+            await handleFailure({
+              type: 'processing_failed',
+              message,
+            });
             return;
           }
 
@@ -104,6 +127,7 @@ export function useActions({
             localStorage.removeItem(storageKeys.PROGRESS);
             localStorage.removeItem(storageKeys.IS_PROCESSING);
             localStorage.removeItem(storageKeys.REFRESH_COUNT);
+            localStorage.removeItem(alertMessageKey);
 
             const timestamp = Date.now().toString();
             localStorage.setItem(storageKeys.RESULT_URL, result.data.url);
@@ -131,7 +155,10 @@ export function useActions({
             errorCount++;
 
             if (errorCount > 5) {
-              await handleFailure();
+              await handleFailure({
+                message:
+                  'We could not confirm the processing result. Please try again in a moment.',
+              });
               return;
             }
           } else {
@@ -212,8 +239,12 @@ export function useActions({
           localStorage.setItem(storageKeys.ALERT, 'limit_reached');
           setAppAlert({ show: true, type: 'limit_reached' });
         } else {
+          const message = error.message || DEFAULT_PROCESSING_FAILURE_MESSAGE;
+
           console.error(`${feature} processing failed:`, error);
-          setAppAlert({ show: true, type: 'dos' });
+          localStorage.setItem(storageKeys.ALERT, 'processing_failed');
+          localStorage.setItem(`${storageKeys.ALERT}_message`, message);
+          setAppAlert({ show: true, type: 'processing_failed', message });
         }
 
         setIsProcessing(false);

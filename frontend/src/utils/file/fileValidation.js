@@ -16,6 +16,7 @@ const ERROR_MESSAGES = {
 };
 
 const RUNTIME_LIMIT_CACHE_MS = 10 * 60 * 1000;
+const RUNTIME_LIMIT_STORAGE_KEY = STORAGE_KEYS.RUNTIME_LIMITS || 'pf_runtime_limits';
 
 const getFallbackLimits = () => ({
   upload: {
@@ -56,7 +57,7 @@ const getAllowedMimeTypes = (limits) => {
  */
 const getRuntimeLimits = async () => {
   try {
-    const cachedRaw = sessionStorage.getItem(STORAGE_KEYS.RUNTIME_LIMITS);
+    const cachedRaw = sessionStorage.getItem(RUNTIME_LIMIT_STORAGE_KEY);
 
     if (cachedRaw) {
       const cached = JSON.parse(cachedRaw);
@@ -69,7 +70,7 @@ const getRuntimeLimits = async () => {
     const value = await apiClient.getRuntimeLimits();
 
     sessionStorage.setItem(
-      STORAGE_KEYS.RUNTIME_LIMITS,
+      RUNTIME_LIMIT_STORAGE_KEY,
       JSON.stringify({
         savedAt: Date.now(),
         value,

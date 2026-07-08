@@ -1,7 +1,7 @@
 """Central AI job lifecycle manager.
 
 ``JobManager`` coordinates queue reservation, usage counters, storage cleanup,
-failure markers, quota refunds, and feature-specific execution. Route handlers
+JSON failure markers, quota refunds, and feature-specific execution. Route handlers
 and dispatch helpers should call this service instead of directly invoking AI
 feature services.
 """
@@ -82,8 +82,10 @@ class JobManager:
         safe_filename: str,
         client_ip: str,
         feature: str,
+        code: str = "PROCESSING_FAILED",
+        message: str | None = None,
     ) -> None:
-        """Mark a job as failed and refund usage quota.
+        """Mark a job as failed, clean upload leftovers, and refund quota.
 
         Args:
             job_id:
@@ -94,19 +96,68 @@ class JobManager:
                 Client identifier used for usage tracking.
             feature:
                 Failed feature name.
+            code:
+                Stable frontend-friendly failure code.
+            message:
+                Safe user-facing explanation for the failure marker.
         """
-        logger.warning(
-            "Job %s failed for feature %s. Initializing cleanup and client limit refund.",
-            job_id,
-            feature,
+        safe_message = (
+            message
+            or "AI processing failed. Please try again with a smaller image."
         )
 
-        await StorageService.mark_job_failed(job_id)
+        logger.warning(
+            "Job %s failed for feature %s with code %s. Cleaning up and refunding usage.",
+            job_id,
+            feature,
+            code,
+        )
+
+        await StorageService.mark_job_failed(job_id, code=code, message=safe_message)
+
+        await StorageService.delete_azure_blob(
+            settings.UPLOAD_CONTAINER,
+            safe_filename,
+        )
 
         await UsageService.decrement_daily_limit(
             client_ip,
             feature=feature,
         )
+
+    @classmethod
+    def _normalize_task_result(cls, result) -> tuple[bool, str, str]:
+        """Normalize feature task results into success and safe failure reason.
+
+        Args:
+            result:
+                Value returned by a feature service. Current AI pipeline
+                services return a ``PipelineResult`` object, but this method
+                also supports legacy booleans and dictionaries.
+
+        Returns:
+            tuple[bool, str, str]:
+                Success flag, failure code, and failure message. Code/message
+                are only meaningful when success is ``False``.
+        """
+        default_code = "PROCESSING_FAILED"
+        default_message = "AI processing failed. Please try again with a smaller image."
+
+        if hasattr(result, "success"):
+            return (
+                bool(result.success),
+                str(getattr(result, "code", None) or default_code),
+                str(getattr(result, "message", None) or default_message),
+            )
+
+        if isinstance(result, dict):
+            return (
+                bool(result.get("success")),
+                str(result.get("code") or default_code),
+                str(result.get("message") or default_message),
+            )
+
+        return bool(result), default_code, default_message
 
     @classmethod
     async def _process_feature(
@@ -149,23 +200,28 @@ class JobManager:
                     safe_filename,
                     client_ip,
                     feature,
+                    code="UPLOAD_TOO_LARGE",
+                    message=f"The uploaded image exceeds the {settings.MAX_FILE_SIZE_MB}MB limit.",
                 )
 
                 return
 
-            success = await task_runner()
+            task_result = await task_runner()
+            success, failure_code, failure_message = cls._normalize_task_result(task_result)
 
-            await StorageService.delete_azure_blob(
-                settings.UPLOAD_CONTAINER,
-                safe_filename,
-            )
-
-            if not success:
+            if success:
+                await StorageService.delete_azure_blob(
+                    settings.UPLOAD_CONTAINER,
+                    safe_filename,
+                )
+            else:
                 await cls._handle_job_failure(
                     job_id,
                     safe_filename,
                     client_ip,
                     feature,
+                    code=failure_code,
+                    message=failure_message,
                 )
 
         except Exception as e:
@@ -181,6 +237,8 @@ class JobManager:
                 safe_filename,
                 client_ip,
                 feature,
+                code="PROCESSING_FAILED",
+                message="AI processing failed. Please try again with a smaller image.",
             )
 
         finally:

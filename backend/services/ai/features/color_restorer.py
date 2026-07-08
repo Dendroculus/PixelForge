@@ -19,7 +19,7 @@ import io
 
 from core.config import settings
 from provider.ai_provider import BaseAIProvider
-from services.ai.pipeline.image_pipeline_service import ImagePipelineService
+from services.ai.pipeline.image_pipeline_service import ImagePipelineService, PipelineResult
 from utils.validator.color_validation import validate_grayscale_image
 
 
@@ -46,7 +46,7 @@ class ColorRestorer(ImagePipelineService):
             max_concurrent_remote_jobs=max_concurrent_remote_jobs,
         )
 
-    async def run_restore(self, safe_filename: str, job_id: str) -> bool:
+    async def run_restore(self, safe_filename: str, job_id: str) -> PipelineResult:
         """Run color restoration for an uploaded image.
 
         Args:
@@ -56,9 +56,9 @@ class ColorRestorer(ImagePipelineService):
                 Current job identifier.
 
         Returns:
-            bool:
-                ``True`` when the result is saved successfully, otherwise
-                ``False``.
+            PipelineResult:
+                Successful result when the output is saved, otherwise a failed
+                result with a user-safe code/message for the frontend.
         """
         return await self.run(safe_filename, job_id)
 

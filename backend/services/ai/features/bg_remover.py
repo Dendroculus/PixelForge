@@ -23,7 +23,7 @@ from PIL import Image
 
 from core.config import settings
 from provider.ai_provider import BaseAIProvider
-from services.ai.pipeline.image_pipeline_service import ImagePipelineService
+from services.ai.pipeline.image_pipeline_service import ImagePipelineService, PipelineResult
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +51,7 @@ class BackgroundRemover(ImagePipelineService):
             max_concurrent_remote_jobs=max_concurrent_remote_jobs,
         )
 
-    async def run_removal(self, safe_filename: str, job_id: str) -> bool:
+    async def run_removal(self, safe_filename: str, job_id: str) -> PipelineResult:
         """Run background removal for an uploaded image.
 
         Args:
@@ -61,9 +61,9 @@ class BackgroundRemover(ImagePipelineService):
                 Current job identifier.
 
         Returns:
-            bool:
-                ``True`` when the result is saved successfully, otherwise
-                ``False``.
+            PipelineResult:
+                Successful result when the output is saved, otherwise a failed
+                result with a user-safe code/message for the frontend.
         """
         return await self.run(safe_filename, job_id)
 

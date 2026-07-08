@@ -26,12 +26,14 @@ streams.
 """
 
 import asyncio
+from dataclasses import dataclass
 import io
 import logging
 import time
 import urllib.parse
 
 import aiohttp
+from fastapi import HTTPException, status
 from PIL import Image
 
 from core.config import settings
@@ -46,6 +48,43 @@ from utils.image.image_utils import (
 )
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class PipelineResult:
+    """User-safe result returned by a feature pipeline run.
+
+    ``JobManager`` uses this object to decide whether a job succeeded and, when
+    it failed, which safe code/message should be written to the public failure
+    marker. Messages must be safe for frontend display and must not include
+    secrets, stack traces, provider internals, or raw exception details.
+
+    Attributes:
+        success:
+            Whether the pipeline completed and saved a result.
+        code:
+            Stable frontend-friendly failure code, or ``None`` on success.
+        message:
+            Safe user-facing explanation, or ``None`` on success.
+    """
+
+    success: bool
+    code: str | None = None
+    message: str | None = None
+
+    def __bool__(self) -> bool:
+        """Allow legacy truthiness checks to treat success as truthy."""
+        return self.success
+
+    @classmethod
+    def ok(cls) -> "PipelineResult":
+        """Return a successful pipeline result."""
+        return cls(success=True)
+
+    @classmethod
+    def failed(cls, code: str, message: str) -> "PipelineResult":
+        """Return a failed pipeline result with a safe public reason."""
+        return cls(success=False, code=code, message=message)
 
 
 class ImagePipelineService:
@@ -80,7 +119,7 @@ class ImagePipelineService:
         self.max_file_size_bytes = max_file_size_bytes
         self.max_result_file_size_bytes = max_result_file_size_bytes
 
-    async def run(self, safe_filename: str, job_id: str, **kwargs) -> bool:
+    async def run(self, safe_filename: str, job_id: str, **kwargs) -> PipelineResult:
         """Execute the full image processing pipeline.
 
         Args:
@@ -93,11 +132,10 @@ class ImagePipelineService:
                 execution, and postprocessing hooks.
 
         Returns:
-            bool:
-                ``True`` if the processed result was saved successfully,
-                otherwise ``False``. Exceptions are logged and converted to
-                ``False`` so ``JobManager`` can mark the job as failed and
-                refund usage quota.
+            PipelineResult:
+                Successful result when the processed image is saved, otherwise
+                a failed result containing a user-safe code and message for the
+                frontend failure modal.
         """
         started_at = time.perf_counter()
 
@@ -165,11 +203,18 @@ class ImagePipelineService:
                 remote_wait,
                 len(final_result) / 1024 / 1024,
             )
-            return True
+            return PipelineResult.ok()
 
         except Exception as e:
-            logger.error("%s error (Job #%s): %s", self.model_type, job_id, e)
-            return False
+            failure = self._failure_from_exception(e)
+            logger.error(
+                "%s error (Job #%s): %s",
+                self.model_type,
+                job_id,
+                e,
+                exc_info=True,
+            )
+            return failure
 
     def validate_input_size(self, raw_bytes: bytes) -> None:
         """Reject uploaded payloads larger than the configured upload limit.

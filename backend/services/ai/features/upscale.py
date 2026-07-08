@@ -21,7 +21,7 @@ from PIL import Image
 from core.config import settings
 from core.model_registry import ModelRegistry
 from provider.ai_provider import BaseAIProvider
-from services.ai.pipeline.image_pipeline_service import ImagePipelineService
+from services.ai.pipeline.image_pipeline_service import ImagePipelineService, PipelineResult
 from utils.image.image_utils import smart_downscale
 
 
@@ -58,7 +58,7 @@ class AIUpscaler(ImagePipelineService):
         job_id: str,
         model_type: str,
         scale: int = 4,
-    ) -> bool:
+    ) -> PipelineResult:
         """Run AI upscaling for an uploaded image.
 
         Args:
@@ -73,9 +73,9 @@ class AIUpscaler(ImagePipelineService):
                 Requested upscale multiplier.
 
         Returns:
-            bool:
-                ``True`` when the result is saved successfully, otherwise
-                ``False``.
+            PipelineResult:
+                Successful result when the output is saved, otherwise a failed
+                result with a user-safe code/message for the frontend.
         """
         return await self.run(
             safe_filename,

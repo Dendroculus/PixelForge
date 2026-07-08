@@ -17,7 +17,7 @@ from PIL import Image
 from core.config import settings
 from core.model_registry import ModelRegistry
 from provider.ai_provider import BaseAIProvider
-from services.ai.pipeline.image_pipeline_service import ImagePipelineService
+from services.ai.pipeline.image_pipeline_service import ImagePipelineService, PipelineResult
 from services.azure.storage import StorageService
 
 
@@ -49,7 +49,7 @@ class ObjectRemover(ImagePipelineService):
         safe_filename: str,
         mask_filename: str,
         job_id: str,
-    ) -> bool:
+    ) -> PipelineResult:
         """Run object removal for an uploaded image and mask.
 
         Args:
@@ -61,9 +61,9 @@ class ObjectRemover(ImagePipelineService):
                 Current job identifier.
 
         Returns:
-            bool:
-                ``True`` when the result is saved successfully, otherwise
-                ``False``.
+            PipelineResult:
+                Successful result when the output is saved, otherwise a failed
+                result with a user-safe code/message for the frontend.
         """
         return await self.run(
             safe_filename,

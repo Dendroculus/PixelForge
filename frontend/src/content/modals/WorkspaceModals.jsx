@@ -33,10 +33,15 @@ export default function WorkspaceModals({
   const closeAndClear = () => {
     setAppAlert({ show: false, type: null });
     localStorage.removeItem(storageKeys.ALERT);
+    localStorage.removeItem(`${storageKeys.ALERT}_message`);
     localStorage.removeItem(storageKeys.REFRESH_COUNT);
   };
 
   const imageTypeName = featureName === 'upscale' ? 'upscaled' : 'transparent';
+  const processingFailureMessage =
+    appAlert.message ||
+    localStorage.getItem(`${storageKeys.ALERT}_message`) ||
+    'Your image could not be processed. Please try a smaller image or lower upscale setting.';
 
   return (
     <>
@@ -78,6 +83,24 @@ export default function WorkspaceModals({
         </div>
       </AppModals>
 
+
+      <AppModals
+        isOpen={appAlert.show && appAlert.type === 'processing_failed'}
+        onClose={closeAndClear}
+        title="Processing Failed ❌"
+      >
+        <div className="space-y-1.5 text-left">
+          <p className="font-semibold text-rose-600 text-base mb-2">
+            We couldn&apos;t finish this image.
+          </p>
+          <p>{processingFailureMessage}</p>
+          <p>
+            If the image is very large or detailed, try a smaller file or use 2x
+            upscale instead of 4x.
+          </p>
+        </div>
+      </AppModals>
+
       <AppModals
         isOpen={appAlert.show && appAlert.type === 'reserved_warning'}
         onClose={() => setAppAlert({ show: false, type: null })}
@@ -114,6 +137,7 @@ export default function WorkspaceModals({
         onClose={() => {
           setAppAlert({ show: false, type: null });
           localStorage.removeItem(storageKeys.ALERT);
+          localStorage.removeItem(`${storageKeys.ALERT}_message`);
         }}
         title="Session Expired ⏱️"
       >

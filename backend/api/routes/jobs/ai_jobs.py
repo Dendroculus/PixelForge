@@ -162,7 +162,7 @@ async def get_result(request: Request, job_id: str):
 
     Returns:
         dict:
-            Processing state. Ready jobs include a signed result URL.
+            Processing state. Ready jobs include a signed result URL; failed jobs include a safe code/message.
     """
     if not job_id or not JOB_ID_RE.fullmatch(job_id):
         raise HTTPException(
@@ -170,10 +170,13 @@ async def get_result(request: Request, job_id: str):
             detail="Invalid job ID",
         )
 
-    if await StorageService.check_job_failed(job_id):
+    failure = await StorageService.get_job_failure(job_id)
+
+    if failure:
         return {
             "status": "failed",
-            "message": "AI processing failed.",
+            "code": failure["code"],
+            "message": failure["message"],
         }
 
     result_filename = get_result_filename(job_id)

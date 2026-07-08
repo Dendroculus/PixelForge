@@ -5,7 +5,7 @@ This module centralizes asynchronous Azure Blob Storage operations:
     - generating upload and result SAS URLs
     - saving and retrieving upload/result blobs
     - deleting temporary files
-    - writing and checking job failure markers
+    - writing, reading, and checking JSON job failure markers
     - cleaning expired result blobs
 
 All public methods sanitize blob names with ``os.path.basename`` before using
@@ -13,6 +13,7 @@ them in Azure calls. This keeps blob operations constrained to expected names.
 """
 
 import io
+import json
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -294,27 +295,95 @@ class StorageService:
         return deleted_count
 
     @classmethod
-    async def mark_job_failed(cls, job_id: str) -> None:
-        """Create a zero-byte failure marker for a job."""
+    async def mark_job_failed(
+        cls,
+        job_id: str,
+        code: str = "PROCESSING_FAILED",
+        message: str | None = None,
+    ) -> None:
+        """Create a JSON failure marker for a job.
+
+        Args:
+            job_id:
+                Failed job identifier.
+            code:
+                Stable frontend-friendly failure code.
+            message:
+                Safe user-facing message. Do not pass secrets, stack traces,
+                provider internals, or raw exception details here.
+        """
         secure_job_id = os.path.basename(job_id)
         marker_filename = get_marker_filename(secure_job_id)
+        payload = {
+            "code": code or "PROCESSING_FAILED",
+            "message": message
+            or "AI processing failed. Please try again with a smaller image.",
+        }
+
         try:
             async with cls._get_blob_client(settings.RESULT_CONTAINER, marker_filename) as blob_client:
-                await blob_client.upload_blob(b"", overwrite=True)
+                await blob_client.upload_blob(
+                    json.dumps(payload).encode("utf-8"),
+                    overwrite=True,
+                )
         except Exception as e:
             logger.error("Failed to write failure marker for job %s to Azure: %s", secure_job_id, e)
 
     @classmethod
-    async def check_job_failed(cls, job_id: str) -> bool:
-        """Check whether a job has a failure marker."""
+    async def get_job_failure(cls, job_id: str) -> dict | None:
+        """Return a job failure payload when a failure marker exists.
+
+        Args:
+            job_id:
+                Job identifier to inspect.
+
+        Returns:
+            dict | None:
+                Failure payload with ``code`` and ``message`` if present,
+                otherwise ``None``. Legacy zero-byte markers are converted to a
+                generic safe failure payload.
+        """
         secure_job_id = os.path.basename(job_id)
         marker_filename = get_marker_filename(secure_job_id)
+
         try:
             async with cls._get_blob_client(settings.RESULT_CONTAINER, marker_filename) as blob_client:
-                return await blob_client.exists()
+                if not await blob_client.exists():
+                    return None
+
+                stream = await blob_client.download_blob()
+                raw_payload = await stream.readall()
+
+                if not raw_payload:
+                    return {
+                        "code": "PROCESSING_FAILED",
+                        "message": "AI processing failed. Please try again with a smaller image.",
+                    }
+
+                try:
+                    payload = json.loads(raw_payload.decode("utf-8"))
+                except (json.JSONDecodeError, UnicodeDecodeError):
+                    logger.warning("Invalid failure marker payload for job %s.", secure_job_id)
+                    return {
+                        "code": "PROCESSING_FAILED",
+                        "message": "AI processing failed. Please try again with a smaller image.",
+                    }
+
+                return {
+                    "code": str(payload.get("code") or "PROCESSING_FAILED"),
+                    "message": str(
+                        payload.get("message")
+                        or "AI processing failed. Please try again with a smaller image."
+                    ),
+                }
         except Exception as e:
-            logger.error("Failed to check failure marker for job %s in Azure: %s", secure_job_id, e)
-            return False
+            logger.error("Failed to read failure marker for job %s in Azure: %s", secure_job_id, e)
+            return None
+
+    @classmethod
+    async def check_job_failed(cls, job_id: str) -> bool:
+        """Check whether a job has a failure marker."""
+        return await cls.get_job_failure(job_id) is not None
 
     @classmethod
     async def get_blob_size(cls, container_name: str, blob_name: str) -> int:
