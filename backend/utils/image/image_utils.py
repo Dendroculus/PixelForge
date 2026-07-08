@@ -156,55 +156,24 @@ def validate_resolution(
         )
 
 
-    def validate_image_bytes_resolution(
-        file_bytes: bytes,
-        max_pixels: int | None = None,
-        max_megapixels: float | None = None,
-    ) -> Tuple[int, int, int]:
-        """Validate uploaded image bytes and return width, height, and pixel count.
-
-        This helper is used by the direct-to-Azure AI job flow after the backend
-        downloads the uploaded blob. It prevents small-byte but unsafe-resolution
-        images from being sent to AI providers.
-
-        Args:
-            file_bytes:
-                Raw uploaded image bytes.
-            max_pixels:
-                Maximum allowed total pixels. Defaults to the public upload limit.
-            max_megapixels:
-                User-facing megapixel label for error messages.
-
-        Raises:
-            HTTPException:
-                Raised when image data is invalid, unsupported, or exceeds the
-                configured resolution limit.
-
-        Returns:
-            tuple[int, int, int]:
-                Image width, height, and total pixel count.
-        """
-        img, _ = load_and_validate_structure(file_bytes)
-        validate_resolution(
-            img,
-            max_pixels=max_pixels,
-            max_megapixels=max_megapixels,
-        )
-
-        width, height = img.size
-        return width, height, width * height
-
-
-def validate_image_bytes_resolution(file_bytes: bytes) -> Tuple[int, int, int]:
+def validate_image_bytes_resolution(
+    file_bytes: bytes,
+    max_pixels: int | None = None,
+    max_megapixels: float | None = None,
+) -> Tuple[int, int, int]:
     """Validate uploaded image bytes and return width, height, and pixel count.
 
     This helper is used by the direct-to-Azure AI job flow after the backend
-    downloads the uploaded blob. It prevents small-byte but huge-resolution
+    downloads the uploaded blob. It prevents small-byte but unsafe-resolution
     images from being sent to AI providers.
 
     Args:
         file_bytes:
             Raw uploaded image bytes.
+        max_pixels:
+            Maximum allowed total pixels. Defaults to the public upload limit.
+        max_megapixels:
+            User-facing megapixel label for error messages.
 
     Raises:
         HTTPException:
@@ -216,7 +185,11 @@ def validate_image_bytes_resolution(file_bytes: bytes) -> Tuple[int, int, int]:
             Image width, height, and total pixel count.
     """
     img, _ = load_and_validate_structure(file_bytes)
-    validate_resolution(img)
+    validate_resolution(
+        img,
+        max_pixels=max_pixels,
+        max_megapixels=max_megapixels,
+    )
 
     width, height = img.size
     return width, height, width * height
