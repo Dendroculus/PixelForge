@@ -6,7 +6,7 @@ import { useImagePaste } from '@/hooks/client/useImagePaste';
  * Reusable hook for handling file upload logic, drag & drop, and validation.
  *
  * @param {Object} params - Hook configuration.
- * @param {Function} params.onFileSelect - Callback triggered when a valid file is selected.
+ * @param {Function} params.onFileSelect - Callback triggered with the selected file and validation result.
  * @param {Function} [params.onValidationError] - Callback triggered when file validation fails.
  * @param {boolean} [params.validate=true] - Whether file validation should be applied.
  * @param {number} [params.maxSizeMB] - Maximum allowed file size in megabytes.
@@ -90,7 +90,7 @@ export function useFileUpload({
         return;
       }
 
-      onFileSelect?.(result.file || file);
+      onFileSelect?.(result.file || file, result);
       if (inputRef.current) inputRef.current.value = '';
     },
     [

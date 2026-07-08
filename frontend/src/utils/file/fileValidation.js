@@ -30,6 +30,10 @@ import {
 import { loadImageMetadata } from './validators/imageMetadata';
 import { validateResolution } from './validators/resolutionValidation';
 import { validateGrayscaleImage } from './validators/grayscaleValidation';
+import {
+  optimizeImageResolution,
+  shouldOptimizeResolution,
+} from './validators/imageOptimization';
 
 /**
  * Build a successful validation result.
@@ -38,10 +42,11 @@ import { validateGrayscaleImage } from './validators/grayscaleValidation';
  * @param {object} metadata - Decoded image metadata.
  * @returns {{isValid: true, file: File|Blob, metadata: object}} Success result.
  */
-const validResult = (file, metadata) => ({
+const validResult = (file, metadata, extra = {}) => ({
   isValid: true,
   file,
   metadata,
+  ...extra,
 });
 
 /**
@@ -104,10 +109,41 @@ export const validateImageUpload = async (
   const mimeError = validateMimeType(file, allowedMimeTypes);
   if (mimeError) return mimeError;
 
-  const imageResult = await loadImageMetadata(file);
+  let workingFile = file;
+  let imageResult = await loadImageMetadata(workingFile);
+
   if (!imageResult.isValid) return imageResult;
 
-  const { image, metadata } = imageResult;
+  let { image, metadata } = imageResult;
+  let wasOptimized = false;
+  let optimization = null;
+
+  if (shouldOptimizeResolution(metadata, limits.upload.max_pixels)) {
+    const optimized = await optimizeImageResolution(
+      workingFile,
+      image,
+      metadata,
+      limits.upload.max_pixels,
+    );
+
+    workingFile = optimized.file;
+    wasOptimized = true;
+    optimization = optimized.optimization;
+
+    const optimizedSizeError = validateFileSize(
+      workingFile,
+      limits,
+      customMaxSizeMB,
+    );
+
+    if (optimizedSizeError) return optimizedSizeError;
+
+    imageResult = await loadImageMetadata(workingFile);
+    if (!imageResult.isValid) return imageResult;
+
+    image = imageResult.image;
+    metadata = imageResult.metadata;
+  }
 
   const resolutionError = validateResolution(metadata, limits);
   if (resolutionError) return resolutionError;
@@ -117,5 +153,8 @@ export const validateImageUpload = async (
     if (grayscaleError) return grayscaleError;
   }
 
-  return validResult(file, metadata);
+  return validResult(workingFile, metadata, {
+    wasOptimized,
+    optimization,
+  });
 };

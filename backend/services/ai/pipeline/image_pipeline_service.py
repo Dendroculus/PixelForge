@@ -14,7 +14,7 @@
 The base implementation is intentionally conservative:
 
     - Upload byte size is capped by ``settings.MAX_FILE_SIZE_BYTES``.
-    - Upload resolution is capped by ``settings.MAX_PIXELS``.
+    - Upload resolution is capped by ``settings.MAX_SAFE_PIXELS``.
     - Normal AI inputs are downscaled to ``settings.OPTIMIZATION_TARGET_PIXELS``
       before being sent to the remote provider.
     - Generated results are forced under ``settings.MAX_RESULT_FILE_SIZE_BYTES``.
@@ -339,7 +339,11 @@ class ImagePipelineService:
             raise ValueError("Payload exceeds maximum size.")
 
     def validate_input_resolution(self, raw_bytes: bytes) -> None:
-        """Reject uploaded images that exceed the configured resolution limit.
+        """Reject uploaded images that exceed the backend safety resolution cap.
+
+        The public frontend limit is allowed to be lower than this backend hard cap.
+        Oversized but safe images may be downscaled during preprocessing before
+        being sent to the AI provider.
 
         Args:
             raw_bytes:
@@ -348,9 +352,13 @@ class ImagePipelineService:
         Raises:
             fastapi.HTTPException:
                 Raised by ``validate_image_bytes_resolution`` when the image is
-                invalid, unsupported, or above ``settings.MAX_PIXELS``.
+                invalid, unsupported, or above ``settings.MAX_SAFE_PIXELS``.
         """
-        width, height, pixels = validate_image_bytes_resolution(raw_bytes)
+        width, height, pixels = validate_image_bytes_resolution(
+            raw_bytes,
+            max_pixels=settings.MAX_SAFE_PIXELS,
+            max_megapixels=settings.MAX_SAFE_PIXELS / 1_000_000,
+        )
 
         logger.info(
             "%s input resolution accepted: %sx%s (%s px).",

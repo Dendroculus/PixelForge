@@ -83,7 +83,6 @@ export default function WorkspaceModals({
         </div>
       </AppModals>
 
-
       <AppModals
         isOpen={appAlert.show && appAlert.type === 'processing_failed'}
         onClose={closeAndClear}
@@ -102,11 +101,30 @@ export default function WorkspaceModals({
       </AppModals>
 
       <AppModals
+        isOpen={appAlert.show && appAlert.type === 'auto_downscaled'}
+        onClose={closeAndClear}
+        title="Image Optimized Automatically"
+      >
+        <div className="space-y-1.5 text-left">
+          <p className="font-semibold text-slate-800 text-base mb-2">
+            Image Resized Automatically
+          </p>
+          <p>
+            Your image resolution was larger than PixelForge’s free processing
+            limit, so we resized it before upload.
+          </p>
+          <p>
+            This keeps processing fast, stable, and free for everyone while
+            preserving as much visual quality as possible.
+          </p>
+        </div>
+      </AppModals>
+
+      <AppModals
         isOpen={appAlert.show && appAlert.type === 'reserved_warning'}
         onClose={() => setAppAlert({ show: false, type: null })}
         title="Session Restored 🔄"
       >
-        {/* FIX: Only render the timer if this specific modal is actually open */}
         {appAlert.show && appAlert.type === 'reserved_warning' && (
           <div className="space-y-1.5 text-left">
             <p className="font-semibold text-slate-800 text-base mb-2">

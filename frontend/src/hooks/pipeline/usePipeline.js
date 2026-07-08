@@ -101,7 +101,7 @@ export function usePipeline(
     feature,
   });
 
-  const handleFileSelect = async (file) => {
+  const handleFileSelect = async (file, validationResult = null) => {
     localStorage.removeItem(storageKeys.RESULT_URL);
     localStorage.removeItem(storageKeys.JOB_ID);
     localStorage.removeItem(storageKeys.IS_PROCESSING);
@@ -116,6 +116,14 @@ export function usePipeline(
     setPreviewUrl(URL.createObjectURL(file));
     setResultUrl(null);
     setJobId(null);
+
+    if (validationResult?.wasOptimized) {
+      setAppAlert({
+        show: true,
+        type: 'auto_downscaled',
+        optimization: validationResult.optimization,
+      });
+    }
   };
 
   const handleCancel = async () => {
