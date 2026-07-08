@@ -281,17 +281,20 @@ hooks/workspace/
 utils/image/
 utils/file/
   fileValidation.js
-  validation/
+  validators/
     errorMessages.js
     runtimeLimits.js
     mimeValidation.js
     imageMetadata.js
+    imageOptimization.js
     resolutionValidation.js
     grayscaleValidation.js
 utils/storage/
 ```
 
-`utils/file/fileValidation.js` 仍然作为文件验证的公共入口点，而 `utils/file/validation/` 则包含更专注的辅助模块，用于运行时限制、MIME 检查、图像元数据加载、分辨率检查、灰度检查以及验证消息。
+`utils/file/fileValidation.js` 仍然作为文件验证的公共入口点，而 `utils/file/validators/` 则包含更专注的辅助模块，用于运行时限制、MIME 检查、图像元数据加载、浏览器端分辨率优化、分辨率检查、灰度检查以及验证消息。
+
+对于 AI 上传，前端可以在上传到 Azure 之前对超过公开像素限制的图像进行降采样。这可以改善用户体验并减少 provider 负载，但后端验证仍然是安全边界，因为浏览器端检查可以被绕过。
 
 示例：
 
@@ -443,6 +446,8 @@ sequenceDiagram
 
 初始化不会运行 AI 模型。它只负责准备安全上传信息，并验证请求是否被允许。
 
+初始化会检查使用配额是否仍然可用，但不会消耗使用次数。使用次数会在上传之后、任务开始时被预留。
+
 ---
 
 ### 阶段 2：上传并启动
@@ -457,6 +462,7 @@ sequenceDiagram
     participant Replicate as Replicate
     participant DB as PostgreSQL
 
+    FE->>FE: Validate image and auto-resize if above public pixel limit
     FE->>Azure: PUT image via SAS URL
     FE->>API: POST /api/{feature}/start
     API->>Queue: Reserve queue slot
@@ -464,7 +470,8 @@ sequenceDiagram
     API-->>FE: 202 Accepted
 
     Queue->>Azure: Download uploaded image
-    Queue->>AI: Preprocess input
+    Queue->>AI: Validate size and hard pixel safety cap
+    Queue->>AI: Preprocess and downscale for provider limits if needed
     AI->>Replicate: Run model
     AI->>AI: Download model output
     AI->>AI: Postprocess result
@@ -513,13 +520,14 @@ backend/services/ai/
 所有 AI 功能共享 `ImagePipelineService`，它实现 template method pipeline：
 
 1. 从 Azure 下载上传文件 bytes
-2. 验证输入大小
-3. 预处理输入
-4. 执行远程模型
-5. 下载远程结果
-6. 后处理输出
-7. 验证输出大小
-8. 保存最终结果到 Azure
+2. 验证输入字节大小
+3. 根据后端硬性像素安全上限验证输入分辨率
+4. 在需要时预处理输入并根据 provider 限制进行降采样
+5. 执行远程模型
+6. 下载远程结果
+7. 后处理输出
+8. 验证输出大小
+9. 保存最终结果到 Azure
 
 各功能服务只覆盖自己需要的部分：
 
@@ -706,8 +714,9 @@ Cloudflare Turnstile 保护 job initialization 与 feedback submission。
 - MIME/type validation
 - 安全生成的文件名
 - 文件大小限制
-- 图像分辨率限制
-- 像素安全限制
+- 公开上传分辨率限制
+- 后端硬性像素安全上限
+- AI 执行前面向 provider 限制的降采样
 - 受控 CPU 并发
 - Azure SAS expiration
 

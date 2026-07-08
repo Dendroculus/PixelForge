@@ -275,17 +275,20 @@ hooks/workspace/
 utils/image/
 utils/file/
   fileValidation.js
-  validation/
+  validators/
     errorMessages.js
     runtimeLimits.js
     mimeValidation.js
     imageMetadata.js
+    imageOptimization.js
     resolutionValidation.js
     grayscaleValidation.js
 utils/storage/
 ```
 
-`utils/file/fileValidation.js` remains the public validation entrypoint, while `utils/file/validation/` contains focused helper modules for runtime limits, MIME checks, image metadata loading, resolution checks, grayscale checks, and validation messages.
+`utils/file/fileValidation.js` remains the public validation entrypoint, while `utils/file/validators/` contains focused helper modules for runtime limits, MIME checks, image metadata loading, browser-side resolution optimization, resolution checks, grayscale checks, and validation messages.
+
+For AI uploads, the frontend may downscale images that exceed the public pixel limit before uploading them to Azure. This improves user experience and reduces provider load, but backend validation remains the security boundary because browser-side checks can be bypassed.
 
 Examples:
 
@@ -437,6 +440,8 @@ sequenceDiagram
 
 Initialization does not run the AI model. It only prepares a secure upload and validates that the request is allowed.
 
+Initialization checks whether usage is still available, but it does not consume usage. Usage is reserved when the job is started, after the upload step.
+
 ---
 
 ### Phase 2: Upload and Start
@@ -451,6 +456,7 @@ sequenceDiagram
     participant Replicate as Replicate
     participant DB as PostgreSQL
 
+    FE->>FE: Validate image and auto-resize if above public pixel limit
     FE->>Azure: PUT image via SAS URL
     FE->>API: POST /api/{feature}/start
     API->>Queue: Reserve queue slot
@@ -458,7 +464,8 @@ sequenceDiagram
     API-->>FE: 202 Accepted
 
     Queue->>Azure: Download uploaded image
-    Queue->>AI: Preprocess input
+    Queue->>AI: Validate size and hard pixel safety cap
+    Queue->>AI: Preprocess and downscale for provider limits if needed
     AI->>Replicate: Run model
     AI->>AI: Download model output
     AI->>AI: Postprocess result
@@ -507,13 +514,14 @@ backend/services/ai/
 All AI features share `ImagePipelineService`, which implements the template method pipeline:
 
 1. Download upload bytes from Azure
-2. Validate input size
-3. Preprocess input
-4. Execute remote model
-5. Download remote result
-6. Postprocess output
-7. Validate output size
-8. Save final result to Azure
+2. Validate input byte size
+3. Validate input resolution against the backend hard safety cap
+4. Preprocess input and downscale for provider limits when needed
+5. Execute remote model
+6. Download remote result
+7. Postprocess output
+8. Validate output size
+9. Save final result to Azure
 
 Feature services override only the parts they need:
 
@@ -700,8 +708,9 @@ The backend validates and limits uploaded data through:
 - MIME/type validation
 - Safe generated filenames
 - File size limits
-- Image resolution limits
-- Pixel safety limits
+- Public upload resolution limits
+- Backend hard pixel safety limits
+- Provider-oriented downscaling before AI execution
 - Controlled CPU concurrency
 - Azure SAS expiration
 

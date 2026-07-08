@@ -174,12 +174,13 @@ Sistem ini dirancang untuk menangani batasan dunia nyata seperti rate limit, job
 24. 🧽 **Azure Cleanup** — janitor untuk hasil kedaluwarsa  
 25. 🧹 **DB Cleanup** — pemeliharaan data penggunaan  
 26. 🔑 **Signed URLs** — upload & akses yang aman  
-27. 🔍 **File Validation** — validasi tipe, ukuran, dan spoof detection  
-28. 🏷️ **Filename Sanitization** — penanganan nama file yang aman  
-29. 🧩 **Workspace System** — shell UI yang dapat digunakan ulang  
-30. 📢 **Modal System** — pengelolaan legal & alert  
-31. 🆚 **Comparison Slider** — preview sebelum/sesudah  
-32. 🎬 **Progress UX** — feedback loading bertahap  
+27. 🔍 **File Validation** — validasi tipe, ukuran, spoof detection, dan keamanan resolusi  
+28. 📉 **Auto-Resize Gambar Besar** — downscale di browser untuk gambar di atas batas pixel publik  
+29. 🏷️ **Filename Sanitization** — penanganan nama file yang aman  
+30. 🧩 **Workspace System** — shell UI yang dapat digunakan ulang  
+31. 📢 **Modal System** — pengelolaan legal & alert  
+32. 🆚 **Comparison Slider** — preview sebelum/sesudah  
+33. 🎬 **Progress UX** — feedback loading bertahap  
 
 ## 🧠 Sorotan Arsitektur
 PixelForge dirancang untuk menyeimbangkan performa, biaya, dan keandalan saat bekerja dengan API AI eksternal yang memiliki batas rate dan concurrency ketat. Keputusan arsitektur utamanya mencakup:
@@ -208,15 +209,17 @@ tugas AI-intensive diproses secara asinkron di backend, sedangkan operasi ringan
 ### 🔄 Alur Pemrosesan AI (Asinkron)
 Sistem memisahkan jalur pemrosesan berdasarkan jenis workload untuk mengoptimalkan performa dan biaya:
 
-1. Pengguna mengunggah gambar → divalidasi dan disanitasi  
-2. Backend membuat signed upload URL (Azure Blob)  
-3. File diunggah langsung ke storage  
-4. Job dibuat dan dimasukkan ke antrean pemrosesan  
-5. AI provider menjalankan tugas secara asinkron  
-6. Client melakukan polling status job melalui API  
-7. Hasil disimpan dengan signed access URL  
-8. Frontend mengambil dan menampilkan hasil  
-9. Sistem cleanup menghapus data kedaluwarsa
+1. Pengguna memilih gambar  
+2. Frontend memvalidasi tipe, ukuran, dan resolusi  
+3. Gambar yang terlalu besar tetapi masih aman akan di-resize di browser sebelum upload  
+4. Backend memverifikasi Turnstile dan mengecek kuota penggunaan  
+5. Backend membuat metadata signed upload URL  
+6. File diunggah langsung ke Azure Blob Storage  
+7. Backend memesan kapasitas antrean dan menambah usage saat pemrosesan dimulai  
+8. AI provider menjalankan tugas secara asinkron  
+9. Client melakukan polling status job melalui API  
+10. Hasil disimpan dengan signed access URL  
+11. Sistem cleanup menghapus data kedaluwarsa
 </div>
 
 <div style="max-width: 720px; line-height: 1.65; margin-left: 12px">
@@ -324,6 +327,9 @@ npm run dev
 - Strategi proxy/IP trust untuk mengurangi risiko header spoofing
 - Signed SAS URL untuk akses blob yang terkontrol
 - Validasi file ketat + batas dimensi/ukuran
+- Upload AI publik memakai batas pixel browser yang lebih rendah untuk UX
+- Validasi backend tetap menjadi batas keamanan utama dengan hard cap pixel yang lebih tinggi
+- Gambar beresolusi besar dapat di-resize sebelum upload, sedangkan file yang terlalu besar secara byte tetap ditolak
 - Cleanup otomatis untuk privasi dan kebersihan storage
 
 
@@ -358,6 +364,11 @@ Dilisensikan di bawah MIT License. Lihat [LICENSE](../../../LICENSE) untuk detai
 
 Cara menambahkan fitur AI baru ke PixelForge:
 - [Menambahkan Fitur AI Baru](../dev/ADDING_AI_FEATURE_ID.md)
+
+Script testing backend dan AI:
+- [Pengujian PixelForge](../dev/TESTING_ID.md) ([EN](../../TESTING.md), [ZH](../dev/TESTING_ZH.md))
+
+> Script PowerShell lokal dan file helper `.bat` ditujukan untuk environment development Windows.
 
 ## 🙏 Acknowledgements
 

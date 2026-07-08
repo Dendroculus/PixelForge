@@ -281,17 +281,20 @@ hooks/workspace/
 utils/image/
 utils/file/
   fileValidation.js
-  validation/
+  validators/
     errorMessages.js
     runtimeLimits.js
     mimeValidation.js
     imageMetadata.js
+    imageOptimization.js
     resolutionValidation.js
     grayscaleValidation.js
 utils/storage/
 ```
 
-`utils/file/fileValidation.js` tetap menjadi entrypoint publik untuk validasi file, sedangkan `utils/file/validation/` berisi modul helper yang lebih fokus untuk runtime limits, pemeriksaan MIME, pembacaan metadata gambar, pemeriksaan resolusi, pemeriksaan grayscale, dan pesan validasi.
+`utils/file/fileValidation.js` tetap menjadi entrypoint publik untuk validasi file, sedangkan `utils/file/validators/` berisi modul helper yang lebih fokus untuk runtime limits, pemeriksaan MIME, pembacaan metadata gambar, optimisasi resolusi di browser, pemeriksaan resolusi, pemeriksaan grayscale, dan pesan validasi.
+
+Untuk upload AI, frontend dapat melakukan downscale pada gambar yang melewati batas pixel publik sebelum mengunggahnya ke Azure. Ini meningkatkan pengalaman pengguna dan mengurangi beban provider, tetapi validasi backend tetap menjadi batas keamanan utama karena validasi browser dapat dilewati.
 
 Contoh:
 
@@ -443,6 +446,8 @@ sequenceDiagram
 
 Initialization tidak menjalankan model AI. Fase ini hanya menyiapkan upload yang aman dan memvalidasi bahwa request diperbolehkan.
 
+Initialization mengecek apakah usage masih tersedia, tetapi tidak mengonsumsi usage. Usage baru di-reserve saat job dimulai, setelah tahap upload.
+
 ---
 
 ### Fase 2: Upload dan Start
@@ -457,6 +462,7 @@ sequenceDiagram
     participant Replicate as Replicate
     participant DB as PostgreSQL
 
+    FE->>FE: Validate image and auto-resize if above public pixel limit
     FE->>Azure: PUT image via SAS URL
     FE->>API: POST /api/{feature}/start
     API->>Queue: Reserve queue slot
@@ -464,7 +470,8 @@ sequenceDiagram
     API-->>FE: 202 Accepted
 
     Queue->>Azure: Download uploaded image
-    Queue->>AI: Preprocess input
+    Queue->>AI: Validate size and hard pixel safety cap
+    Queue->>AI: Preprocess and downscale for provider limits if needed
     AI->>Replicate: Run model
     AI->>AI: Download model output
     AI->>AI: Postprocess result
@@ -513,13 +520,14 @@ backend/services/ai/
 Semua fitur AI menggunakan `ImagePipelineService`, yang mengimplementasikan template method pipeline:
 
 1. Download upload bytes dari Azure
-2. Validasi input size
-3. Preprocess input
-4. Eksekusi remote model
-5. Download remote result
-6. Postprocess output
-7. Validasi output size
-8. Simpan final result ke Azure
+2. Validasi ukuran byte input
+3. Validasi resolusi input terhadap hard safety cap pixel backend
+4. Preprocess input dan downscale untuk batas provider jika diperlukan
+5. Eksekusi remote model
+6. Download remote result
+7. Postprocess output
+8. Validasi output size
+9. Simpan final result ke Azure
 
 Feature services hanya override bagian yang mereka perlukan:
 
@@ -706,8 +714,9 @@ Backend memvalidasi dan membatasi data upload melalui:
 - MIME/type validation
 - Safe generated filenames
 - File size limits
-- Image resolution limits
-- Pixel safety limits
+- Public upload resolution limits
+- Backend hard pixel safety limits
+- Provider-oriented downscaling before AI execution
 - Controlled CPU concurrency
 - Azure SAS expiration
 

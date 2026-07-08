@@ -174,11 +174,12 @@ The system is designed to handle real-world constraints such as rate limits, lon
 24. 🧽 **Azure Cleanup** — expired result janitor  
 25. 🧹 **DB Cleanup** — usage data maintenance  
 26. 🔑 **Signed URLs** — secure upload & access  
-27. 🔍 **File Validation** — type, size, spoof detection  
-28. 🏷️ **Filename Sanitization** — safe file handling  
-29. 🧩 **Workspace System** — reusable UI shell  
-30. 📢 **Modal System** — legal & alert handling  
-31. 🆚 **Comparison Slider** — before/after preview  
+27. 🔍 **File Validation** — type, size, spoof detection, and resolution safety  
+28. 📉 **Auto-Resize for Oversized Images** — browser-side downscaling for images above the public pixel limit  
+29. 🏷️ **Filename Sanitization** — safe file handling  
+30. 🧩 **Workspace System** — reusable UI shell  
+31. 📢 **Modal System** — legal & alert handling  
+32. 🆚 **Comparison Slider** — before/after preview  
 33. 🎬 **Progress UX** — staged loading feedback  
 
 ## 🧠 Architecture Highlights
@@ -208,15 +209,17 @@ AI-intensive tasks are handled asynchronously on the backend, while lightweight 
 ### 🔄 AI Processing Flow (Asynchronous)
 The system separates processing paths based on workload type to optimize performance and cost :
 
-1. User uploads image → validated and sanitized  
-2. Backend generates signed upload URL (Azure Blob)  
-3. File uploaded directly to storage  
-4. Job created and queued for processing  
-5. AI provider executes task asynchronously  
-6. Client polls job status via API  
-7. Result stored with signed access URL  
-8. Frontend retrieves and displays result  
-9. Cleanup system removes expired data
+1. User selects an image  
+2. Frontend validates type, size, and resolution  
+3. Oversized but safe images are resized in the browser before upload  
+4. Backend verifies Turnstile and checks usage quota  
+5. Backend generates signed upload URL metadata  
+6. File uploads directly to Azure Blob Storage  
+7. Backend reserves queue capacity and increments usage when processing starts  
+8. AI provider executes the task asynchronously  
+9. Client polls job status via API  
+10. Result is stored with a signed access URL  
+11. Cleanup system removes expired data
 </div>
 
 <div style="max-width: 720px; line-height: 1.65; margin-left: 12px">
@@ -323,6 +326,9 @@ npm run dev
 - Proxy/IP trust strategy to reduce header spoofing risk
 - Signed SAS URLs for controlled blob access
 - Strict file validation + capped dimensions/size
+- Public AI uploads use a lower browser-side pixel limit for user experience
+- Backend validation remains the security boundary with a higher hard pixel safety cap
+- Oversized images may be resized before upload, while oversized files are still rejected by byte-size limits
 - Automated cleanup for privacy and storage hygiene
 
 
@@ -354,6 +360,11 @@ Licensed under the MIT License. See [LICENSE](./LICENSE) for details.
 
 How to add a new AI feature to PixelForge:
 - [Adding a New AI Feature](docs/ADDING_AI_FEATURE.md)
+
+Backend and AI test scripts:
+- [Testing PixelForge](docs/TESTING.md) ([ID](docs/translation/dev/TESTING_ID.md), [ZH](docs/translation/dev/TESTING_ZH.md))
+
+> Local PowerShell scripts and `.bat` helper files are intended for Windows development environments.
 
 ## 🙏 Acknowledgements
 
