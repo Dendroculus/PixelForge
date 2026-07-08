@@ -280,8 +280,18 @@ hooks/client/
 hooks/workspace/
 utils/image/
 utils/file/
+  fileValidation.js
+  validation/
+    errorMessages.js
+    runtimeLimits.js
+    mimeValidation.js
+    imageMetadata.js
+    resolutionValidation.js
+    grayscaleValidation.js
 utils/storage/
 ```
+
+`utils/file/fileValidation.js` tetap menjadi entrypoint publik untuk validasi file, sedangkan `utils/file/validation/` berisi modul helper yang lebih fokus untuk runtime limits, pemeriksaan MIME, pembacaan metadata gambar, pemeriksaan resolusi, pemeriksaan grayscale, dan pesan validasi.
 
 Contoh:
 

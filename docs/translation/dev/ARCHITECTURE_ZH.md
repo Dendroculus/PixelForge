@@ -280,8 +280,18 @@ hooks/client/
 hooks/workspace/
 utils/image/
 utils/file/
+  fileValidation.js
+  validation/
+    errorMessages.js
+    runtimeLimits.js
+    mimeValidation.js
+    imageMetadata.js
+    resolutionValidation.js
+    grayscaleValidation.js
 utils/storage/
 ```
+
+`utils/file/fileValidation.js` 仍然作为文件验证的公共入口点，而 `utils/file/validation/` 则包含更专注的辅助模块，用于运行时限制、MIME 检查、图像元数据加载、分辨率检查、灰度检查以及验证消息。
 
 示例：
 

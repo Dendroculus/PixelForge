@@ -274,8 +274,18 @@ hooks/client/
 hooks/workspace/
 utils/image/
 utils/file/
+  fileValidation.js
+  validation/
+    errorMessages.js
+    runtimeLimits.js
+    mimeValidation.js
+    imageMetadata.js
+    resolutionValidation.js
+    grayscaleValidation.js
 utils/storage/
 ```
+
+`utils/file/fileValidation.js` remains the public validation entrypoint, while `utils/file/validation/` contains focused helper modules for runtime limits, MIME checks, image metadata loading, resolution checks, grayscale checks, and validation messages.
 
 Examples:
 

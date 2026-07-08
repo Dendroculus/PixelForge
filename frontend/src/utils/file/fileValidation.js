@@ -1,97 +1,90 @@
-import { AppConfig as config, STORAGE_KEYS } from '@/config';
-import { apiClient } from '@/services/base/apiClient';
+/**
+ * Public file validation entrypoint for PixelForge uploads.
+ *
+ * This module intentionally keeps ``validateImageUpload`` as the stable public
+ * function used by upload hooks/components, while delegating each validation
+ * responsibility to focused modules under ``utils/file/validation``.
+ *
+ * Validation flow:
+ *   1. Ensure a file exists.
+ *   2. Resolve backend-owned runtime upload/result limits.
+ *   3. Check file byte size.
+ *   4. Check MIME type.
+ *   5. Decode the image and read metadata.
+ *   6. Check decoded resolution.
+ *   7. Optionally check grayscale suitability for color restoration.
+ *
+ * Frontend validation improves UX only. Backend validation remains the security
+ * boundary because client-side checks can be bypassed.
+ */
 
-const ERROR_MESSAGES = {
-  ATTACK: "Are you trying to attack the web? Well that's unfortunate",
-  SPOOFED:
-    'Nice try! That file is disguised as an image, are you trying to trick us?',
-  SVG: 'SVGs are math! They already have infinite resolution',
-  OTHER_IMAGE:
-    'Nice picture, but we only support static PNG, JPG, and WEBP right now 🎨',
-  VIDEO: 'Why do you even try to upload a video to an image upscaler web?',
-  TIMEOUT: 'The file took too long to process. Is it corrupted? ⏳',
-  DEFAULT: 'Uh oh! This file is not supported.',
-  COLORIZED:
-    'This image already has color! Please upload a black and white image.',
-};
-
-const RUNTIME_LIMIT_CACHE_MS = 10 * 60 * 1000;
-const RUNTIME_LIMIT_STORAGE_KEY = STORAGE_KEYS.RUNTIME_LIMITS || 'pf_runtime_limits';
-
-const getFallbackLimits = () => ({
-  upload: {
-    max_file_size_mb: config.MAX_FILE_SIZE_MB,
-    max_file_size_bytes: config.MAX_FILE_SIZE_MB * 1024 * 1024,
-    max_megapixels: config.MAX_MEGAPIXELS,
-    max_pixels: config.MAX_PIXELS,
-    allowed_extensions: config.ALLOWED_EXTENSIONS,
-  },
-  result: {
-    max_result_file_size_mb: config.MAX_RESULT_FILE_SIZE_MB,
-  },
-});
-
-const normalizeExtension = (ext) => {
-  if (ext === 'jpeg') return 'jpg';
-  return ext;
-};
-
-const getAllowedMimeTypes = (limits) => {
-  const extensions = limits?.upload?.allowed_extensions?.length
-    ? limits.upload.allowed_extensions
-    : config.ALLOWED_EXTENSIONS;
-
-  return new Set(
-    extensions.map((ext) => {
-      const normalized = normalizeExtension(ext);
-      return `image/${normalized === 'jpg' ? 'jpeg' : normalized}`;
-    }),
-  );
-};
+import { ERROR_MESSAGES, invalidResult } from './validators/errorMessages';
+import {
+  getRuntimeLimits,
+  resolveUploadSizeLimit,
+} from './validators/runtimeLimits';
+import {
+  getAllowedMimeTypes,
+  validateMimeType,
+} from './validators/mimeValidation';
+import { loadImageMetadata } from './validators/imageMetadata';
+import { validateResolution } from './validators/resolutionValidation';
+import { validateGrayscaleImage } from './validators/grayscaleValidation';
 
 /**
- * Fetch backend-owned upload/result limits, with session cache and fallback.
+ * Build a successful validation result.
  *
- * Frontend validation is only for UX. The backend still validates size and
- * resolution after direct-to-Azure upload.
+ * @param {File|Blob} file - Original uploaded file/blob.
+ * @param {object} metadata - Decoded image metadata.
+ * @returns {{isValid: true, file: File|Blob, metadata: object}} Success result.
  */
-const getRuntimeLimits = async () => {
-  try {
-    const cachedRaw = sessionStorage.getItem(RUNTIME_LIMIT_STORAGE_KEY);
+const validResult = (file, metadata) => ({
+  isValid: true,
+  file,
+  metadata,
+});
 
-    if (cachedRaw) {
-      const cached = JSON.parse(cachedRaw);
+/**
+ * Validate uploaded image byte size.
+ *
+ * @param {File|Blob} file - User-selected file/blob.
+ * @param {object} limits - Runtime limits from backend or fallback config.
+ * @param {number|null} customMaxSizeMB - Optional upload-size override in MB.
+ * @returns {{isValid: false, error: string}|null} Invalid result, or ``null``
+ * when the file is within the allowed byte limit.
+ */
+const validateFileSize = (file, limits, customMaxSizeMB = null) => {
+  const { limitMB, maxFileSizeBytes } = resolveUploadSizeLimit(
+    limits,
+    customMaxSizeMB,
+  );
 
-      if (Date.now() - cached.savedAt < RUNTIME_LIMIT_CACHE_MS) {
-        return cached.value;
-      }
-    }
-
-    const value = await apiClient.getRuntimeLimits();
-
-    sessionStorage.setItem(
-      RUNTIME_LIMIT_STORAGE_KEY,
-      JSON.stringify({
-        savedAt: Date.now(),
-        value,
-      }),
-    );
-
-    return value;
-  } catch (e) {
-    console.warn('Using fallback upload limits because /limits failed.', e);
-    return getFallbackLimits();
+  if (file.size > maxFileSizeBytes) {
+    return invalidResult(`File size exceeds the ${limitMB}MB limit.`);
   }
-};
 
-const formatMegapixels = (pixels) => (pixels / 1_000_000).toFixed(2);
+  return null;
+};
 
 /**
  * Validate whether an uploaded image is allowed.
  *
- * @param {File} file - The file object from the dropzone/input.
- * @param {number} [customMaxSizeMB] - Optional override for max file size.
- * @param {boolean} [requireGrayscale] - If true, rejects images that already have color.
+ * This function keeps the original return shape used by the rest of the app:
+ *
+ * Success:
+ * ``{ isValid: true, file, metadata }``
+ *
+ * Failure:
+ * ``{ isValid: false, error }``
+ *
+ * @param {File|Blob|null} file - File object from the dropzone/input.
+ * @param {number|null} [customMaxSizeMB=null] - Optional max-size override in MB.
+ * @param {boolean} [requireGrayscale=false] - If true, rejects images that
+ * already contain significant color data.
+ * @returns {Promise<
+ *   | {isValid: true, file: File|Blob, metadata: object}
+ *   | {isValid: false, error: string}
+ * >} Validation result.
  */
 export const validateImageUpload = async (
   file,
@@ -99,139 +92,30 @@ export const validateImageUpload = async (
   requireGrayscale = false,
 ) => {
   if (!file) {
-    return { isValid: false, error: ERROR_MESSAGES.DEFAULT };
+    return invalidResult(ERROR_MESSAGES.DEFAULT);
   }
 
   const limits = await getRuntimeLimits();
+
+  const sizeError = validateFileSize(file, limits, customMaxSizeMB);
+  if (sizeError) return sizeError;
+
   const allowedMimeTypes = getAllowedMimeTypes(limits);
+  const mimeError = validateMimeType(file, allowedMimeTypes);
+  if (mimeError) return mimeError;
 
-  const limitMB = customMaxSizeMB || limits.upload.max_file_size_mb;
-  const maxFileSizeBytes =
-    customMaxSizeMB != null
-      ? customMaxSizeMB * 1024 * 1024
-      : limits.upload.max_file_size_bytes;
+  const imageResult = await loadImageMetadata(file);
+  if (!imageResult.isValid) return imageResult;
 
-  if (file.size > maxFileSizeBytes) {
-    return {
-      isValid: false,
-      error: `File size exceeds the ${limitMB}MB limit.`,
-    };
+  const { image, metadata } = imageResult;
+
+  const resolutionError = validateResolution(metadata, limits);
+  if (resolutionError) return resolutionError;
+
+  if (requireGrayscale) {
+    const grayscaleError = validateGrayscaleImage(image);
+    if (grayscaleError) return grayscaleError;
   }
 
-  const fileType = file.type || '';
-
-  if (fileType === 'image/svg+xml') {
-    return { isValid: false, error: ERROR_MESSAGES.SVG };
-  }
-
-  if (fileType.startsWith('video/')) {
-    return { isValid: false, error: ERROR_MESSAGES.VIDEO };
-  }
-
-  if (fileType.startsWith('image/') && !allowedMimeTypes.has(fileType)) {
-    return { isValid: false, error: ERROR_MESSAGES.OTHER_IMAGE };
-  }
-
-  if (!allowedMimeTypes.has(fileType)) {
-    return { isValid: false, error: ERROR_MESSAGES.ATTACK };
-  }
-
-  return new Promise((resolve) => {
-    const img = new Image();
-    const objectUrl = URL.createObjectURL(file);
-
-    const timeoutId = setTimeout(() => {
-      URL.revokeObjectURL(objectUrl);
-      img.src = '';
-      resolve({ isValid: false, error: ERROR_MESSAGES.TIMEOUT });
-    }, 5000);
-
-    img.onload = () => {
-      clearTimeout(timeoutId);
-
-      const width = img.naturalWidth || img.width;
-      const height = img.naturalHeight || img.height;
-      const pixels = width * height;
-      const maxPixels = limits.upload.max_pixels;
-      const maxMegapixels = limits.upload.max_megapixels;
-
-      if (pixels > maxPixels) {
-        URL.revokeObjectURL(objectUrl);
-
-        return resolve({
-          isValid: false,
-          error:
-            `Image resolution is too large. Your image is ${width}x${height} ` +
-            `(${formatMegapixels(pixels)}MP), but the limit is ` +
-            `${maxMegapixels}MP.`,
-        });
-      }
-
-      if (requireGrayscale) {
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d', { willReadFrequently: true });
-
-        canvas.width = 100;
-        canvas.height = 100;
-        ctx.drawImage(img, 0, 0, 100, 100);
-
-        try {
-          const data = ctx.getImageData(0, 0, 100, 100).data;
-          let colorPixels = 0;
-          let validPixels = 0;
-
-          for (let i = 0; i < data.length; i += 4) {
-            if (data[i + 3] < 20) continue;
-
-            validPixels++;
-
-            const r = data[i];
-            const g = data[i + 1];
-            const b = data[i + 2];
-
-            const max = Math.max(r, g, b);
-            const min = Math.min(r, g, b);
-
-            if (max - min > 35) {
-              colorPixels++;
-            }
-          }
-
-          const hasColor = validPixels > 0 && colorPixels / validPixels >= 0.05;
-
-          if (hasColor) {
-            URL.revokeObjectURL(objectUrl);
-
-            return resolve({
-              isValid: false,
-              error: ERROR_MESSAGES.COLORIZED,
-            });
-          }
-        } catch (e) {
-          console.warn('Could not read image data for color check', e);
-        }
-      }
-
-      URL.revokeObjectURL(objectUrl);
-
-      resolve({
-        isValid: true,
-        file,
-        metadata: {
-          width,
-          height,
-          pixels,
-          megapixels: pixels / 1_000_000,
-        },
-      });
-    };
-
-    img.onerror = () => {
-      clearTimeout(timeoutId);
-      URL.revokeObjectURL(objectUrl);
-      resolve({ isValid: false, error: ERROR_MESSAGES.SPOOFED });
-    };
-
-    img.src = objectUrl;
-  });
+  return validResult(file, metadata);
 };
