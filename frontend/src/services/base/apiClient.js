@@ -11,7 +11,8 @@ const apiUrl =
   import.meta.env.VITE_API_URL ||
   (import.meta.env.DEV ? 'http://127.0.0.1:8000/api' : '');
 
-const DEBUG_API = import.meta.env.DEV && import.meta.env.VITE_DEBUG_API === 'true';
+const DEBUG_API =
+  import.meta.env.DEV && import.meta.env.VITE_DEBUG_API === 'true';
 
 /**
  * Log API debug information only when debug mode is enabled.
@@ -20,6 +21,43 @@ const DEBUG_API = import.meta.env.DEV && import.meta.env.VITE_DEBUG_API === 'tru
  */
 export const debugLog = (...args) => {
   if (DEBUG_API) console.log(...args);
+};
+
+/**
+ * Extracts a string message from a value, checking for various possible structures.
+ *
+ * @param {*} value - The value to extract the message from.
+ * @returns {string|null} The extracted message or null if not found.
+ */
+const getStringMessage = (value) => {
+  if (typeof value === 'string') return value;
+  if (typeof value?.message === 'string') return value.message;
+
+  return null;
+};
+
+/**
+ * Extracts a user-friendly error message from API error data.
+ *
+ * @param {*} errData - The error data from the API response.
+ * @param {*} defaultErrorMsg - The default error message to use if no specific message is found.
+ * @returns {string} The extracted error message.
+ */
+const extractApiErrorMessage = (errData, defaultErrorMsg) => {
+  const directMessage = getStringMessage(errData?.message);
+  if (directMessage) return directMessage;
+
+  if (Array.isArray(errData?.detail)) {
+    return (
+      errData.detail.find((item) => getStringMessage(item?.msg))?.msg ||
+      defaultErrorMsg
+    );
+  }
+
+  const detailMessage = getStringMessage(errData?.detail);
+  if (detailMessage) return detailMessage;
+
+  return defaultErrorMsg;
 };
 
 /**
@@ -35,12 +73,7 @@ const handleApiResponse = async (response, defaultErrorMsg) => {
 
     try {
       const errData = await response.json();
-
-      if (Array.isArray(errData?.detail)) {
-        detail = errData.detail[0].msg;
-      } else if (errData?.detail) {
-        detail = errData.detail;
-      }
+      detail = extractApiErrorMessage(errData, defaultErrorMsg);
     } catch (e) {
       console.warn(
         `[API Error] Failed to parse error JSON (Status: ${response.status}):`,
@@ -169,11 +202,7 @@ export const apiClient = {
       file.type || 'application/octet-stream',
     );
 
-    await uploadToAzure(
-      mask_upload_url,
-      maskBlob,
-      'image/png',
-    );
+    await uploadToAzure(mask_upload_url, maskBlob, 'image/png');
 
     debugLog(`[objectremove] start -> ${apiUrl}/objectremove/start`);
 

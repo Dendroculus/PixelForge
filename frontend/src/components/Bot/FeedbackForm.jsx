@@ -3,6 +3,8 @@ import { apiService } from '@/services/apiService';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { STORAGE_KEYS, AppConfig } from '@/config';
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@.]+\.[^\s@.]+$/;
+
 /**
  * FeedbackForm Component
  * * Renders a contact form allowing users to send feedback directly to Discord.
@@ -47,18 +49,53 @@ export default function FeedbackForm() {
   /**
    * Handles form submission, triggers the API call, and handles specific
    * rate-limit errors thrown by the backend.
-   * * @param {React.FormEvent} e - The form submission event.
+   * @param {SubmitEvent} e - The form submission event.
    */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg('');
+
+    const trimmedName = formData.name.trim();
+    const trimmedEmail = formData.email.trim();
+    const trimmedMessage = formData.message.trim();
+
+    if (!trimmedName) {
+      setStatus('error');
+      setErrorMsg('Please enter your name.');
+      return;
+    }
+
+    if (!trimmedEmail) {
+      setStatus('error');
+      setErrorMsg('Please enter your email address.');
+      return;
+    }
+
+    if (!EMAIL_PATTERN.test(trimmedEmail)) {
+      setStatus('error');
+      setErrorMsg('Please enter a valid email address.');
+      return;
+    }
+
+    if (trimmedMessage.length < 10) {
+      setStatus('error');
+      setErrorMsg('Please enter at least 10 characters in your message.');
+      return;
+    }
+
+    if (!turnstileToken) {
+      setStatus('error');
+      setErrorMsg('Please complete the verification before sending feedback.');
+      return;
+    }
+
     setStatus('loading');
 
     try {
       await apiService.submitFeedback(
-        formData.name,
-        formData.email,
-        formData.message,
+        trimmedName,
+        trimmedEmail,
+        trimmedMessage,
         turnstileToken,
       );
       setStatus('success');
@@ -76,7 +113,7 @@ export default function FeedbackForm() {
       }
 
       setStatus('error');
-      setErrorMsg(err.message);
+      setErrorMsg(err.message || 'Failed to send feedback. Please try again.');
 
       if (turnstileRef.current) turnstileRef.current.reset();
       setTurnstileToken('');
@@ -140,6 +177,7 @@ export default function FeedbackForm() {
 
   return (
     <form
+      noValidate
       onSubmit={handleSubmit}
       className="flex flex-col gap-3.5 text-sm animate-fade-in"
     >
@@ -166,6 +204,8 @@ export default function FeedbackForm() {
         value={formData.message}
         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
         required
+        minLength={10}
+        maxLength={1000}
         rows={4}
         className={`${inputStyles} resize-none`}
       />
