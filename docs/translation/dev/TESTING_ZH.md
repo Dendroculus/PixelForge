@@ -81,13 +81,47 @@ powershell -ExecutionPolicy Bypass -File .\scripts\testing\check_ai_feature_succ
   -FilePath ".\frontend\public\demo\res_color_before.jpg"
 ```
 
-Object Remove 需要同时提供原图和 mask 图片：
+Object Remove 需要同时提供原图和 mask 图片。
+
+mask 图片必须与原图尺寸一致：
+
+- 黑色像素 = 保留区域
+- 白色像素 = 需要移除的区域
+
+如果 `object_remove_test_mask.png` 还不存在，可以从仓库根目录生成一个简单的中心 mask：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\testing\check_ai_feature_success.ps1 `
-  -Feature objectremove `
-  -FilePath ".\frontend\public\demo\object_remove_before.png" `
-  -MaskPath ".\frontend\public\demo\object_remove_test_mask.png"
+@'
+from pathlib import Path
+from PIL import Image, ImageDraw
+
+src = Path("frontend/public/demo/object_remove_before.png")
+mask = Path("frontend/public/demo/object_remove_test_mask.png")
+
+if not src.exists():
+    raise SystemExit(f"Missing source image: {src}")
+
+img = Image.open(src)
+w, h = img.size
+
+out = Image.new("L", (w, h), 0)
+draw = ImageDraw.Draw(out)
+
+box_w = int(w * 0.28)
+box_h = int(h * 0.28)
+left = (w - box_w) // 2
+top = (h - box_h) // 2
+right = left + box_w
+bottom = top + box_h
+
+draw.ellipse((left, top, right, bottom), fill=255)
+
+mask.parent.mkdir(parents=True, exist_ok=True)
+out.save(mask)
+
+print(f"Created mask: {mask}")
+print(f"Size: {w}x{h}")
+'@ | .\backend\venv\Scripts\python.exe
 ```
 
 ---

@@ -81,15 +81,48 @@ powershell -ExecutionPolicy Bypass -File .\scripts\testing\check_ai_feature_succ
   -FilePath ".\frontend\public\demo\res_color_before.jpg"
 ```
 
-Object Remove requires both a source image and a mask image:
+Object Remove requires both a source image and a mask image.
+
+The mask image must match the source image dimensions:
+
+- Black pixels = keep area
+- White pixels = area to remove
+
+If `object_remove_test_mask.png` does not exist yet, generate a simple center mask from the repository root:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\testing\check_ai_feature_success.ps1 `
-  -Feature objectremove `
-  -FilePath ".\frontend\public\demo\object_remove_before.png" `
-  -MaskPath ".\frontend\public\demo\object_remove_test_mask.png"
-```
+@'
+from pathlib import Path
+from PIL import Image, ImageDraw
 
+src = Path("frontend/public/demo/object_remove_before.png")
+mask = Path("frontend/public/demo/object_remove_test_mask.png")
+
+if not src.exists():
+    raise SystemExit(f"Missing source image: {src}")
+
+img = Image.open(src)
+w, h = img.size
+
+out = Image.new("L", (w, h), 0)
+draw = ImageDraw.Draw(out)
+
+box_w = int(w * 0.28)
+box_h = int(h * 0.28)
+left = (w - box_w) // 2
+top = (h - box_h) // 2
+right = left + box_w
+bottom = top + box_h
+
+draw.ellipse((left, top, right, bottom), fill=255)
+
+mask.parent.mkdir(parents=True, exist_ok=True)
+out.save(mask)
+
+print(f"Created mask: {mask}")
+print(f"Size: {w}x{h}")
+'@ | .\backend\venv\Scripts\python.exe
+```
 ---
 
 ## Frontend Build Check
