@@ -442,6 +442,8 @@ Initialization does not run the AI model. It only prepares a secure upload and v
 
 Initialization checks whether usage is still available, but it does not consume usage. Usage is reserved when the job is started, after the upload step.
 
+Turnstile verification is performed on every initialization request. The token is single-use in the application flow and is reset before a later job.
+
 ---
 
 ### Phase 2: Upload and Start
@@ -615,18 +617,24 @@ backend/repository/
 
 ### Rate Limiting
 
-SlowAPI rate limits requests by resolved client IP.
+SlowAPI rate-limits requests using the client IP returned by `get_real_client_ip()`.
 
-Client IP resolution order:
+Client IP resolution is fail-closed:
 
-1. `CF-Connecting-IP`
-2. `X-Forwarded-For`
-3. `X-Real-IP`
-4. request peer host
+1. When `TRUST_PROXY_HEADERS=false`, forwarded headers are ignored and the direct socket peer (`request.client.host`) is used.
+2. When proxy trust is enabled, the direct peer must belong to `TRUSTED_PROXY_CIDRS` or `CLOUDFLARE_SUBNETS`; otherwise `CF-Connecting-IP`, `X-Forwarded-For`, and `X-Real-IP` are ignored.
+3. `CF-Connecting-IP` is accepted only when the direct peer is a verified Cloudflare address.
+4. Otherwise, `X-Forwarded-For` is evaluated from right to left. Only configured trusted proxy hops are skipped, and the first untrusted address is treated as the client.
+5. `X-Real-IP` is used only as a final fallback from an allowlisted proxy.
+6. Malformed IP addresses and invalid CIDRs are ignored and logged.
+
+Uvicorn should run with `--no-proxy-headers` so the application resolver receives the real socket peer instead of a value already rewritten by the server. Never trust `0.0.0.0/0`, `::/0`, or an unrestricted forwarded-header configuration.
+
+When PixelForge runs behind a managed platform and proxy trust is disabled, multiple visitors may appear under the platform's shared proxy address. This is resistant to spoofed headers but can make per-IP rate and usage limits less precise. Proxy trust should be enabled only after the platform's direct proxy CIDRs and forwarded-header behavior are verified.
 
 ### Usage Limits
 
-Usage is tracked per IP and feature:
+Usage is currently tracked per resolved IP and feature:
 
 ```txt
 {client_ip}:{feature}
@@ -638,10 +646,9 @@ Usage records are stored by hour in:
 ip_usage_hourly
 ```
 
-This supports rolling 24-hour usage windows while keeping cleanup simple.
+This supports rolling 24-hour usage windows while keeping cleanup simple. Because the current identity is IP-based, users behind the same NAT, carrier network, or reverse proxy can share a quota, while one user can receive a different identity after changing networks.
 
 ---
-
 ## 12. Queue and Job Management
 
 Job orchestration is handled by:
@@ -697,9 +704,11 @@ PixelForge security focuses on limiting abuse, unsafe uploads, and accidental ex
 
 ### Bot Protection
 
-Cloudflare Turnstile protects job initialization and feedback submission.
+Cloudflare Turnstile protects every AI job initialization and every feedback submission.
 
-A manual bypass exists only for local/development environments when explicitly enabled.
+Each `POST /api/{feature}/init` request must include a fresh Turnstile token, and the backend verifies that token with Cloudflare before checking quota or issuing upload metadata. A previous successful verification does not create a reusable approval. The frontend resets the token after completion, cancellation, or failure so the next job obtains a new token.
+
+Feedback submission performs its own Turnstile verification. A manual bypass exists only for explicitly enabled local/development environments. In production, a missing Turnstile secret is treated as a configuration error and verification fails closed.
 
 ### File Safety
 
@@ -802,15 +811,49 @@ Runtime configuration is centralized in:
 backend/core/config.py
 ```
 
-Important environment variables:
+Important backend environment variables:
 
 ```txt
 DATABASE_URL
 AZURE_CONNECTION_STRING
+REPLICATE_API_TOKEN
 CLOUDFLARE_TURNSTILE_SECRET_KEY
 DISCORD_WEBHOOK_URL
-REPLICATE_API_TOKEN
 ALLOWED_ORIGINS
+
+ENVIRONMENT
+ALLOW_TURNSTILE_TEST_BYPASS
+
+TRUST_PROXY_HEADERS
+TRUSTED_PROXY_CIDRS
+CLOUDFLARE_SUBNETS
+REQUIRE_CLOUDFLARE_PROXY
+
+LOG_LEVEL
+LOG_TO_FILE
+LOG_DIR
+LOG_FILE_NAME
+LOG_MAX_BYTES
+LOG_BACKUP_COUNT
+```
+
+Important frontend environment variables:
+
+```txt
+VITE_API_BASE_URL
+VITE_TURNSTILE_SITE_KEY
+VITE_DEBUG_API
+```
+
+The Turnstile site key is public frontend configuration. The Turnstile secret key, provider credentials, database URL, Azure connection string, and Discord webhook URL must remain backend-only.
+
+Safe proxy defaults are:
+
+```env
+TRUST_PROXY_HEADERS=false
+TRUSTED_PROXY_CIDRS=
+CLOUDFLARE_SUBNETS=
+REQUIRE_CLOUDFLARE_PROXY=false
 ```
 
 Important limits:
@@ -834,7 +877,6 @@ MAX_CONCURRENT_CPU_JOBS
 ```
 
 ---
-
 ## 18. Deployment Model
 
 ```mermaid

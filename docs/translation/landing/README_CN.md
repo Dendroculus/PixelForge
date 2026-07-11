@@ -300,10 +300,12 @@ LOG_BACKUP_COUNT=5
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:8000/api
 VITE_TURNSTILE_SITE_KEY=
+VITE_DEBUG_API=false # 仅本地开发时设为 true
 ```
 
 - `DATABASE_URL`、Azure 凭据、Replicate Token、Turnstile Secret 和 `DISCORD_WEBHOOK_URL` 只能保存在后端环境中。
 - 所有 `VITE_*` 值都会被打包到浏览器代码中，因此必须可以安全公开。
+- `VITE_DEBUG_API` 只在 development 模式下启用 API 日志；production 应保持为 `false`。
 - 当托管平台已经收集 stdout 时，建议使用 `LOG_TO_FILE=false`。本地开发需要轮转日志文件时可改为 `true`。
 - 默认忽略代理提供的 IP Header。只有在明确配置可信代理 CIDR 后才能启用 `TRUST_PROXY_HEADERS`；不要使用 `0.0.0.0/0` 或 `::/0`。
 - `CLOUDFLARE_SUBNETS` 仅在经过验证的 Cloudflare 代理模式中需要。`REQUIRE_CLOUDFLARE_PROXY` 只验证代理链，不会自动阻止对 origin 的直接访问。

@@ -1,6 +1,4 @@
-"""
-Run PixelForge FastAPI backend locally.
-"""
+"""Run the PixelForge FastAPI backend locally."""
 
 import uvicorn
 
@@ -42,6 +40,7 @@ if __name__ == "__main__":
             ".pytest_cache",
             ".pytest_cache/*",
         ],
+        proxy_headers=False,
         log_config=None,
         log_level="info",
         access_log=False,

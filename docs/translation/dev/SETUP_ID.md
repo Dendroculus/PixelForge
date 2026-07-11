@@ -313,6 +313,9 @@ VITE_TURNSTILE_SITE_KEY=your_turnstile_site_key
 > [!CAUTION]
 > Turnstile secret key harus tetap backend-only. Jangan expose di kode frontend.
 
+> [!NOTE]
+> PixelForge meminta dan memverifikasi token Turnstile baru untuk setiap inisialisasi job AI dan setiap pengiriman feedback. Token tidak digunakan ulang; frontend mereset widget setelah proses berhasil atau gagal.
+
 ---
 
 ### 3.3 Konfigurasi Hostname Management
@@ -487,6 +490,7 @@ Template:
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:8000/api
 VITE_TURNSTILE_SITE_KEY=
+VITE_DEBUG_API=false
 ```
 
 Untuk deployment:
@@ -494,10 +498,13 @@ Untuk deployment:
 ```env
 VITE_API_BASE_URL=https://your-backend-domain.com/api
 VITE_TURNSTILE_SITE_KEY=your_turnstile_site_key
+VITE_DEBUG_API=false
 ```
 
 > [!IMPORTANT]
 > Variable Vite dengan prefix `VITE_` akan terekspos ke browser. Hanya masukkan value yang aman untuk publik di `frontend/.env`.
+
+`VITE_DEBUG_API` hanya bekerja saat Vite berada dalam mode development. Gunakan `true` untuk troubleshooting lokal dan `false` untuk production.
 
 ---
 
@@ -576,6 +583,7 @@ Sebelum menjalankan PixelForge secara lokal, pastikan:
 - [ ] `DISCORD_WEBHOOK_URL` sudah dikonfigurasi jika feedback notification digunakan
 - [ ] `VITE_API_BASE_URL` mengarah ke backend API
 - [ ] `VITE_TURNSTILE_SITE_KEY` sesuai dengan Turnstile site key
+- [ ] `VITE_DEBUG_API=false` untuk deployment production
 
 ---
 

@@ -448,6 +448,8 @@ sequenceDiagram
 
 初始化会检查使用配额是否仍然可用，但不会消耗使用次数。使用次数会在上传之后、任务开始时被预留。
 
+每次 initialization request 都会执行 Turnstile 验证。该 token 在应用流程中只使用一次，并会在后续任务前重置。
+
 ---
 
 ### 阶段 2：上传并启动
@@ -621,18 +623,24 @@ backend/repository/
 
 ### Rate Limiting
 
-SlowAPI 按解析后的客户端 IP 进行限流。
+SlowAPI 使用 `get_real_client_ip()` 返回的客户端 IP 对请求进行限流。
 
-客户端 IP 解析顺序：
+客户端 IP 解析采用 fail-closed 策略：
 
-1. `CF-Connecting-IP`
-2. `X-Forwarded-For`
-3. `X-Real-IP`
-4. request peer host
+1. 当 `TRUST_PROXY_HEADERS=false` 时，忽略 forwarded headers，并使用直接 socket peer（`request.client.host`）。
+2. 启用 proxy trust 后，直接 peer 必须属于 `TRUSTED_PROXY_CIDRS` 或 `CLOUDFLARE_SUBNETS`；否则会忽略 `CF-Connecting-IP`、`X-Forwarded-For` 与 `X-Real-IP`。
+3. 只有当直接 peer 是经过验证的 Cloudflare 地址时，才接受 `CF-Connecting-IP`。
+4. 其他情况下，从右向左检查 `X-Forwarded-For`。只跳过已配置的可信 proxy hop，并将第一个不可信地址视为客户端。
+5. `X-Real-IP` 仅作为来自 allowlisted proxy 的最后 fallback。
+6. 格式错误的 IP 地址与无效 CIDR 会被忽略并写入日志。
+
+Uvicorn 应使用 `--no-proxy-headers` 启动，使应用 resolver 获取真实 socket peer，而不是已被服务器重写的值。绝不要信任 `0.0.0.0/0`、`::/0` 或无限制的 forwarded-header 配置。
+
+当 PixelForge 部署在托管平台之后且 proxy trust 被禁用时，多个访问者可能会显示为同一个平台 proxy 地址。这样可以抵御伪造 header，但会降低基于 IP 的 rate limit 与 usage limit 精度。只有在确认平台的直接 proxy CIDR 与 forwarded-header 行为后，才能启用 proxy trust。
 
 ### 使用限制
 
-使用量按 IP 和 feature 跟踪：
+当前使用量按解析后的 IP 与 feature 跟踪：
 
 ```txt
 {client_ip}:{feature}
@@ -644,10 +652,9 @@ SlowAPI 按解析后的客户端 IP 进行限流。
 ip_usage_hourly
 ```
 
-这支持滚动 24 小时窗口，同时保持清理逻辑简单。
+这支持滚动 24 小时窗口，同时保持清理逻辑简单。由于当前 identity 基于 IP，位于同一 NAT、运营商网络或 reverse proxy 后的用户可能共享配额，而同一用户切换网络后也可能获得不同 identity。
 
 ---
-
 ## 12. Queue 与 Job Management
 
 Job 编排由以下文件处理：
@@ -703,9 +710,11 @@ PixelForge 的安全重点是限制滥用、不安全上传和意外暴露。
 
 ### 机器人防护
 
-Cloudflare Turnstile 保护 job initialization 与 feedback submission。
+Cloudflare Turnstile 会保护每一次 AI job initialization 与每一次 feedback submission。
 
-手动 bypass 只允许在显式启用的 local/development 环境中使用。
+每个 `POST /api/{feature}/init` 请求都必须携带新的 Turnstile token，后端会先通过 Cloudflare 验证该 token，再检查配额或签发上传 metadata。之前成功的验证不会形成可重复使用的授权。任务完成、取消或失败后，前端会重置 token，使下一次任务获取新的 token。
+
+Feedback submission 会执行独立的 Turnstile 验证。手动 bypass 仅允许在显式启用的 local/development 环境中使用。在 production 中，缺少 Turnstile secret 会被视为配置错误，并采用 fail-closed 行为。
 
 ### 文件安全
 
@@ -808,15 +817,49 @@ backend/scripts/reset_usage.py
 backend/core/config.py
 ```
 
-重要环境变量：
+重要的后端环境变量：
 
 ```txt
 DATABASE_URL
 AZURE_CONNECTION_STRING
+REPLICATE_API_TOKEN
 CLOUDFLARE_TURNSTILE_SECRET_KEY
 DISCORD_WEBHOOK_URL
-REPLICATE_API_TOKEN
 ALLOWED_ORIGINS
+
+ENVIRONMENT
+ALLOW_TURNSTILE_TEST_BYPASS
+
+TRUST_PROXY_HEADERS
+TRUSTED_PROXY_CIDRS
+CLOUDFLARE_SUBNETS
+REQUIRE_CLOUDFLARE_PROXY
+
+LOG_LEVEL
+LOG_TO_FILE
+LOG_DIR
+LOG_FILE_NAME
+LOG_MAX_BYTES
+LOG_BACKUP_COUNT
+```
+
+重要的前端环境变量：
+
+```txt
+VITE_API_BASE_URL
+VITE_TURNSTILE_SITE_KEY
+VITE_DEBUG_API
+```
+
+Turnstile site key 是可公开的前端配置。Turnstile secret key、provider 凭据、database URL、Azure connection string 与 Discord webhook URL 必须仅保存在后端。
+
+安全的 proxy 默认值：
+
+```env
+TRUST_PROXY_HEADERS=false
+TRUSTED_PROXY_CIDRS=
+CLOUDFLARE_SUBNETS=
+REQUIRE_CLOUDFLARE_PROXY=false
 ```
 
 重要限制项：
@@ -840,7 +883,6 @@ MAX_CONCURRENT_CPU_JOBS
 ```
 
 ---
-
 ## 18. 部署模型
 
 ```mermaid

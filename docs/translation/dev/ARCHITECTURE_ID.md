@@ -448,6 +448,8 @@ Initialization tidak menjalankan model AI. Fase ini hanya menyiapkan upload yang
 
 Initialization mengecek apakah usage masih tersedia, tetapi tidak mengonsumsi usage. Usage baru di-reserve saat job dimulai, setelah tahap upload.
 
+Verifikasi Turnstile dilakukan pada setiap initialization request. Token digunakan satu kali dalam alur aplikasi dan direset sebelum job berikutnya.
+
 ---
 
 ### Fase 2: Upload dan Start
@@ -621,18 +623,24 @@ backend/repository/
 
 ### Rate Limiting
 
-SlowAPI membatasi request berdasarkan client IP yang sudah di-resolve.
+SlowAPI membatasi request menggunakan client IP yang dikembalikan oleh `get_real_client_ip()`.
 
-Urutan resolusi client IP:
+Resolusi client IP menggunakan pendekatan fail-closed:
 
-1. `CF-Connecting-IP`
-2. `X-Forwarded-For`
-3. `X-Real-IP`
-4. request peer host
+1. Saat `TRUST_PROXY_HEADERS=false`, forwarded header diabaikan dan direct socket peer (`request.client.host`) digunakan.
+2. Saat proxy trust diaktifkan, direct peer harus termasuk dalam `TRUSTED_PROXY_CIDRS` atau `CLOUDFLARE_SUBNETS`; jika tidak, `CF-Connecting-IP`, `X-Forwarded-For`, dan `X-Real-IP` diabaikan.
+3. `CF-Connecting-IP` hanya diterima ketika direct peer merupakan alamat Cloudflare yang sudah diverifikasi.
+4. Selain itu, `X-Forwarded-For` diperiksa dari kanan ke kiri. Hanya hop proxy tepercaya yang dikonfigurasi yang dilewati, dan alamat tidak tepercaya pertama dianggap sebagai client.
+5. `X-Real-IP` hanya digunakan sebagai fallback terakhir dari proxy yang sudah di-allowlist.
+6. Alamat IP malformed dan CIDR yang tidak valid diabaikan serta dicatat di log.
+
+Uvicorn sebaiknya dijalankan dengan `--no-proxy-headers` agar resolver aplikasi menerima socket peer asli, bukan nilai yang sudah ditulis ulang oleh server. Jangan pernah mempercayai `0.0.0.0/0`, `::/0`, atau konfigurasi forwarded header tanpa batas.
+
+Ketika PixelForge berjalan di belakang managed platform dan proxy trust dinonaktifkan, beberapa pengunjung dapat terlihat menggunakan alamat proxy platform yang sama. Konfigurasi ini tahan terhadap spoofed header, tetapi dapat membuat rate limit dan usage limit berbasis IP kurang akurat. Proxy trust hanya boleh diaktifkan setelah direct proxy CIDR dan perilaku forwarded header platform sudah diverifikasi.
 
 ### Usage Limits
 
-Usage dilacak per IP dan feature:
+Usage saat ini dilacak berdasarkan resolved IP dan feature:
 
 ```txt
 {client_ip}:{feature}
@@ -644,10 +652,9 @@ Usage record disimpan per jam di:
 ip_usage_hourly
 ```
 
-Ini mendukung rolling 24-hour usage window sekaligus menjaga cleanup tetap sederhana.
+Ini mendukung rolling 24-hour usage window sekaligus menjaga cleanup tetap sederhana. Karena identity saat ini berbasis IP, pengguna di balik NAT, jaringan operator, atau reverse proxy yang sama dapat berbagi quota, sedangkan satu pengguna dapat memperoleh identity berbeda setelah berpindah jaringan.
 
 ---
-
 ## 12. Queue dan Job Management
 
 Orkestrasi job ditangani oleh:
@@ -703,9 +710,11 @@ Keamanan PixelForge berfokus pada pembatasan abuse, upload tidak aman, dan expos
 
 ### Bot Protection
 
-Cloudflare Turnstile melindungi job initialization dan feedback submission.
+Cloudflare Turnstile melindungi setiap AI job initialization dan setiap feedback submission.
 
-Manual bypass hanya tersedia untuk environment local/development ketika diaktifkan secara eksplisit.
+Setiap request `POST /api/{feature}/init` harus menyertakan Turnstile token baru, lalu backend memverifikasi token tersebut ke Cloudflare sebelum mengecek quota atau memberikan metadata upload. Verifikasi yang berhasil sebelumnya tidak membuat approval yang dapat digunakan kembali. Frontend mereset token setelah job selesai, dibatalkan, atau gagal sehingga job berikutnya memperoleh token baru.
+
+Feedback submission melakukan verifikasi Turnstile tersendiri. Manual bypass hanya tersedia untuk environment local/development yang diaktifkan secara eksplisit. Di production, Turnstile secret yang hilang dianggap sebagai configuration error dan verification akan fail closed.
 
 ### File Safety
 
@@ -808,15 +817,49 @@ Konfigurasi runtime dipusatkan di:
 backend/core/config.py
 ```
 
-Environment variables penting:
+Environment variable backend yang penting:
 
 ```txt
 DATABASE_URL
 AZURE_CONNECTION_STRING
+REPLICATE_API_TOKEN
 CLOUDFLARE_TURNSTILE_SECRET_KEY
 DISCORD_WEBHOOK_URL
-REPLICATE_API_TOKEN
 ALLOWED_ORIGINS
+
+ENVIRONMENT
+ALLOW_TURNSTILE_TEST_BYPASS
+
+TRUST_PROXY_HEADERS
+TRUSTED_PROXY_CIDRS
+CLOUDFLARE_SUBNETS
+REQUIRE_CLOUDFLARE_PROXY
+
+LOG_LEVEL
+LOG_TO_FILE
+LOG_DIR
+LOG_FILE_NAME
+LOG_MAX_BYTES
+LOG_BACKUP_COUNT
+```
+
+Environment variable frontend yang penting:
+
+```txt
+VITE_API_BASE_URL
+VITE_TURNSTILE_SITE_KEY
+VITE_DEBUG_API
+```
+
+Turnstile site key merupakan konfigurasi frontend yang boleh terlihat publik. Turnstile secret key, kredensial provider, database URL, Azure connection string, dan Discord webhook URL harus tetap berada di backend.
+
+Default proxy yang aman:
+
+```env
+TRUST_PROXY_HEADERS=false
+TRUSTED_PROXY_CIDRS=
+CLOUDFLARE_SUBNETS=
+REQUIRE_CLOUDFLARE_PROXY=false
 ```
 
 Limit penting:
@@ -840,7 +883,6 @@ MAX_CONCURRENT_CPU_JOBS
 ```
 
 ---
-
 ## 18. Model Deployment
 
 ```mermaid

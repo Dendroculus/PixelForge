@@ -313,6 +313,9 @@ VITE_TURNSTILE_SITE_KEY=your_turnstile_site_key
 > [!CAUTION]
 > Turnstile secret key 必须只保存在 backend。不要暴露在 frontend 代码中。
 
+> [!NOTE]
+> PixelForge 会为每次 AI job 初始化和每次 feedback 提交获取并验证新的 Turnstile token。Token 不会被重复使用；流程成功或失败后，frontend 会重置 widget。
+
 ---
 
 ### 3.3 配置 Hostname Management
@@ -487,6 +490,7 @@ frontend/.env
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:8000/api
 VITE_TURNSTILE_SITE_KEY=
+VITE_DEBUG_API=false
 ```
 
 Deployment 示例：
@@ -494,10 +498,13 @@ Deployment 示例：
 ```env
 VITE_API_BASE_URL=https://your-backend-domain.com/api
 VITE_TURNSTILE_SITE_KEY=your_turnstile_site_key
+VITE_DEBUG_API=false
 ```
 
 > [!IMPORTANT]
 > 以 `VITE_` 开头的 Vite 变量会暴露到浏览器中。`frontend/.env` 中只能放对外公开也安全的值。
+
+`VITE_DEBUG_API` 只在 Vite development 模式下生效。本地排查问题时可设为 `true`，production 应设为 `false`。
 
 ---
 
@@ -576,6 +583,7 @@ http://localhost:5173
 - [ ] 如果启用 feedback notification，`DISCORD_WEBHOOK_URL` 已配置
 - [ ] `VITE_API_BASE_URL` 指向 backend API
 - [ ] `VITE_TURNSTILE_SITE_KEY` 与 Turnstile site key 一致
+- [ ] Production deployment 使用 `VITE_DEBUG_API=false`
 
 ---
 

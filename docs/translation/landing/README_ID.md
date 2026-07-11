@@ -301,10 +301,12 @@ LOG_BACKUP_COUNT=5
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:8000/api
 VITE_TURNSTILE_SITE_KEY=
+VITE_DEBUG_API=false # true hanya untuk development lokal
 ```
 
 - Simpan `DATABASE_URL`, kredensial Azure, token Replicate, Turnstile secret, dan `DISCORD_WEBHOOK_URL` hanya di environment backend.
 - Semua nilai `VITE_*` akan dimasukkan ke bundle browser dan harus aman untuk dipublikasikan.
+- `VITE_DEBUG_API` hanya mengaktifkan log API di mode development; pertahankan `false` untuk production.
 - `LOG_TO_FILE=false` cocok ketika platform hosting sudah menangkap stdout. Ubah menjadi `true` jika membutuhkan rotating log file saat development lokal.
 - Header IP dari proxy diabaikan secara default. Aktifkan `TRUST_PROXY_HEADERS` hanya bersama CIDR proxy yang jelas; jangan pernah gunakan `0.0.0.0/0` atau `::/0`.
 - `CLOUDFLARE_SUBNETS` hanya diperlukan untuk mode proxy Cloudflare yang tervalidasi. `REQUIRE_CLOUDFLARE_PROXY` memvalidasi rantai proxy, tetapi tidak memblokir akses langsung ke origin.
