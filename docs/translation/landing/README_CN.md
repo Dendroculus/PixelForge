@@ -355,18 +355,6 @@ npm run dev
 - 自动清理保障隐私与存储卫生
 
 
-
-## 🛠 技术栈
-
-- **React + Vite**（前端）
-- **FastAPI**（后端）
-- **Replicate**（AI 模型推理）
-- **Azure Blob Storage**（上传/结果生命周期）
-- **PostgreSQL**（使用限制与保留窗口）
-- **Cloudflare Turnstile**（机器人防护）
-
-
-
 ## 🤝 贡献
 
 欢迎提交 PR 和改进建议。  

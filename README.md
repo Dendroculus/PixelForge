@@ -353,16 +353,6 @@ npm run dev
 - Automated cleanup for privacy and storage hygiene
 
 
-
-## 🛠 Built With
-
-- **React + Vite** (frontend)
-- **FastAPI** (backend)
-- **Replicate** (AI model inference)
-- **Azure Blob Storage** (upload/result lifecycle)
-- **PostgreSQL** (usage limits & retention windows)
-- **Cloudflare Turnstile** (bot protection)
-
 ## 🤝 Contributing
 
 PRs and improvements are welcome.  

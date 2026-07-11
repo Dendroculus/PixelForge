@@ -356,18 +356,6 @@ npm run dev
 - Cleanup otomatis untuk privasi dan kebersihan storage
 
 
-
-## 🛠 Dibangun Dengan
-
-- **React + Vite** (frontend)
-- **FastAPI** (backend)
-- **Replicate** (inferensi model AI)
-- **Azure Blob Storage** (lifecycle upload/result)
-- **PostgreSQL** (usage limit & retention window)
-- **Cloudflare Turnstile** (perlindungan bot)
-
-
-
 ## 🤝 Kontribusi
 
 PR dan perbaikan sangat diterima.  
