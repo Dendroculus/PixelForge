@@ -1,64 +1,86 @@
 # PixelForge 测试
 
-本文档记录 PixelForge 后端、AI 流程、使用额度限制以及构建检查的本地验证脚本。
+本指南列出后端 API、AI pipeline、使用限制、前端构建以及文档相关工作流的本地验证命令。
 
-这些脚本用于本地开发环境。运行前请确保后端已在本地启动，并在需要时启用了本地测试绕过配置。
+`scripts/testing/` 下的 PowerShell 脚本用于 Windows 本地开发。脚本假设后端在本地运行，并在需要时启用本地 Turnstile bypass：
 
-> **仅限 Windows 的说明：** `scripts/testing/*.ps1` 中的 PowerShell 脚本以及本地 `.bat` 辅助文件面向 Windows 开发环境。macOS/Linux 用户需要将命令改写为 Bash，或手动执行等效的 API 检查。
+```env
+ENVIRONMENT=development
+ALLOW_TURNSTILE_TEST_BYPASS=true
+```
+
+Production 中绝不能启用手动 bypass。
+
+---
+
+## 启动应用
+
+从仓库根目录运行：
+
+```powershell
+.\scripts\start_app.bat
+```
+
+也可以分别手动启动：
+
+```powershell
+Push-Location .\backend
+.\venv\Scripts\python.exe run.py
+Pop-Location
+```
+
+```powershell
+Push-Location .\frontend
+npm run dev
+Pop-Location
+```
 
 ---
 
 ## 后端 API 检查
 
-从仓库根目录运行。
-
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\testing\check_backend_limits_and_usage.ps1
 ```
 
-验证内容：
-
-- `/api/limits`
-- `/api/usage`
-- 功能额度结构
-- 运行时额度响应的一致性
+验证 `/api/limits`、`/api/usage`、feature limit 结构以及 runtime limit 一致性。
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\testing\check_backend_error_responses.ps1
 ```
 
-验证后端结构化错误响应。
+验证结构化后端错误响应。
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\testing\check_backend_invalid_image_upload.ps1
 ```
 
-验证无效图片上传数据会以结构化错误安全失败。
+验证无效图像数据会以结构化错误安全失败。
 
 ---
 
-## 使用额度检查
+## Usage Limit 检查
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\testing\check_backend_usage_limit.ps1
 ```
 
-验证所有 AI 功能在使用额度耗尽时都会返回结构化的 `RATE_LIMITED` 响应。
+脚本会临时写入本地 usage table、调用 init endpoint、验证结构化 `RATE_LIMITED` 响应，并恢复当前小时之前的状态。
 
-该脚本会临时写入本地 usage 表，调用 init endpoint，验证响应，然后恢复之前的当前小时 usage 状态。
-
-覆盖的功能：
+覆盖功能：
 
 - `upscale`
 - `rembg`
 - `colorrestore`
 - `objectremove`
 
+当前 quota identity 基于 IP，因此这些检查只能验证后端行为，不能消除 shared NAT/shared proxy 的已知限制。
+
 ---
 
 ## AI 成功流程检查
 
-Upscale：
+Upscale:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\testing\check_ai_feature_success.ps1 `
@@ -81,14 +103,12 @@ powershell -ExecutionPolicy Bypass -File .\scripts\testing\check_ai_feature_succ
   -FilePath ".\frontend\public\demo\res_color_before.jpg"
 ```
 
-Object Remove 需要同时提供原图和 mask 图片。
+Object Remove 需要源图像以及相同尺寸的 mask：
 
-mask 图片必须与原图尺寸一致：
+- 黑色像素：保留区域
+- 白色像素：移除区域
 
-- 黑色像素 = 保留区域
-- 白色像素 = 需要移除的区域
-
-如果 `object_remove_test_mask.png` 还不存在，可以从仓库根目录生成一个简单的中心 mask：
+需要时生成一个简单中心 mask：
 
 ```powershell
 @'
@@ -101,65 +121,86 @@ mask = Path("frontend/public/demo/object_remove_test_mask.png")
 if not src.exists():
     raise SystemExit(f"Missing source image: {src}")
 
-img = Image.open(src)
-w, h = img.size
+with Image.open(src) as img:
+    width, height = img.size
 
-out = Image.new("L", (w, h), 0)
+out = Image.new("L", (width, height), 0)
 draw = ImageDraw.Draw(out)
-
-box_w = int(w * 0.28)
-box_h = int(h * 0.28)
-left = (w - box_w) // 2
-top = (h - box_h) // 2
-right = left + box_w
-bottom = top + box_h
-
-draw.ellipse((left, top, right, bottom), fill=255)
+box_width = int(width * 0.28)
+box_height = int(height * 0.28)
+left = (width - box_width) // 2
+top = (height - box_height) // 2
+draw.ellipse(
+    (left, top, left + box_width, top + box_height),
+    fill=255,
+)
 
 mask.parent.mkdir(parents=True, exist_ok=True)
 out.save(mask)
-
-print(f"Created mask: {mask}")
-print(f"Size: {w}x{h}")
+print(f"Created mask: {mask} ({width}x{height})")
 '@ | .\backend\venv\Scripts\python.exe
 ```
 
+然后使用 `check_ai_feature_success.ps1` 支持的 source 和 mask 参数运行 object-removal 成功流程脚本。
+
 ---
 
-## 前端构建检查
+## Turnstile 流程检查
+
+每个 AI 任务：
+
+1. 确认前端收到 Turnstile token。
+2. 确认 `POST /api/{feature}/init` 对其进行验证。
+3. 完成任务或使任务失败。
+4. 启动另一个任务并确认请求了新 token。
+
+另外提交一次反馈并确认它执行独立验证。在非 development 环境中，临时移除 secret 必须让验证 fail-closed，而不是绕过保护。
+
+---
+
+## 前端检查
 
 ```powershell
-cd E:\GitHub\pixelforge\frontend
-npm run build
+npm --prefix frontend run lint
+npm --prefix frontend run build
 ```
-
-构建成功表示 production 前端 bundle 可以正常编译。
 
 ---
 
 ## 后端编译检查
 
 ```powershell
-cd E:\GitHub\pixelforge\backend
-python -m compileall .
-```
-
-为了减少输出噪音，可以排除虚拟环境：
-
-```powershell
+Push-Location .\backend
 python -m compileall api app core database domain limiter provider repository services utils
+Pop-Location
 ```
 
 ---
 
 ## 手动 UI 检查
 
-完成后端和前端改动后，请手动验证：
+1. 向 AI 工具上传超过公开像素限制的图像。
+2. 确认上传前进行了 resize，并显示 resize alert。
+3. 确认预览仍然正确。
+4. 确认 AI 任务达到 ready 结果。
+5. 运行第二个任务并确认 Turnstile 获取新 token。
+6. 检查 proxy/IP 行为时从两个网络测试；不要假设托管平台的 direct peer 就是访客 IP。
 
-1. 将超过 public pixel limit 的图片上传到 AI 工具
-2. 确认图片在上传前被 resize
-3. 确认 resize alert 会显示
-4. 确认 preview 仍然正常
-5. 确认 AI job 最终能达到 ready 状态
+---
 
-该检查用于验证浏览器端 auto-resize 流程；直接调用 API 的 PowerShell 脚本不会覆盖这个浏览器端流程。
+## 最终仓库检查
+
+```powershell
+git diff --check
+git status --short
+```
+
+搜索文档中的旧命令或个人绝对路径：
+
+```powershell
+Get-ChildItem -Recurse -File -Include *.md,*.bat,*.ps1 |
+  Where-Object { $_.Name -notlike 'TESTING*.md' -and $_.Name -ne 'PACKAGE_NOTES.md' } |
+  Select-String -Pattern 'python -m venv \.venv|uvicorn main:app --reload$|E:\\GitHub\\pixelforge'
+```
+
+该命令不应返回过时文档匹配。

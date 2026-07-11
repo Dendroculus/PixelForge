@@ -424,7 +424,7 @@ Endpoint job bersama:
 
 ## 6. Lifecycle Job AI
 
-Job AI menggunakan workflow dua fase.
+Job AI menggunakan workflow tiga fase.
 
 ### Fase 1: Initialize
 
@@ -634,7 +634,7 @@ Resolusi client IP menggunakan pendekatan fail-closed:
 5. `X-Real-IP` hanya digunakan sebagai fallback terakhir dari proxy yang sudah di-allowlist.
 6. Alamat IP malformed dan CIDR yang tidak valid diabaikan serta dicatat di log.
 
-Uvicorn sebaiknya dijalankan dengan `--no-proxy-headers` agar resolver aplikasi menerima socket peer asli, bukan nilai yang sudah ditulis ulang oleh server. Jangan pernah mempercayai `0.0.0.0/0`, `::/0`, atau konfigurasi forwarded header tanpa batas.
+Development lokal sebaiknya menggunakan `python run.py`; runner tersebut menjalankan Uvicorn dengan `proxy_headers=False` agar resolver aplikasi menerima socket peer asli, bukan nilai yang sudah ditulis ulang oleh server. Perintah langsung yang setara adalah `uvicorn main:app --reload --no-proxy-headers`. Jangan pernah mempercayai `0.0.0.0/0`, `::/0`, atau konfigurasi forwarded header tanpa batas.
 
 Ketika PixelForge berjalan di belakang managed platform dan proxy trust dinonaktifkan, beberapa pengunjung dapat terlihat menggunakan alamat proxy platform yang sama. Konfigurasi ini tahan terhadap spoofed header, tetapi dapat membuat rate limit dan usage limit berbasis IP kurang akurat. Proxy trust hanya boleh diaktifkan setelah direct proxy CIDR dan perilaku forwarded header platform sudah diverifikasi.
 
@@ -991,6 +991,7 @@ Dokumentasi developer:
 docs/
 ├── ARCHITECTURE.md
 ├── ADDING_AI_FEATURE.md
+├── TESTING.md
 ├── assets/
 │   ├── TECH_STACKS.png
 │   └── tech_stacks_generator.html
@@ -1002,7 +1003,11 @@ docs/
     │   ├── ADDING_AI_FEATURE_ID.md
     │   ├── ADDING_AI_FEATURE_ZH.md
     │   ├── ARCHITECTURE_ID.md
-    │   └── ARCHITECTURE_ZH.md
+    │   ├── ARCHITECTURE_ZH.md
+    │   ├── SETUP_ID.md
+    │   ├── SETUP_ZH.md
+    │   ├── TESTING_ID.md
+    │   └── TESTING_ZH.md
     └── community/
         ├── CONTRIBUTING_ID.md
         ├── CONTRIBUTING_ZH.md
@@ -1017,8 +1022,7 @@ Dokumentasi yang direkomendasikan untuk ditambahkan nanti:
 ```txt
 docs/
 ├── API.md
-├── DEPLOYMENT.md
-└── TESTING.md
+└── DEPLOYMENT.md
 ```
 
 `ARCHITECTURE.md` sebaiknya tetap high-level. Detail implementasi sebaiknya berada di module docstring dan panduan khusus fitur.

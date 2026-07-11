@@ -418,7 +418,7 @@ Shared job endpoints:
 
 ## 6. AI Job Lifecycle
 
-AI jobs use a two-phase workflow.
+AI jobs use a three-phase workflow.
 
 ### Phase 1: Initialize
 
@@ -628,7 +628,7 @@ Client IP resolution is fail-closed:
 5. `X-Real-IP` is used only as a final fallback from an allowlisted proxy.
 6. Malformed IP addresses and invalid CIDRs are ignored and logged.
 
-Uvicorn should run with `--no-proxy-headers` so the application resolver receives the real socket peer instead of a value already rewritten by the server. Never trust `0.0.0.0/0`, `::/0`, or an unrestricted forwarded-header configuration.
+Local development should use `python run.py`; the runner starts Uvicorn with `proxy_headers=False` so the application resolver receives the real socket peer instead of a value already rewritten by the server. The equivalent direct command is `uvicorn main:app --reload --no-proxy-headers`. Never trust `0.0.0.0/0`, `::/0`, or an unrestricted forwarded-header configuration.
 
 When PixelForge runs behind a managed platform and proxy trust is disabled, multiple visitors may appear under the platform's shared proxy address. This is resistant to spoofed headers but can make per-IP rate and usage limits less precise. Proxy trust should be enabled only after the platform's direct proxy CIDRs and forwarded-header behavior are verified.
 
@@ -985,6 +985,7 @@ Developer docs:
 docs/
 ├── ARCHITECTURE.md
 ├── ADDING_AI_FEATURE.md
+├── TESTING.md
 ├── assets/
 │   ├── TECH_STACKS.png
 │   └── tech_stacks_generator.html
@@ -996,7 +997,11 @@ docs/
     │   ├── ADDING_AI_FEATURE_ID.md
     │   ├── ADDING_AI_FEATURE_ZH.md
     │   ├── ARCHITECTURE_ID.md
-    │   └── ARCHITECTURE_ZH.md
+    │   ├── ARCHITECTURE_ZH.md
+    │   ├── SETUP_ID.md
+    │   ├── SETUP_ZH.md
+    │   ├── TESTING_ID.md
+    │   └── TESTING_ZH.md
     └── community/
         ├── CONTRIBUTING_ID.md
         ├── CONTRIBUTING_ZH.md
@@ -1011,8 +1016,7 @@ Recommended future docs:
 ```txt
 docs/
 ├── API.md
-├── DEPLOYMENT.md
-└── TESTING.md
+└── DEPLOYMENT.md
 ```
 
 `ARCHITECTURE.md` should remain high-level. Implementation details should live in module docstrings and feature-specific guides.

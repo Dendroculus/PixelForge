@@ -1,95 +1,68 @@
+<div align="center">
+
+[EN](../../../SECURITY.md) | ID | [中文](./SECURITY_ZH.md)
+
+</div>
+
 # Kebijakan Keamanan
 
 ## Versi yang Didukung
 
-PixelForge dikelola secara aktif dari branch utama repository.
-
-Perbaikan keamanan umumnya diterapkan pada versi terbaru proyek. Commit lama, fork, atau deployment privat mungkin tidak menerima patch keamanan terpisah.
+PixelForge dipelihara aktif dari branch `master`. Security fix umumnya diterapkan ke versi terbaru; commit lama, fork, atau deployment private mungkin tidak menerima patch terpisah.
 
 ## Melaporkan Kerentanan
 
-Jika Anda menemukan kemungkinan kerentanan keamanan di PixelForge, harap laporkan secara privat dan jangan membuka public issue.
+Laporkan dugaan kerentanan secara private, bukan melalui issue publik yang memuat detail exploit.
 
-Mohon sertakan:
-
-- Deskripsi kerentanan yang jelas
-- Langkah-langkah untuk mereproduksi masalah
-- Komponen, route, page, atau file yang terdampak
-- Potensi dampak
-- Screenshot, log, atau proof-of-concept yang relevan
-- Saran perbaikan, jika ada
-
-Mohon hindari membagikan detail eksploitasi secara publik sebelum masalah ditinjau dan diperbaiki.
+Sertakan deskripsi, langkah reproduksi, komponen yang terpengaruh, dampak, bukti yang relevan, dan saran perbaikan bila tersedia. Hindari disclosure publik sebelum masalah ditinjau dan diperbaiki.
 
 ## Hal yang Perlu Dilaporkan
 
-Laporkan masalah seperti:
-
-- Bypass autentikasi atau otorisasi
-- Perilaku upload file yang tidak aman
-- Bypass spoofing tipe file
-- Eksposur atau penyalahgunaan Signed URL
-- Kebocoran secret, token, atau kredensial
+- Bypass authentication atau authorization
+- Upload tidak aman atau bypass validasi file
+- Eksposur/misuse signed URL
+- Kebocoran secret, token, atau credential
 - Bypass Cloudflare Turnstile di production
-- Masalah proxy/IP trust
+- Konfigurasi Turnstile production yang hilang tetapi tetap diterima
+- Masalah proxy/IP trust atau forwarded header yang dapat dipalsukan
 - Bypass rate limit atau usage limit
-- Path traversal atau penanganan nama file yang tidak aman
-- Server-side request forgery
-- Cross-site scripting
-- Eksposur data yang melibatkan gambar upload, result URL, log, atau environment variable
+- Path traversal, unsafe filename, SSRF, atau XSS
+- Eksposur image upload, result URL, log, atau environment value
 
-## Hal yang Tidak Perlu Dilaporkan Secara Privat
-
-Hal berikut biasanya tidak memerlukan laporan keamanan privat:
-
-- Bug umum tanpa dampak keamanan
-- Masalah layout UI
-- Dokumentasi yang kurang
-- Saran update dependency tanpa vulnerability yang diketahui
-- Kesalahan konfigurasi lokal yang tidak berdampak ke production
-
-Hal-hal tersebut dapat dilaporkan melalui GitHub issue biasa.
+Bug umum tanpa dampak keamanan, masalah layout, kekurangan dokumentasi, dan misconfiguration yang hanya terjadi secara lokal dapat dilaporkan melalui issue biasa.
 
 ## Praktik Keamanan Proyek
 
-PixelForge menggunakan beberapa langkah keamanan:
+PixelForge menggunakan:
 
-- Verifikasi Cloudflare Turnstile sebelum inisialisasi job AI
-- Rate limiting untuk endpoint API
-- Usage limit per fitur
-- Signed Azure Blob URL untuk upload dan akses hasil
-- Validasi file untuk tipe, ukuran, dan struktur gambar
-- Nama file aman yang dihasilkan backend
-- Siklus hidup dan cleanup storage sementara
-- Token provider dan kredensial cloud hanya berada di backend
-- Validasi environment untuk pengaturan runtime sensitif
+- Verifikasi Turnstile baru untuk setiap inisialisasi job AI dan pengiriman feedback
+- Fail-closed di production saat Turnstile secret tidak tersedia
+- Manual bypass yang hanya dapat diaktifkan secara eksplisit di development
+- Rate limit endpoint dan rolling usage limit per fitur
+- Resolusi client IP fail-closed: forwarded header diabaikan kecuali proxy trust aktif dan direct proxy berada dalam CIDR eksplisit
+- Signed Azure Blob URL yang short-lived
+- Validasi tipe, byte size, resolusi, dan struktur gambar
+- Safe generated filename dan cleanup temporary storage
+- Provider credential dan cloud secret hanya di backend
+
+Validasi Cloudflare pada aplikasi tidak memblokir origin secara firewall. Deployment Cloudflare-only juga harus membatasi direct origin traffic pada layer network/hosting.
+
+Identitas daily usage saat ini berbasis IP. Pengguna di balik NAT, carrier network, atau managed reverse proxy dapat berbagi quota; ini adalah keterbatasan yang didokumentasikan, bukan jaminan authentication.
 
 ## Secret dan File Environment
 
-Jangan commit:
+Jangan commit file `.env`, token, database URL, Azure connection string, Cloudflare secret, Discord webhook, private key, log sensitif/signed URL, atau image private pengguna.
 
-- File `.env`
-- API token
-- Database URL
-- Azure connection string
-- Replicate token
-- Cloudflare secret
-- Discord webhook URL
-- Private key
-- Log yang mengandung data sensitif
-
-Gunakan file contoh seperti `.env.example` saat mendokumentasikan variable yang diperlukan.
+Gunakan `.env.example` hanya untuk nama variable dan placeholder aman. Rotate secret segera jika terekspos.
 
 ## Responsible Disclosure
 
-Setelah kerentanan dilaporkan:
+1. Maintainer meninjau dan mereproduksi masalah.
+2. Dampak dan versi yang terpengaruh dinilai.
+3. Perbaikan terfokus dan langkah verifikasi disiapkan.
+4. Perbaikan di-merge atau dirilis.
+5. Disclosure publik dapat dilakukan setelah pengguna memiliki waktu yang wajar untuk update.
 
-1. Maintainer akan meninjau laporan.
-2. Masalah akan direproduksi dan dinilai.
-3. Perbaikan akan disiapkan jika diperlukan.
-4. Perbaikan akan dirilis atau di-merge.
-5. Pengungkapan publik dapat dilakukan setelah pengguna memiliki waktu yang wajar untuk update.
-
-Mohon bertindak dengan itikad baik dan hindari mengakses, mengubah, atau menghapus data yang bukan milik Anda.
+Bertindaklah dengan itikad baik dan jangan mengakses, mengubah, atau menghapus data yang bukan milik Anda.
 
 Terima kasih telah membantu menjaga PixelForge tetap aman.

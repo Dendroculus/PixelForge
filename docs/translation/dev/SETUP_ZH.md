@@ -450,6 +450,7 @@ LOG_BACKUP_COUNT=5
 ```env
 TRUST_PROXY_HEADERS=false
 TRUSTED_PROXY_CIDRS=
+CLOUDFLARE_SUBNETS=
 REQUIRE_CLOUDFLARE_PROXY=false
 ```
 
@@ -490,7 +491,7 @@ frontend/.env
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:8000/api
 VITE_TURNSTILE_SITE_KEY=
-VITE_DEBUG_API=false
+VITE_DEBUG_API=true
 ```
 
 Deployment 示例：
@@ -514,19 +515,19 @@ VITE_DEBUG_API=false
 
 ```bash
 cd backend
-python -m venv .venv
+python -m venv venv
 ```
 
 macOS/Linux：
 
 ```bash
-source .venv/bin/activate
+source venv/bin/activate
 ```
 
 Windows PowerShell：
 
 ```powershell
-.venv\Scripts\Activate.ps1
+venv\Scripts\Activate.ps1
 ```
 
 安装依赖：
@@ -538,8 +539,10 @@ pip install -r requirements.txt
 运行 backend：
 
 ```bash
-uvicorn main:app --reload --no-proxy-headers
+python run.py
 ```
+
+`backend/run.py` 会启用 Uvicorn reload，并设置 `proxy_headers=False`，使应用级客户端 IP resolver 获取直接 socket peer。
 
 默认 backend URL：
 

@@ -1,51 +1,71 @@
 # Pengujian PixelForge
 
-Dokumen ini mencatat skrip verifikasi lokal untuk backend PixelForge, pipeline AI, batas penggunaan, dan pemeriksaan build.
+Panduan ini berisi command verifikasi lokal untuk API backend, pipeline AI, usage limit, build frontend, dan workflow yang sensitif terhadap dokumentasi.
 
-Skrip ini ditujukan untuk development lokal. Skrip mengasumsikan backend berjalan secara lokal dan pengaturan bypass test lokal sudah diaktifkan jika diperlukan.
+Script PowerShell di `scripts/testing/` ditujukan untuk development lokal Windows. Script mengasumsikan backend berjalan lokal dan bypass Turnstile lokal diaktifkan bila diperlukan:
 
-> **Catatan khusus Windows:** skrip PowerShell di `scripts/testing/*.ps1` dan file helper lokal `.bat` ditujukan untuk environment development Windows. Pengguna macOS/Linux perlu mem-port perintah ke Bash atau menjalankan pengecekan API yang setara secara manual.
+```env
+ENVIRONMENT=development
+ALLOW_TURNSTILE_TEST_BYPASS=true
+```
+
+Jangan pernah mengaktifkan manual bypass di production.
+
+---
+
+## Menjalankan Aplikasi
+
+Dari root repository:
+
+```powershell
+.\scripts\start_app.bat
+```
+
+Atau jalankan masing-masing secara manual:
+
+```powershell
+Push-Location .\backend
+.\venv\Scripts\python.exe run.py
+Pop-Location
+```
+
+```powershell
+Push-Location .\frontend
+npm run dev
+Pop-Location
+```
 
 ---
 
 ## Pemeriksaan API Backend
 
-Jalankan dari root repository.
-
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\testing\check_backend_limits_and_usage.ps1
 ```
 
-Memverifikasi:
-
-- `/api/limits`
-- `/api/usage`
-- Bentuk limit fitur
-- Konsistensi response runtime limit
+Memverifikasi `/api/limits`, `/api/usage`, bentuk feature limit, dan konsistensi runtime limit.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\testing\check_backend_error_responses.ps1
 ```
 
-Memverifikasi response error backend yang terstruktur.
+Memverifikasi structured error response backend.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\testing\check_backend_invalid_image_upload.ps1
 ```
 
-Memverifikasi bahwa data gambar upload yang invalid gagal secara aman dengan error terstruktur.
+Memverifikasi bahwa data gambar invalid gagal secara aman dengan structured error.
 
 ---
 
-## Pemeriksaan Batas Penggunaan
+## Pemeriksaan Usage Limit
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\testing\check_backend_usage_limit.ps1
 ```
 
-Memverifikasi bahwa semua fitur AI mengembalikan response `RATE_LIMITED` yang terstruktur saat kuota penggunaan habis.
-
-Skrip ini sementara mengisi tabel usage lokal, memanggil endpoint init, memvalidasi response, lalu mengembalikan state usage current-hour sebelumnya.
+Script sementara mengisi usage table lokal, memanggil init endpoint, memvalidasi response `RATE_LIMITED`, lalu mengembalikan state jam berjalan sebelumnya.
 
 Fitur yang dicakup:
 
@@ -53,6 +73,8 @@ Fitur yang dicakup:
 - `rembg`
 - `colorrestore`
 - `objectremove`
+
+Karena identitas quota saat ini berbasis IP, pemeriksaan ini memvalidasi behavior backend tetapi tidak menghilangkan keterbatasan shared NAT/shared proxy.
 
 ---
 
@@ -81,14 +103,12 @@ powershell -ExecutionPolicy Bypass -File .\scripts\testing\check_ai_feature_succ
   -FilePath ".\frontend\public\demo\res_color_before.jpg"
 ```
 
-Object Remove membutuhkan source image dan mask image.
+Object Remove memerlukan source image dan mask dengan ukuran yang sama:
 
-Mask image harus memiliki dimensi yang sama dengan source image:
+- Pixel hitam: pertahankan area
+- Pixel putih: hapus area
 
-- Pixel hitam = area yang dipertahankan
-- Pixel putih = area yang ingin dihapus
-
-Jika `object_remove_test_mask.png` belum ada, buat mask sederhana dari root repository:
+Buat simple center mask bila diperlukan:
 
 ```powershell
 @'
@@ -101,64 +121,86 @@ mask = Path("frontend/public/demo/object_remove_test_mask.png")
 if not src.exists():
     raise SystemExit(f"Missing source image: {src}")
 
-img = Image.open(src)
-w, h = img.size
+with Image.open(src) as img:
+    width, height = img.size
 
-out = Image.new("L", (w, h), 0)
+out = Image.new("L", (width, height), 0)
 draw = ImageDraw.Draw(out)
-
-box_w = int(w * 0.28)
-box_h = int(h * 0.28)
-left = (w - box_w) // 2
-top = (h - box_h) // 2
-right = left + box_w
-bottom = top + box_h
-
-draw.ellipse((left, top, right, bottom), fill=255)
+box_width = int(width * 0.28)
+box_height = int(height * 0.28)
+left = (width - box_width) // 2
+top = (height - box_height) // 2
+draw.ellipse(
+    (left, top, left + box_width, top + box_height),
+    fill=255,
+)
 
 mask.parent.mkdir(parents=True, exist_ok=True)
 out.save(mask)
-
-print(f"Created mask: {mask}")
-print(f"Size: {w}x{h}")
+print(f"Created mask: {mask} ({width}x{height})")
 '@ | .\backend\venv\Scripts\python.exe
 ```
+
+Kemudian jalankan success script object removal menggunakan argument source dan mask yang didukung `check_ai_feature_success.ps1`.
+
 ---
 
-## Pemeriksaan Build Frontend
+## Pemeriksaan Alur Turnstile
+
+Untuk setiap job AI:
+
+1. Pastikan frontend menerima token Turnstile.
+2. Pastikan `POST /api/{feature}/init` memverifikasinya.
+3. Selesaikan atau gagalkan job.
+4. Mulai job lain dan pastikan token baru diminta.
+
+Kirim feedback sekali dan pastikan verifikasi dilakukan terpisah. Pada environment non-development, menghapus secret sementara harus menyebabkan verifikasi fail-closed, bukan melewati perlindungan.
+
+---
+
+## Pemeriksaan Frontend
 
 ```powershell
-cd E:\GitHub\pixelforge\frontend
-npm run build
+npm --prefix frontend run lint
+npm --prefix frontend run build
 ```
-
-Build yang berhasil memastikan bundle frontend production dapat dikompilasi.
 
 ---
 
 ## Pemeriksaan Compile Backend
 
 ```powershell
-cd E:\GitHub\pixelforge\backend
-python -m compileall .
-```
-
-Agar output tidak terlalu ramai, exclude virtual environment:
-
-```powershell
+Push-Location .\backend
 python -m compileall api app core database domain limiter provider repository services utils
+Pop-Location
 ```
 
 ---
 
 ## Pemeriksaan Manual UI
 
-Setelah perubahan backend dan frontend, verifikasi manual:
+1. Upload gambar di atas public pixel limit ke tool AI.
+2. Pastikan gambar di-resize sebelum upload dan alert resize muncul.
+3. Pastikan preview tetap benar.
+4. Pastikan job AI mencapai result ready.
+5. Jalankan job kedua dan pastikan Turnstile memperoleh token baru.
+6. Test dari dua network saat memeriksa behavior proxy/IP; jangan menganggap direct peer platform terkelola adalah IP pengunjung.
 
-1. Upload gambar di atas public pixel limit ke tool AI
-2. Pastikan gambar di-resize sebelum upload
-3. Pastikan alert resize muncul
-4. Pastikan preview tetap berjalan
-5. Pastikan job AI tetap mencapai status ready
+---
 
-Pemeriksaan ini memvalidasi flow auto-resize browser-side yang tidak dijalankan oleh skrip API PowerShell langsung.
+## Pemeriksaan Final Repository
+
+```powershell
+git diff --check
+git status --short
+```
+
+Cari command lama atau personal absolute path dalam dokumentasi:
+
+```powershell
+Get-ChildItem -Recurse -File -Include *.md,*.bat,*.ps1 |
+  Where-Object { $_.Name -notlike 'TESTING*.md' -and $_.Name -ne 'PACKAGE_NOTES.md' } |
+  Select-String -Pattern 'python -m venv \.venv|uvicorn main:app --reload$|E:\\GitHub\\pixelforge'
+```
+
+Command seharusnya tidak mengembalikan match dokumentasi yang outdated.

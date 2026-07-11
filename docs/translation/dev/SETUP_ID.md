@@ -450,6 +450,7 @@ LOG_BACKUP_COUNT=5
 ```env
 TRUST_PROXY_HEADERS=false
 TRUSTED_PROXY_CIDRS=
+CLOUDFLARE_SUBNETS=
 REQUIRE_CLOUDFLARE_PROXY=false
 ```
 
@@ -490,7 +491,7 @@ Template:
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:8000/api
 VITE_TURNSTILE_SITE_KEY=
-VITE_DEBUG_API=false
+VITE_DEBUG_API=true
 ```
 
 Untuk deployment:
@@ -514,19 +515,19 @@ VITE_DEBUG_API=false
 
 ```bash
 cd backend
-python -m venv .venv
+python -m venv venv
 ```
 
 macOS/Linux:
 
 ```bash
-source .venv/bin/activate
+source venv/bin/activate
 ```
 
 Windows PowerShell:
 
 ```powershell
-.venv\Scripts\Activate.ps1
+venv\Scripts\Activate.ps1
 ```
 
 Install dependencies:
@@ -535,11 +536,13 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Jalankan backend:
+Jalankan backend melalui project runner:
 
 ```bash
-uvicorn main:app --reload --no-proxy-headers
+python run.py
 ```
+
+`backend/run.py` menjalankan Uvicorn dengan reload aktif dan `proxy_headers=False`, sehingga resolver client IP pada aplikasi menerima direct socket peer.
 
 Default backend URL:
 

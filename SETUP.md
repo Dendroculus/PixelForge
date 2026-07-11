@@ -313,6 +313,9 @@ VITE_TURNSTILE_SITE_KEY=your_turnstile_site_key
 > [!CAUTION]
 > The Turnstile secret key must stay backend-only. Never expose it in frontend code.
 
+> [!NOTE]
+> PixelForge requests and verifies a fresh Turnstile token for every AI job initialization and every feedback submission. Tokens are not reused; the frontend resets the widget after success, cancellation, or failure. Outside local/development environments, a missing secret fails closed.
+
 ---
 
 ### 3.3 Configure Hostname Management
@@ -447,6 +450,7 @@ LOG_BACKUP_COUNT=5
 ```env
 TRUST_PROXY_HEADERS=false
 TRUSTED_PROXY_CIDRS=
+CLOUDFLARE_SUBNETS=
 REQUIRE_CLOUDFLARE_PROXY=false
 ```
 
@@ -487,6 +491,7 @@ Template:
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:8000/api
 VITE_TURNSTILE_SITE_KEY=
+VITE_DEBUG_API=true
 ```
 
 For deployment:
@@ -494,10 +499,13 @@ For deployment:
 ```env
 VITE_API_BASE_URL=https://your-backend-domain.com/api
 VITE_TURNSTILE_SITE_KEY=your_turnstile_site_key
+VITE_DEBUG_API=false
 ```
 
 > [!IMPORTANT]
 > Vite variables prefixed with `VITE_` are exposed to the browser. Only put public-safe values in `frontend/.env`.
+
+`VITE_DEBUG_API` is effective only in Vite development mode. Use `true` for local troubleshooting and `false` in production.
 
 ---
 
@@ -507,19 +515,19 @@ VITE_TURNSTILE_SITE_KEY=your_turnstile_site_key
 
 ```bash
 cd backend
-python -m venv .venv
+python -m venv venv
 ```
 
 macOS/Linux:
 
 ```bash
-source .venv/bin/activate
+source venv/bin/activate
 ```
 
 Windows PowerShell:
 
 ```powershell
-.venv\Scripts\Activate.ps1
+venv\Scripts\Activate.ps1
 ```
 
 Install dependencies:
@@ -528,11 +536,13 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-Run the backend:
+Run the backend through the project runner:
 
 ```bash
-uvicorn main:app --reload --no-proxy-headers
+python run.py
 ```
+
+`backend/run.py` starts Uvicorn with reload enabled and `proxy_headers=False`, so the application-level client-IP resolver receives the direct socket peer.
 
 Default backend URL:
 

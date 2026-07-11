@@ -2,94 +2,86 @@
 
 ## Supported Versions
 
-PixelForge is actively maintained from the main branch of the repository.
-
-Security fixes are generally applied to the latest version of the project. Older commits, forks, or private deployments may not receive separate security patches.
+PixelForge is actively maintained from the repository's `master` branch. Security fixes are generally applied to the latest version; older commits, forks, or private deployments may not receive separate patches.
 
 ## Reporting a Vulnerability
 
-If you believe you found a security vulnerability in PixelForge, please report it privately instead of opening a public issue.
+Report suspected vulnerabilities privately instead of opening a public issue with exploit details.
 
-Please include:
+Include:
 
-- A clear description of the vulnerability
-- Steps to reproduce the issue
+- A clear description
+- Reproduction steps
 - Affected component, route, page, or file
 - Potential impact
-- Any relevant screenshots, logs, or proof-of-concept details
-- Suggested fix, if you have one
+- Relevant screenshots, logs, or proof-of-concept details
+- A suggested fix, when available
 
-Please avoid sharing exploit details publicly until the issue has been reviewed and addressed.
+Avoid public disclosure until the issue has been reviewed and addressed.
 
 ## What to Report
 
-Please report issues such as:
+Examples include:
 
 - Authentication or authorization bypass
-- Unsafe file upload behavior
-- File type spoofing bypass
+- Unsafe upload or file-type validation bypass
 - Signed URL exposure or misuse
 - Secret, token, or credential leakage
 - Cloudflare Turnstile bypass in production
-- Proxy/IP trust issues
+- Missing production Turnstile configuration being accepted
+- Proxy/IP trust issues or spoofable forwarded headers
 - Rate-limit or usage-limit bypass
-- Path traversal or unsafe filename handling
-- Server-side request forgery
-- Cross-site scripting
-- Data exposure involving uploaded images, result URLs, logs, or environment variables
+- Path traversal, unsafe filenames, SSRF, or XSS
+- Exposure of uploaded images, result URLs, logs, or environment values
 
 ## What Not to Report
 
-The following usually do not require a private security report:
-
-- General bugs without security impact
-- UI layout issues
-- Missing documentation
-- Dependency update suggestions without a known vulnerability
-- Local development misconfiguration that does not affect production
-
-These can be reported through regular GitHub issues.
+General bugs without security impact, UI layout issues, missing documentation, dependency suggestions without a known vulnerability, and local-only misconfiguration can be reported through regular GitHub issues.
 
 ## Project Security Practices
 
-PixelForge uses several security measures:
+PixelForge uses:
 
-- Cloudflare Turnstile verification before AI job initialization
-- Rate limiting for API endpoints
-- Per-feature usage limits
-- Signed Azure Blob URLs for upload and result access
-- File validation for type, size, and image structure
-- Safe generated filenames
-- Temporary storage lifecycle and cleanup
-- Backend-only provider tokens and cloud credentials
-- Environment validation for sensitive runtime settings
+- Fresh Cloudflare Turnstile verification for every AI job initialization and feedback submission
+- Production fail-closed behavior when the Turnstile secret is missing
+- A development-only manual bypass that must be explicitly enabled
+- SlowAPI endpoint rate limits and per-feature rolling usage limits
+- Fail-closed client-IP resolution: forwarded headers are ignored unless proxy trust is enabled and the direct proxy belongs to an explicit CIDR
+- Signed, short-lived Azure Blob URLs for upload and result access
+- File validation for type, byte size, resolution, and image structure
+- Safe generated filenames and controlled temporary-storage cleanup
+- Backend-only provider credentials and cloud secrets
+
+The application-level Cloudflare check does not firewall the origin. Deployments requiring Cloudflare-only access must also restrict direct origin traffic at the network or hosting layer.
+
+Current daily usage identity is IP-based. Users behind the same NAT, carrier network, or managed reverse proxy may share a quota; this is a documented limitation rather than an authentication guarantee.
 
 ## Secrets and Environment Files
 
-Do not commit:
+Never commit:
 
 - `.env` files
-- API tokens
+- API or provider tokens
 - Database URLs
 - Azure connection strings
-- Replicate tokens
 - Cloudflare secrets
 - Discord webhook URLs
 - Private keys
-- Generated logs containing sensitive data
+- Generated logs containing sensitive data or signed URLs
+- User-uploaded private images
 
-Use example files such as `.env.example` when documenting required variables.
+Use `.env.example` for names and safe placeholders only. Rotate any secret immediately if exposed.
 
 ## Responsible Disclosure
 
-After a vulnerability is reported:
+After a report is received:
 
-1. The maintainer will review the report.
-2. The issue will be reproduced and assessed.
-3. A fix will be prepared when needed.
-4. The fix will be released or merged.
-5. Public disclosure can happen after users have had a reasonable chance to update.
+1. The maintainer reviews and reproduces the issue.
+2. Impact and affected versions are assessed.
+3. A focused fix and verification steps are prepared.
+4. The fix is merged or released.
+5. Public disclosure may occur after users have had a reasonable opportunity to update.
 
-Please act in good faith and avoid accessing, modifying, or deleting data that does not belong to you.
+Act in good faith and do not access, modify, or delete data that does not belong to you.
 
 Thank you for helping keep PixelForge safe.

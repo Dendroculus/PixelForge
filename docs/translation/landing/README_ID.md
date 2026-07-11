@@ -41,7 +41,6 @@ Sistem ini dirancang untuk menangani batasan dunia nyata seperti rate limit, job
 - 🛠️ Open-source dan mudah dikembangkan melalui arsitektur provider  
 
 
-
 ## 🎯 Fitur
 
 ### A) Alat Gambar Utama
@@ -301,7 +300,7 @@ LOG_BACKUP_COUNT=5
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:8000/api
 VITE_TURNSTILE_SITE_KEY=
-VITE_DEBUG_API=false # true hanya untuk development lokal
+VITE_DEBUG_API=true # false untuk production
 ```
 
 - Simpan `DATABASE_URL`, kredensial Azure, token Replicate, Turnstile secret, dan `DISCORD_WEBHOOK_URL` hanya di environment backend.
@@ -327,11 +326,11 @@ cd PixelForge
 
 ```bash
 cd backend
-python -m venv .venv
-source .venv/bin/activate      # macOS/Linux
-# .venv\Scripts\activate       # Windows
+python -m venv venv
+source venv/bin/activate      # macOS/Linux
+# venv\Scripts\activate       # Windows
 pip install -r requirements.txt
-uvicorn main:app --reload --no-proxy-headers
+python run.py  # menjalankan Uvicorn tanpa menulis ulang proxy header
 ```
 
 ## 3) Jalankan frontend
@@ -343,11 +342,11 @@ npm run dev
 ```
 
 
-
 ## 🔒 Catatan Keamanan
 
-- Pemeriksaan Turnstile sebelum route init AI
+- Verifikasi Turnstile baru sebelum setiap inisialisasi job AI dan pengiriman feedback
 - Header client IP dari proxy hanya diterima dari CIDR proxy tepercaya yang dikonfigurasi
+- Konfigurasi Turnstile yang hilang akan gagal secara tertutup di luar environment lokal/development
 - Signed SAS URL untuk akses blob yang terkontrol
 - Validasi file ketat + batas dimensi/ukuran
 - Upload AI publik memakai batas pixel browser yang lebih rendah untuk UX

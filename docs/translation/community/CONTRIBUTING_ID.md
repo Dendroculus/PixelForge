@@ -1,8 +1,14 @@
+<div align="center">
+
+[EN](../../../CONTRIBUTING.md) | ID | [中文](./CONTRIBUTING_ZH.md)
+
+</div>
+
 # Berkontribusi ke PixelForge
 
-Terima kasih sudah meluangkan waktu untuk membantu mengembangkan PixelForge.
+Terima kasih telah meluangkan waktu untuk meningkatkan PixelForge.
 
-PixelForge adalah studio gambar open-source yang menggabungkan pemrosesan berbasis AI di cloud dengan alat gambar cepat yang berjalan di browser. Kontribusi sangat diterima, tetapi mohon jaga perubahan tetap fokus, terdokumentasi, dan mudah ditinjau.
+PixelForge adalah studio gambar open-source yang menggabungkan pemrosesan cloud berbasis AI dengan tool gambar browser yang cepat. Kontribusi sangat diterima, tetapi perubahan harus tetap fokus, terdokumentasi, aman, dan mudah direview.
 
 ---
 
@@ -12,7 +18,7 @@ PixelForge adalah studio gambar open-source yang menggabungkan pemrosesan berbas
 - [Sebelum Memulai](#sebelum-memulai)
 - [Pengembangan Lokal](#pengembangan-lokal)
 - [Penamaan Branch](#penamaan-branch)
-- [Konvensi Commit Message](#konvensi-commit-message)
+- [Konvensi Commit](#konvensi-commit)
 - [Panduan Pull Request](#panduan-pull-request)
 - [Panduan Frontend](#panduan-frontend)
 - [Panduan Backend](#panduan-backend)
@@ -24,29 +30,25 @@ PixelForge adalah studio gambar open-source yang menggabungkan pemrosesan berbas
 
 ## Cara Berkontribusi
 
-Anda dapat berkontribusi dengan:
-
 - Memperbaiki bug
-- Meningkatkan UI/UX
-- Menambahkan atau menyempurnakan alat gambar
-- Meningkatkan keandalan backend
-- Meningkatkan dokumentasi
-- Menambahkan test
-- Melaporkan bug atau masalah penggunaan
+- Meningkatkan UI/UX dan accessibility
+- Menambah atau menyempurnakan image tool
+- Meningkatkan reliability atau performance backend
+- Memperbaiki dokumentasi dan terjemahan
+- Menambah test
+- Melaporkan bug atau masalah usability
 - Mengusulkan peningkatan arsitektur atau keamanan
 
-Untuk perubahan besar, sebaiknya buat issue terlebih dahulu agar ruang lingkupnya dapat didiskusikan sebelum implementasi.
+Untuk perubahan besar, buka issue terlebih dahulu agar scope dapat didiskusikan.
 
 ---
 
 ## Sebelum Memulai
 
-Sebelum berkontribusi, mohon:
-
 1. Periksa issue dan pull request yang sudah ada.
-2. Pastikan perubahan hanya fokus pada satu tujuan.
-3. Hindari perubahan format yang tidak berhubungan.
-4. Jangan commit secret, file `.env` lokal, log yang dihasilkan, atau konfigurasi privat.
+2. Fokuskan perubahan pada satu concern.
+3. Hindari perubahan formatting yang tidak terkait.
+4. Jangan commit secret, file `.env` lokal, log, atau konfigurasi private.
 5. Pastikan perubahan berjalan secara lokal sebelum membuka pull request.
 
 ---
@@ -57,11 +59,17 @@ Sebelum berkontribusi, mohon:
 
 ```bash
 cd backend
-python -m venv .venv
-source .venv/bin/activate      # macOS/Linux
-# .venv\Scripts\activate      # Windows
+python -m venv venv
+source venv/bin/activate      # macOS/Linux
+# venv\Scripts\activate       # Windows
 pip install -r requirements.txt
-uvicorn main:app --reload
+python run.py
+```
+
+`backend/run.py` menjalankan Uvicorn dengan reload aktif dan `proxy_headers=False`. Perintah langsung yang setara:
+
+```bash
+uvicorn main:app --reload --no-proxy-headers
 ```
 
 ### Frontend
@@ -74,21 +82,21 @@ npm run dev
 
 ### Pemeriksaan yang Disarankan
 
-Jalankan pemeriksaan yang sesuai dengan perubahan Anda:
-
 ```bash
 npm --prefix frontend run lint
+npm --prefix frontend run build
 ```
 
-Jika test backend atau tool formatting sudah tersedia di environment lokal Anda, jalankan sebelum mengirim pull request.
+```bash
+cd backend
+python -m compileall api app core database domain limiter provider repository services utils
+```
+
+Lihat [TESTING_ID.md](../dev/TESTING_ID.md) untuk pemeriksaan backend dan workflow AI.
 
 ---
 
 ## Penamaan Branch
-
-Gunakan nama branch yang singkat dan deskriptif.
-
-Pola yang disarankan:
 
 ```txt
 feat/object-remover
@@ -101,11 +109,9 @@ chore/update-deps
 
 ---
 
-## Konvensi Commit Message
+## Konvensi Commit
 
-PixelForge menggunakan gaya Conventional Commit.
-
-Format:
+Gunakan format Conventional Commit:
 
 ```txt
 <type>(optional-scope): <ringkasan singkat>
@@ -122,166 +128,108 @@ test(result-viewer): add result download render test
 chore(deps): update frontend dependencies
 ```
 
-Tipe umum:
-
-| Tipe | Digunakan untuk |
-|---|---|
-| `feat` | Fitur baru yang terlihat oleh pengguna |
-| `fix` | Perbaikan bug |
-| `docs` | Perubahan dokumentasi saja |
-| `style` | Perubahan format saja |
-| `refactor` | Restrukturisasi kode tanpa perubahan perilaku |
-| `perf` | Peningkatan performa |
-| `test` | Test |
-| `chore` | Tooling, dependency, maintenance |
-| `ci` | Perubahan CI/CD |
-| `build` | Perubahan sistem build |
-
-Commit message yang baik harus spesifik dan menggunakan bentuk imperatif.
-
-Lebih baik:
-
-```txt
-fix(upload): validate MIME type before creating job
-```
-
-Hindari:
-
-```txt
-fixed stuff
-update files
-changes
-```
+Type umum: `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`, `chore`, `ci`, dan `build`.
 
 ---
 
 ## Panduan Pull Request
 
-Pull request yang baik sebaiknya mencakup:
+Pull request yang baik mencakup:
 
-- Judul yang jelas menggunakan gaya Conventional Commit
-- Ringkasan singkat tentang perubahan
-- Alasan perubahan dibuat
+- Judul yang mengikuti Conventional Commit
+- Ringkasan perubahan
+- Alasan perubahan
 - Catatan testing
-- Screenshot atau video untuk perubahan UI
-- Catatan risiko, batasan, atau pekerjaan lanjutan
+- Screenshot/video untuk perubahan UI
+- Risiko, keterbatasan, dan follow-up
 
-Jaga pull request tetap fokus. Jika perubahan menyentuh area yang tidak berhubungan, pisahkan menjadi beberapa pull request.
+Pisahkan perubahan yang tidak terkait ke pull request berbeda.
 
 ---
 
 ## Panduan Frontend
 
-Saat mengubah kode frontend:
-
-- Jaga komponen page tetap mudah dibaca dan fokus.
-- Letakkan UI yang reusable di `components/`.
-- Letakkan workflow logic yang reusable di `hooks/`.
-- Letakkan API call di `services/`.
-- Letakkan konten UI di `content/`, konfigurasi navigasi di `content/navigation/`, dan konfigurasi runtime di `config.js`.
-- Hindari duplikasi pola UI workspace.
-- Perhatikan aksesibilitas untuk button, input, label, dan interaksi keyboard.
-- Gunakan dokumentasi komponen dan hook yang bermakna untuk logic non-trivial.
-
-Untuk perubahan UI, sertakan screenshot atau video singkat di pull request jika memungkinkan.
+- Jaga page component tetap fokus dan readable.
+- Tempatkan UI reusable di `components/`.
+- Tempatkan workflow reusable di `hooks/`.
+- Tempatkan API call di `services/`.
+- Simpan constant dan copy di `content/`, `data/`, atau module konfigurasi.
+- Hindari duplikasi pola workspace.
+- Pertahankan keyboard support, label, focus behavior, dan status message yang accessible.
+- Dokumentasikan component dan hook yang non-trivial.
 
 ---
 
 ## Panduan Backend
 
-Saat mengubah kode backend:
+- Jaga route tetap tipis dan delegasikan business logic ke service.
+- Letakkan detail provider di balik provider abstraction.
+- Simpan konfigurasi runtime di `core/config.py`.
+- Validasi upload sebelum processing mahal.
+- Pertahankan usage limit, rate limit, queue, dan cleanup.
+- Hindari blocking work dalam async request path.
+- Perbarui docstring untuk kode non-trivial.
+- Pertahankan forwarded client-IP header secara fail-closed; jangan trust CIDR tanpa batas.
+- Pastikan konfigurasi Turnstile production gagal secara tertutup.
 
-- Jaga route handler tetap tipis.
-- Letakkan business logic di service.
-- Letakkan logic khusus provider di balik provider abstraction.
-- Simpan konfigurasi di `core/config.py`.
-- Validasi input file sebelum diproses.
-- Pertahankan perilaku usage limit, rate limit, dan cleanup.
-- Hindari pekerjaan blocking di async request path.
-- Tambahkan atau perbarui docstring saat mengubah module, class, atau function yang non-trivial.
-
-Perubahan backend harus aman dalam kondisi gagal. Job yang gagal harus melepaskan kapasitas antrean, mencatat status gagal jika diperlukan, dan menghindari file sementara yang tertinggal.
+Job yang gagal harus melepaskan queue capacity, mencatat failure state bila perlu, melakukan refund usage sesuai kondisi, dan membersihkan file sementara.
 
 ---
 
 ## Panduan Dokumentasi
 
-Dokumentasi sebaiknya tetap selaras antar bahasa jika memungkinkan.
-
-Dokumentasi utama berbahasa Inggris:
+Dokumen utama:
 
 ```txt
 README.md
+SETUP.md
 CONTRIBUTING.md
 CODE_OF_CONDUCT.md
 SECURITY.md
 LICENSE
+
 docs/ARCHITECTURE.md
 docs/ADDING_AI_FEATURE.md
+docs/TESTING.md
 ```
 
-Dokumentasi terjemahan:
+Dokumen developer terjemahan:
 
 ```txt
-docs/translation/landing/README_ID.md
-docs/translation/landing/README_CN.md
-
-docs/translation/dev/ADDING_AI_FEATURE_ID.md
-docs/translation/dev/ADDING_AI_FEATURE_ZH.md
+docs/translation/dev/SETUP_ID.md
+docs/translation/dev/SETUP_ZH.md
 docs/translation/dev/ARCHITECTURE_ID.md
 docs/translation/dev/ARCHITECTURE_ZH.md
-
-docs/translation/community/CONTRIBUTING_ID.md
-docs/translation/community/CONTRIBUTING_ZH.md
-docs/translation/community/CODE_OF_CONDUCT_ID.md
-docs/translation/community/CODE_OF_CONDUCT_ZH.md
-docs/translation/community/SECURITY_ID.md
-docs/translation/community/SECURITY_ZH.md
+docs/translation/dev/ADDING_AI_FEATURE_ID.md
+docs/translation/dev/ADDING_AI_FEATURE_ZH.md
+docs/translation/dev/TESTING_ID.md
+docs/translation/dev/TESTING_ZH.md
 ```
 
-Saat memperbarui dokumentasi berbahasa Inggris, perbarui juga versi Indonesia dan Mandarin jika konten yang sama tersedia di sana.
+Dokumen community dan landing terjemahan berada di `docs/translation/community/` dan `docs/translation/landing/`.
 
-Simpan dokumen komunitas di `docs/translation/community/`, dokumen developer di `docs/translation/dev/`, dan terjemahan landing page di `docs/translation/landing/`.
+Saat behavior, command, environment variable, atau path berubah, update semua versi yang sesuai dalam perubahan yang sama.
 
 ---
+
 ## Panduan Keamanan
 
-Jangan commit:
+Jangan commit file `.env`, token, cloud credential, database URL, private key, Discord webhook, log sensitif, atau gambar private milik pengguna.
 
-- File `.env`
-- API token
-- Kredensial cloud provider
-- Database URL
-- Private key
-- Log yang dihasilkan
-- Gambar privat yang diunggah pengguna
-
-Perubahan yang sensitif terhadap keamanan harus ditinjau dengan hati-hati, terutama perubahan yang berkaitan dengan:
-
-- Validasi file
-- Signed URL
-- Verifikasi Turnstile
-- Perilaku proxy/IP trust
-- Usage limit
-- Rate limit
-- Cleanup storage
-- Token provider
-
-Jika menemukan masalah keamanan serius, hindari membuka public issue yang berisi detail eksploitasi. Hubungi maintainer secara privat jika memungkinkan.
+Review dengan hati-hati perubahan pada file validation, signed URL, Turnstile, proxy/IP trust, usage/rate limit, storage cleanup, dan provider token. Laporkan kerentanan serius secara private sesuai [SECURITY_ID.md](./SECURITY_ID.md).
 
 ---
 
 ## Checklist Review
 
-Sebelum membuka pull request, pastikan:
+- [ ] Perubahan fokus dan mudah direview.
+- [ ] Aplikasi berjalan secara lokal.
+- [ ] Lint/build frontend yang relevan berhasil.
+- [ ] Compile/test backend yang relevan berhasil.
+- [ ] Perubahan behavior sudah didokumentasikan.
+- [ ] Terjemahan yang sesuai sudah diperbarui.
+- [ ] Tidak ada secret, environment lokal, log, atau artifact generated yang di-commit.
+- [ ] Perubahan UI menyertakan screenshot/video bila berguna.
+- [ ] Judul pull request mengikuti konvensi commit.
 
-- [ ] Perubahan fokus dan mudah ditinjau.
-- [ ] Kode berjalan secara lokal.
-- [ ] Linting frontend berhasil jika file frontend berubah.
-- [ ] Dokumentasi diperbarui jika perilaku berubah.
-- [ ] Dokumentasi terjemahan diperbarui jika konten terjemahan yang sesuai tersedia.
-- [ ] Tidak ada secret, file `.env`, log, atau artifact generated yang ikut di-commit.
-- [ ] Perubahan UI menyertakan screenshot atau video jika berguna.
-- [ ] Judul pull request mengikuti gaya Conventional Commit.
-
-Terima kasih sudah membantu mengembangkan PixelForge.
+Terima kasih telah membantu meningkatkan PixelForge.

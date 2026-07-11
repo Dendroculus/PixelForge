@@ -1,27 +1,49 @@
 # PixelForge Testing
 
-This document lists local verification scripts for PixelForge backend, AI pipeline, usage limits, and build checks.
+This guide lists local verification commands for the backend API, AI pipeline, usage limits, frontend build, and documentation-sensitive workflows.
 
-These scripts are intended for local development. They assume the backend is running locally and local test bypass settings are enabled where required.
+The PowerShell scripts under `scripts/testing/` are intended for local Windows development. They assume the backend is running locally and local Turnstile bypass settings are enabled where required:
 
-> **Windows-only note:** the PowerShell scripts in `scripts/testing/*.ps1` and local `.bat` helper files are intended for Windows development environments. macOS/Linux users should port the commands to Bash or run equivalent API checks manually.
+```env
+ENVIRONMENT=development
+ALLOW_TURNSTILE_TEST_BYPASS=true
+```
+
+Never enable the manual bypass in production.
+
+---
+
+## Start the Application
+
+From the repository root:
+
+```powershell
+.\scripts\start_app.bat
+```
+
+Or start each side manually:
+
+```powershell
+Push-Location .\backend
+.\venv\Scripts\python.exe run.py
+Pop-Location
+```
+
+```powershell
+Push-Location .\frontend
+npm run dev
+Pop-Location
+```
 
 ---
 
 ## Backend API Checks
 
-Run from the repository root.
-
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\testing\check_backend_limits_and_usage.ps1
 ```
 
-Verifies:
-
-- `/api/limits`
-- `/api/usage`
-- Feature limit shape
-- Runtime limit response consistency
+Verifies `/api/limits`, `/api/usage`, feature-limit shape, and runtime-limit consistency.
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\testing\check_backend_error_responses.ps1
@@ -33,19 +55,17 @@ Verifies structured backend error responses.
 powershell -ExecutionPolicy Bypass -File .\scripts\testing\check_backend_invalid_image_upload.ps1
 ```
 
-Verifies that invalid uploaded image data fails safely with a structured error.
+Verifies that invalid image data fails safely with a structured error.
 
 ---
 
-## Usage Limit Checks
+## Usage-Limit Checks
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\testing\check_backend_usage_limit.ps1
 ```
 
-Verifies that all AI features return a structured `RATE_LIMITED` response when their usage quota is exhausted.
-
-The script temporarily seeds the local usage table, calls the init endpoint, validates the response, and restores the previous current-hour usage state.
+The script temporarily seeds the local usage table, calls the init endpoint, validates the structured `RATE_LIMITED` response, and restores the previous current-hour state.
 
 Covered features:
 
@@ -53,6 +73,8 @@ Covered features:
 - `rembg`
 - `colorrestore`
 - `objectremove`
+
+Because the current quota identity is IP-based, these checks validate backend behavior but do not remove the known shared-NAT/shared-proxy limitation.
 
 ---
 
@@ -81,14 +103,12 @@ powershell -ExecutionPolicy Bypass -File .\scripts\testing\check_ai_feature_succ
   -FilePath ".\frontend\public\demo\res_color_before.jpg"
 ```
 
-Object Remove requires both a source image and a mask image.
+Object Remove requires a source image and a same-size mask:
 
-The mask image must match the source image dimensions:
+- Black pixels: keep the area
+- White pixels: remove the area
 
-- Black pixels = keep area
-- White pixels = area to remove
-
-If `object_remove_test_mask.png` does not exist yet, generate a simple center mask from the repository root:
+Generate a simple center mask when needed:
 
 ```powershell
 @'
@@ -101,64 +121,86 @@ mask = Path("frontend/public/demo/object_remove_test_mask.png")
 if not src.exists():
     raise SystemExit(f"Missing source image: {src}")
 
-img = Image.open(src)
-w, h = img.size
+with Image.open(src) as img:
+    width, height = img.size
 
-out = Image.new("L", (w, h), 0)
+out = Image.new("L", (width, height), 0)
 draw = ImageDraw.Draw(out)
-
-box_w = int(w * 0.28)
-box_h = int(h * 0.28)
-left = (w - box_w) // 2
-top = (h - box_h) // 2
-right = left + box_w
-bottom = top + box_h
-
-draw.ellipse((left, top, right, bottom), fill=255)
+box_width = int(width * 0.28)
+box_height = int(height * 0.28)
+left = (width - box_width) // 2
+top = (height - box_height) // 2
+draw.ellipse(
+    (left, top, left + box_width, top + box_height),
+    fill=255,
+)
 
 mask.parent.mkdir(parents=True, exist_ok=True)
 out.save(mask)
-
-print(f"Created mask: {mask}")
-print(f"Size: {w}x{h}")
+print(f"Created mask: {mask} ({width}x{height})")
 '@ | .\backend\venv\Scripts\python.exe
 ```
+
+Then run the object-removal success script with the source and mask arguments supported by `check_ai_feature_success.ps1`.
+
 ---
 
-## Frontend Build Check
+## Turnstile Flow Check
+
+For every AI job:
+
+1. Confirm the frontend receives a Turnstile token.
+2. Confirm `POST /api/{feature}/init` verifies it.
+3. Complete or fail the job.
+4. Start another job and confirm a fresh token is requested.
+
+Also submit feedback once and confirm it performs its own verification. In a non-development environment, temporarily removing the secret must cause verification to fail closed rather than bypassing protection.
+
+---
+
+## Frontend Checks
 
 ```powershell
-cd E:\GitHub\pixelforge\frontend
-npm run build
+npm --prefix frontend run lint
+npm --prefix frontend run build
 ```
-
-A successful build confirms that the production frontend bundle compiles.
 
 ---
 
 ## Backend Compile Check
 
 ```powershell
-cd E:\GitHub\pixelforge\backend
-python -m compileall .
-```
-
-For less noise, exclude the virtual environment:
-
-```powershell
+Push-Location .\backend
 python -m compileall api app core database domain limiter provider repository services utils
+Pop-Location
 ```
 
 ---
 
 ## Manual UI Check
 
-After backend and frontend changes, manually verify:
+1. Upload an image above the public pixel limit to an AI tool.
+2. Confirm it is resized before upload and the resize alert appears.
+3. Confirm the preview remains correct.
+4. Confirm the AI job reaches a ready result.
+5. Run a second job and confirm Turnstile obtains a fresh token.
+6. Test from two networks when checking proxy/IP behavior; do not assume a managed platform's direct peer is the visitor IP.
 
-1. Upload an image above the public pixel limit to an AI tool
-2. Confirm the image is resized before upload
-3. Confirm the resize alert appears
-4. Confirm the preview still works
-5. Confirm the AI job still reaches a ready result
+---
 
-This validates the browser-side auto-resize flow that direct PowerShell API scripts do not exercise.
+## Final Repository Checks
+
+```powershell
+git diff --check
+git status --short
+```
+
+Search documentation for obsolete commands or personal absolute paths:
+
+```powershell
+Get-ChildItem -Recurse -File -Include *.md,*.bat,*.ps1 |
+  Where-Object { $_.Name -notlike 'TESTING*.md' -and $_.Name -ne 'PACKAGE_NOTES.md' } |
+  Select-String -Pattern 'python -m venv \.venv|uvicorn main:app --reload$|E:\\GitHub\\pixelforge'
+```
+
+The command should return no outdated documentation matches.

@@ -40,7 +40,6 @@ The system is designed to handle real-world constraints such as rate limits, lon
 - 🛠️ Open-source and extensible provider architecture  
 
 
-
 ## 🎯 Features
 
 ### A) Core Image Tools
@@ -301,11 +300,12 @@ LOG_BACKUP_COUNT=5
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:8000/api
 VITE_TURNSTILE_SITE_KEY=
-VITE_DEBUG_API=false # true in development, false in production
+VITE_DEBUG_API=true
 ```
 
 - Keep `DATABASE_URL`, Azure credentials, Replicate tokens, the Turnstile secret, and `DISCORD_WEBHOOK_URL` only in the backend environment.
 - All `VITE_*` values are bundled into browser code and must be safe to expose publicly.
+- `VITE_DEBUG_API=true` enables API debug logging only during local Vite development; keep it `false` in production.
 - `LOG_TO_FILE=false` is suitable when the hosting platform already captures stdout. Set it to `true` for local rotating file logs when needed.
 - Forwarded IP headers are ignored by default. Enable `TRUST_PROXY_HEADERS` only with explicit proxy CIDRs; never use `0.0.0.0/0` or `::/0`.
 - `CLOUDFLARE_SUBNETS` is required only for verified Cloudflare proxy mode. `REQUIRE_CLOUDFLARE_PROXY` validates the proxy chain but does not firewall the origin.
@@ -326,11 +326,11 @@ cd PixelForge
 
 ```bash
 cd backend
-python -m venv .venv
-source .venv/bin/activate      # macOS/Linux
-# .venv\Scripts\activate       # Windows
+python -m venv venv
+source venv/bin/activate      # macOS/Linux
+# venv\Scripts\activate       # Windows
 pip install -r requirements.txt
-uvicorn main:app --reload --no-proxy-headers
+python run.py  # starts Uvicorn with proxy header rewriting disabled
 ```
 
 ## 3) Run frontend
@@ -343,8 +343,9 @@ npm run dev
 
 ## 🔒 Security Notes
 
-- Turnstile check before AI init routes
+- Fresh Turnstile verification before every AI job initialization and feedback submission
 - Forwarded client-IP headers accepted only from configured trusted proxy CIDRs
+- Missing Turnstile configuration fails closed outside local/development environments
 - Signed SAS URLs for controlled blob access
 - Strict file validation + capped dimensions/size
 - Public AI uploads use a lower browser-side pixel limit for user experience
