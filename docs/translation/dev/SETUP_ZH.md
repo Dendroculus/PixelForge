@@ -8,7 +8,7 @@ PixelForge 使用：
 |---|---|---|
 | Azure Blob Storage | 临时上传与生成结果存储 | `AZURE_CONNECTION_STRING` |
 | Replicate | AI 模型推理 | `REPLICATE_API_TOKEN` |
-| Cloudflare Turnstile | Bot 防护 | `CLOUDFLARE_TURNSTILE_SITE_KEY`, `CLOUDFLARE_TURNSTILE_SECRET_KEY` |
+| Cloudflare Turnstile | Bot 防护 | `VITE_TURNSTILE_SITE_KEY`（frontend）、`CLOUDFLARE_TURNSTILE_SECRET_KEY`（backend） |
 | PostgreSQL | Usage 统计与后端数据 | `DATABASE_URL` |
 | Discord Webhook | Feedback 通知 | `DISCORD_WEBHOOK_URL` |
 
@@ -269,7 +269,7 @@ PixelForge 使用 Cloudflare Turnstile 保护 AI job 初始化和 feedback reque
 
 | Key | 使用位置 | Secret? |
 |---|---|---|
-| Site key | Frontend 和 backend config | 否，可公开 |
+| Site key | 仅 Frontend | 否，可公开 |
 | Secret key | Backend only | 是，private |
 
 ---
@@ -301,7 +301,6 @@ Invisible
 Backend：
 
 ```env
-CLOUDFLARE_TURNSTILE_SITE_KEY=your_turnstile_site_key
 CLOUDFLARE_TURNSTILE_SECRET_KEY=your_turnstile_secret_key
 ```
 
@@ -399,51 +398,79 @@ DISCORD_WEBHOOK_URL=your_discord_webhook_url
 
 ## 6. Backend 环境变量
 
-创建文件：
+创建以下文件：
 
 ```txt
 backend/.env
 ```
 
-模板：
+从已提交的示例文件开始：
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Windows PowerShell：
+
+```powershell
+Copy-Item backend/.env.example backend/.env
+```
+
+核心模板：
 
 ```env
+ENVIRONMENT=development
+
+DATABASE_URL=
 AZURE_CONNECTION_STRING=
 REPLICATE_API_TOKEN=
-ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
-CLOUDFLARE_TURNSTILE_SITE_KEY=
 CLOUDFLARE_TURNSTILE_SECRET_KEY=
-DATABASE_URL=
 DISCORD_WEBHOOK_URL=
-CLOUDFLARE_SUBNETS=
-ENVIRONMENT=development
-ALLOW_TURNSTILE_TEST_BYPASS=true
-TRUST_PROXY_HEADERS=false
-REQUIRE_CLOUDFLARE_PROXY=false
-STRICT_ENV_VALIDATION=false
-```
-
-### 本地 backend 默认值
-
-```env
-ENVIRONMENT=development
-ALLOW_TURNSTILE_TEST_BYPASS=true
-TRUST_PROXY_HEADERS=false
-REQUIRE_CLOUDFLARE_PROXY=false
-STRICT_ENV_VALIDATION=false
-```
-
-### Production backend 默认值
-
-```env
-ENVIRONMENT=production
+ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ALLOW_TURNSTILE_TEST_BYPASS=false
-TRUST_PROXY_HEADERS=true
+
+TRUST_PROXY_HEADERS=false
+TRUSTED_PROXY_CIDRS=
+CLOUDFLARE_SUBNETS=
 REQUIRE_CLOUDFLARE_PROXY=false
-STRICT_ENV_VALIDATION=true
+
+LOG_LEVEL=INFO
+LOG_TO_FILE=false
+LOG_DIR=logs
+LOG_FILE_NAME=pixelforge.log
+LOG_MAX_BYTES=10485760
+LOG_BACKUP_COUNT=5
 ```
 
-只有当 production backend 确实需要通过 Cloudflare 接收流量时，才设置 `REQUIRE_CLOUDFLARE_PROXY=true`。
+### 本地和直接访问 origin 的安全默认值
+
+```env
+TRUST_PROXY_HEADERS=false
+TRUSTED_PROXY_CIDRS=
+REQUIRE_CLOUDFLARE_PROXY=false
+```
+
+使用这些值时，PixelForge 会忽略 `CF-Connecting-IP`、`X-Forwarded-For` 和 `X-Real-IP`，并使用 ASGI server 报告的直接连接地址。当 backend 可以被直接访问，或代理拓扑尚未验证时，这是最安全的默认配置。
+
+### 可信代理模式
+
+只有在明确知道哪个代理直接连接到 Uvicorn/FastAPI 时，才能启用 forwarded header：
+
+```env
+TRUST_PROXY_HEADERS=true
+TRUSTED_PROXY_CIDRS=直接代理的_cidr
+CLOUDFLARE_SUBNETS=cloudflare_官方_ipv4_和_ipv6_cidr
+REQUIRE_CLOUDFLARE_PROXY=true
+```
+
+- `TRUSTED_PROXY_CIDRS` 必须包含直接连接应用的代理 CIDR。
+- `CLOUDFLARE_SUBNETS` 包含 Cloudflare edge 网络，用于验证 Cloudflare hop。
+- `REQUIRE_CLOUDFLARE_PROXY=true` 会在验证链中没有 Cloudflare 时拒绝信任 forwarded value。
+- 不要使用 `0.0.0.0/0` 或 `::/0`，否则所有客户端都会被信任。
+- 请从 `https://www.cloudflare.com/ips-v4/` 和 `https://www.cloudflare.com/ips-v6/` 更新 Cloudflare IP range。
+- 此应用层检查**不会**自动通过 firewall 阻止直接 origin 访问。若只允许 Cloudflare 流量，仍需单独限制 origin。
+
+如果 Cloudflare 与应用之间还有托管平台代理，请将该平台官方公布的 ingress CIDR 配置到 `TRUSTED_PROXY_CIDRS`。在确认平台的 `X-Forwarded-For` 行为之前，不要猜测 private range，也不要启用信任。
 
 ---
 
@@ -504,7 +531,7 @@ pip install -r requirements.txt
 运行 backend：
 
 ```bash
-uvicorn main:app --reload
+uvicorn main:app --reload --no-proxy-headers
 ```
 
 默认 backend URL：

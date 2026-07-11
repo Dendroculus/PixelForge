@@ -261,33 +261,54 @@ Untuk detail lebih lengkap, lihat [dokumen arsitektur](../dev/ARCHITECTURE_ID.md
 
 ## ⚙️ Environment Variables
 
-### Backend (root/backend env)
+PixelForge memisahkan secret backend dari konfigurasi frontend yang dapat terlihat di browser. Buat file environment lokal dari contoh yang tersedia:
 
-```env
-AZURE_CONNECTION_STRING=
-REPLICATE_API_TOKEN=
-ALLOWED_ORIGINS=
-CLOUDFLARE_TURNSTILE_SITE_KEY=
-CLOUDFLARE_TURNSTILE_SECRET_KEY=
-DATABASE_URL=
-CLOUDFLARE_SUBNETS=
-ENVIRONMENT=
-ALLOW_TURNSTILE_TEST_BYPASS=
-TRUST_PROXY_HEADERS=
-REQUIRE_CLOUDFLARE_PROXY=
-STRICT_ENV_VALIDATION=
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 ```
 
-### Frontend
+> Windows PowerShell: gunakan `Copy-Item backend/.env.example backend/.env` dan `Copy-Item frontend/.env.example frontend/.env`.
+
+### Backend (`backend/.env`)
+
+```env
+ENVIRONMENT=development
+
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/pixelforge
+AZURE_CONNECTION_STRING=
+REPLICATE_API_TOKEN=
+CLOUDFLARE_TURNSTILE_SECRET_KEY=
+DISCORD_WEBHOOK_URL=
+ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+ALLOW_TURNSTILE_TEST_BYPASS=false
+
+TRUST_PROXY_HEADERS=false
+TRUSTED_PROXY_CIDRS=
+CLOUDFLARE_SUBNETS=
+REQUIRE_CLOUDFLARE_PROXY=false
+
+LOG_LEVEL=INFO
+LOG_TO_FILE=false
+LOG_DIR=logs
+LOG_FILE_NAME=pixelforge.log
+LOG_MAX_BYTES=10485760
+LOG_BACKUP_COUNT=5
+```
+
+### Frontend (`frontend/.env`)
 
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:8000/api
-VITE_TURNSTILE_SITE_KEY=0x4AAAAAACxEYGPTmGZUjctK
+VITE_TURNSTILE_SITE_KEY=
 ```
 
-> Untuk testing lokal, pertahankan API base URL ke backend lokal.  
-> Untuk deployment, ganti ke endpoint API hosted Anda (contoh: `https://your-domain/app/api`).
-
+- Simpan `DATABASE_URL`, kredensial Azure, token Replicate, Turnstile secret, dan `DISCORD_WEBHOOK_URL` hanya di environment backend.
+- Semua nilai `VITE_*` akan dimasukkan ke bundle browser dan harus aman untuk dipublikasikan.
+- `LOG_TO_FILE=false` cocok ketika platform hosting sudah menangkap stdout. Ubah menjadi `true` jika membutuhkan rotating log file saat development lokal.
+- Header IP dari proxy diabaikan secara default. Aktifkan `TRUST_PROXY_HEADERS` hanya bersama CIDR proxy yang jelas; jangan pernah gunakan `0.0.0.0/0` atau `::/0`.
+- `CLOUDFLARE_SUBNETS` hanya diperlukan untuk mode proxy Cloudflare yang tervalidasi. `REQUIRE_CLOUDFLARE_PROXY` memvalidasi rantai proxy, tetapi tidak memblokir akses langsung ke origin.
+- Untuk deployment, ganti origin dan URL lokal dengan alamat frontend dan backend yang sudah di-host.
 
 Butuh bantuan menyiapkan layanan eksternal? Lihat [SETUP.md](../dev/SETUP_ID.md) untuk panduan langkah demi langkah dalam mengonfigurasi Azure Blob Storage, Replicate, Cloudflare Turnstile, PostgreSQL, Discord webhook, dan environment variables.
 
@@ -308,7 +329,7 @@ python -m venv .venv
 source .venv/bin/activate      # macOS/Linux
 # .venv\Scripts\activate       # Windows
 pip install -r requirements.txt
-uvicorn main:app --reload
+uvicorn main:app --reload --no-proxy-headers
 ```
 
 ## 3) Jalankan frontend
@@ -324,7 +345,7 @@ npm run dev
 ## 🔒 Catatan Keamanan
 
 - Pemeriksaan Turnstile sebelum route init AI
-- Strategi proxy/IP trust untuk mengurangi risiko header spoofing
+- Header client IP dari proxy hanya diterima dari CIDR proxy tepercaya yang dikonfigurasi
 - Signed SAS URL untuk akses blob yang terkontrol
 - Validasi file ketat + batas dimensi/ukuran
 - Upload AI publik memakai batas pixel browser yang lebih rendah untuk UX

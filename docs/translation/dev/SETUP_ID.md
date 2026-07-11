@@ -8,7 +8,7 @@ PixelForge menggunakan:
 |---|---|---|
 | Azure Blob Storage | Upload sementara dan hasil gambar | `AZURE_CONNECTION_STRING` |
 | Replicate | Inferensi model AI | `REPLICATE_API_TOKEN` |
-| Cloudflare Turnstile | Proteksi bot | `CLOUDFLARE_TURNSTILE_SITE_KEY`, `CLOUDFLARE_TURNSTILE_SECRET_KEY` |
+| Cloudflare Turnstile | Proteksi bot | `VITE_TURNSTILE_SITE_KEY` (frontend), `CLOUDFLARE_TURNSTILE_SECRET_KEY` (backend) |
 | PostgreSQL | Pelacakan usage dan data backend | `DATABASE_URL` |
 | Discord Webhook | Notifikasi feedback | `DISCORD_WEBHOOK_URL` |
 
@@ -269,7 +269,7 @@ Kamu membutuhkan dua key:
 
 | Key | Digunakan di | Secret? |
 |---|---|---|
-| Site key | Frontend dan konfigurasi backend | Tidak, aman untuk publik |
+| Site key | Frontend saja | Tidak, aman untuk publik |
 | Secret key | Backend saja | Ya, private |
 
 ---
@@ -301,7 +301,6 @@ Setelah widget dibuat:
 Backend:
 
 ```env
-CLOUDFLARE_TURNSTILE_SITE_KEY=your_turnstile_site_key
 CLOUDFLARE_TURNSTILE_SECRET_KEY=your_turnstile_secret_key
 ```
 
@@ -399,51 +398,79 @@ DISCORD_WEBHOOK_URL=your_discord_webhook_url
 
 ## 6. Environment Variables Backend
 
-Buat file ini:
+Buat file berikut:
 
 ```txt
 backend/.env
 ```
 
-Template:
+Mulai dari file contoh yang di-commit:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Windows PowerShell:
+
+```powershell
+Copy-Item backend/.env.example backend/.env
+```
+
+Template utama:
 
 ```env
+ENVIRONMENT=development
+
+DATABASE_URL=
 AZURE_CONNECTION_STRING=
 REPLICATE_API_TOKEN=
-ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
-CLOUDFLARE_TURNSTILE_SITE_KEY=
 CLOUDFLARE_TURNSTILE_SECRET_KEY=
-DATABASE_URL=
 DISCORD_WEBHOOK_URL=
-CLOUDFLARE_SUBNETS=
-ENVIRONMENT=development
-ALLOW_TURNSTILE_TEST_BYPASS=true
-TRUST_PROXY_HEADERS=false
-REQUIRE_CLOUDFLARE_PROXY=false
-STRICT_ENV_VALIDATION=false
-```
-
-### Default backend lokal
-
-```env
-ENVIRONMENT=development
-ALLOW_TURNSTILE_TEST_BYPASS=true
-TRUST_PROXY_HEADERS=false
-REQUIRE_CLOUDFLARE_PROXY=false
-STRICT_ENV_VALIDATION=false
-```
-
-### Default backend production
-
-```env
-ENVIRONMENT=production
+ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ALLOW_TURNSTILE_TEST_BYPASS=false
-TRUST_PROXY_HEADERS=true
+
+TRUST_PROXY_HEADERS=false
+TRUSTED_PROXY_CIDRS=
+CLOUDFLARE_SUBNETS=
 REQUIRE_CLOUDFLARE_PROXY=false
-STRICT_ENV_VALIDATION=true
+
+LOG_LEVEL=INFO
+LOG_TO_FILE=false
+LOG_DIR=logs
+LOG_FILE_NAME=pixelforge.log
+LOG_MAX_BYTES=10485760
+LOG_BACKUP_COUNT=5
 ```
 
-Gunakan `REQUIRE_CLOUDFLARE_PROXY=true` hanya jika backend production memang diharapkan menerima traffic melalui Cloudflare.
+### Default aman untuk lokal dan direct origin
+
+```env
+TRUST_PROXY_HEADERS=false
+TRUSTED_PROXY_CIDRS=
+REQUIRE_CLOUDFLARE_PROXY=false
+```
+
+Dengan nilai ini, PixelForge mengabaikan `CF-Connecting-IP`, `X-Forwarded-For`, dan `X-Real-IP`, lalu menggunakan direct peer yang dilaporkan oleh ASGI server. Ini adalah default paling aman ketika backend dapat diakses langsung atau topologi proxy belum diverifikasi.
+
+### Mode trusted proxy
+
+Aktifkan forwarded header hanya jika kamu mengetahui proxy mana yang terhubung langsung ke Uvicorn/FastAPI:
+
+```env
+TRUST_PROXY_HEADERS=true
+TRUSTED_PROXY_CIDRS=cidr_proxy_langsung_anda
+CLOUDFLARE_SUBNETS=cidr_ipv4_dan_ipv6_cloudflare_resmi
+REQUIRE_CLOUDFLARE_PROXY=true
+```
+
+- `TRUSTED_PROXY_CIDRS` harus berisi CIDR proxy yang terhubung langsung ke aplikasi.
+- `CLOUDFLARE_SUBNETS` berisi jaringan edge Cloudflare dan digunakan untuk memvalidasi hop Cloudflare.
+- `REQUIRE_CLOUDFLARE_PROXY=true` mencegah forwarded value diterima jika rantai tervalidasi tidak berisi Cloudflare.
+- Jangan pernah menggunakan `0.0.0.0/0` atau `::/0` karena itu mempercayai semua client.
+- Perbarui range Cloudflare dari `https://www.cloudflare.com/ips-v4/` dan `https://www.cloudflare.com/ips-v6/`.
+- Pemeriksaan aplikasi ini **tidak** memblokir origin secara firewall. Blokir akses langsung ke origin secara terpisah jika hanya traffic Cloudflare yang diizinkan.
+
+Jika platform hosting terkelola berada di antara Cloudflare dan aplikasi, gunakan CIDR ingress resmi platform tersebut pada `TRUSTED_PROXY_CIDRS`. Jangan menebak private range atau mengaktifkan trust sebelum perilaku `X-Forwarded-For` platform dipastikan.
 
 ---
 
@@ -504,7 +531,7 @@ pip install -r requirements.txt
 Jalankan backend:
 
 ```bash
-uvicorn main:app --reload
+uvicorn main:app --reload --no-proxy-headers
 ```
 
 Default backend URL:

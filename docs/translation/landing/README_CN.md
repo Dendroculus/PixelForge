@@ -260,32 +260,54 @@ PixelForge 使用前后端分离架构：
 
 ## ⚙️ 环境变量
 
-### 后端（root/backend env）
+PixelForge 将后端密钥与浏览器可见的前端配置分开管理。请根据示例文件创建本地环境文件：
 
-```env
-AZURE_CONNECTION_STRING=
-REPLICATE_API_TOKEN=
-ALLOWED_ORIGINS=
-CLOUDFLARE_TURNSTILE_SITE_KEY=
-CLOUDFLARE_TURNSTILE_SECRET_KEY=
-DATABASE_URL=
-CLOUDFLARE_SUBNETS=
-ENVIRONMENT=
-ALLOW_TURNSTILE_TEST_BYPASS=
-TRUST_PROXY_HEADERS=
-REQUIRE_CLOUDFLARE_PROXY=
-STRICT_ENV_VALIDATION=
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 ```
 
-### 前端
+> Windows PowerShell：使用 `Copy-Item backend/.env.example backend/.env` 和 `Copy-Item frontend/.env.example frontend/.env`。
+
+### 后端（`backend/.env`）
+
+```env
+ENVIRONMENT=development
+
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/pixelforge
+AZURE_CONNECTION_STRING=
+REPLICATE_API_TOKEN=
+CLOUDFLARE_TURNSTILE_SECRET_KEY=
+DISCORD_WEBHOOK_URL=
+ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+ALLOW_TURNSTILE_TEST_BYPASS=false
+
+TRUST_PROXY_HEADERS=false
+TRUSTED_PROXY_CIDRS=
+CLOUDFLARE_SUBNETS=
+REQUIRE_CLOUDFLARE_PROXY=false
+
+LOG_LEVEL=INFO
+LOG_TO_FILE=false
+LOG_DIR=logs
+LOG_FILE_NAME=pixelforge.log
+LOG_MAX_BYTES=10485760
+LOG_BACKUP_COUNT=5
+```
+
+### 前端（`frontend/.env`）
 
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:8000/api
-VITE_TURNSTILE_SITE_KEY=0x4AAAAAACxEYGPTmGZUjctK
+VITE_TURNSTILE_SITE_KEY=
 ```
 
-> 本地测试时，请保持 API base URL 指向本地后端。  
-> 部署时，请切换为托管后的 API 端点（例如：`https://your-domain/app/api`）。
+- `DATABASE_URL`、Azure 凭据、Replicate Token、Turnstile Secret 和 `DISCORD_WEBHOOK_URL` 只能保存在后端环境中。
+- 所有 `VITE_*` 值都会被打包到浏览器代码中，因此必须可以安全公开。
+- 当托管平台已经收集 stdout 时，建议使用 `LOG_TO_FILE=false`。本地开发需要轮转日志文件时可改为 `true`。
+- 默认忽略代理提供的 IP Header。只有在明确配置可信代理 CIDR 后才能启用 `TRUST_PROXY_HEADERS`；不要使用 `0.0.0.0/0` 或 `::/0`。
+- `CLOUDFLARE_SUBNETS` 仅在经过验证的 Cloudflare 代理模式中需要。`REQUIRE_CLOUDFLARE_PROXY` 只验证代理链，不会自动阻止对 origin 的直接访问。
+- 部署时，请将本地 origin 和 URL 替换为已托管的前端与后端地址。
 
 需要配置外部服务？请查看 [SETUP.md](../dev/SETUP_ZH.md)，其中提供了 Azure Blob Storage、Replicate、Cloudflare Turnstile、PostgreSQL、Discord Webhook 和环境变量的分步配置说明。
 
@@ -306,7 +328,7 @@ python -m venv .venv
 source .venv/bin/activate      # macOS/Linux
 # .venv\Scripts\activate       # Windows
 pip install -r requirements.txt
-uvicorn main:app --reload
+uvicorn main:app --reload --no-proxy-headers
 ```
 
 ## 3) 运行前端
@@ -322,7 +344,7 @@ npm run dev
 ## 🔒 安全说明
 
 - AI init 路由前进行 Turnstile 校验
-- 代理/IP 信任策略降低 header spoofing 风险
+- 仅接受来自已配置可信代理 CIDR 的客户端 IP Header
 - 使用签名 SAS URL 控制 Blob 访问
 - 严格文件验证 + 尺寸/大小上限
 - 公开 AI 上传使用较低的浏览器端像素限制以改善用户体验

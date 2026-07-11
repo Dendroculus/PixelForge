@@ -261,36 +261,57 @@ For more details, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## ⚙️ Environment Variables
 
-### Backend (root/backend env)
+PixelForge separates backend secrets from browser-visible frontend configuration. Create local environment files from the included examples:
 
-```env
-AZURE_CONNECTION_STRING=
-REPLICATE_API_TOKEN=
-ALLOWED_ORIGINS=
-CLOUDFLARE_TURNSTILE_SITE_KEY=
-CLOUDFLARE_TURNSTILE_SECRET_KEY=
-DATABASE_URL=
-CLOUDFLARE_SUBNETS=
-ENVIRONMENT=
-ALLOW_TURNSTILE_TEST_BYPASS=
-TRUST_PROXY_HEADERS=
-REQUIRE_CLOUDFLARE_PROXY=
-STRICT_ENV_VALIDATION=
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
 ```
 
-### Frontend
+> Windows PowerShell: use `Copy-Item backend/.env.example backend/.env` and `Copy-Item frontend/.env.example frontend/.env`.
+
+### Backend (`backend/.env`)
+
+```env
+ENVIRONMENT=development
+
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/pixelforge
+AZURE_CONNECTION_STRING=
+REPLICATE_API_TOKEN=
+CLOUDFLARE_TURNSTILE_SECRET_KEY=
+DISCORD_WEBHOOK_URL=
+ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+ALLOW_TURNSTILE_TEST_BYPASS=false
+
+TRUST_PROXY_HEADERS=false
+TRUSTED_PROXY_CIDRS=
+CLOUDFLARE_SUBNETS=
+REQUIRE_CLOUDFLARE_PROXY=false
+
+LOG_LEVEL=INFO
+LOG_TO_FILE=false
+LOG_DIR=logs
+LOG_FILE_NAME=pixelforge.log
+LOG_MAX_BYTES=10485760
+LOG_BACKUP_COUNT=5
+```
+
+### Frontend (`frontend/.env`)
 
 ```env
 VITE_API_BASE_URL=http://127.0.0.1:8000/api
-VITE_TURNSTILE_SITE_KEY=0x4AAAAAACxEYGPTmGZUjctK
+VITE_TURNSTILE_SITE_KEY=
+VITE_DEBUG_API=false # true in development, false in production
 ```
 
+- Keep `DATABASE_URL`, Azure credentials, Replicate tokens, the Turnstile secret, and `DISCORD_WEBHOOK_URL` only in the backend environment.
+- All `VITE_*` values are bundled into browser code and must be safe to expose publicly.
+- `LOG_TO_FILE=false` is suitable when the hosting platform already captures stdout. Set it to `true` for local rotating file logs when needed.
+- Forwarded IP headers are ignored by default. Enable `TRUST_PROXY_HEADERS` only with explicit proxy CIDRs; never use `0.0.0.0/0` or `::/0`.
+- `CLOUDFLARE_SUBNETS` is required only for verified Cloudflare proxy mode. `REQUIRE_CLOUDFLARE_PROXY` validates the proxy chain but does not firewall the origin.
+- For deployment, replace local origins and URLs with the hosted frontend and backend addresses.
+
 Need help setting up external services? See [SETUP.md](./SETUP.md) for step-by-step instructions on configuring Azure Blob Storage, Replicate, Cloudflare Turnstile, PostgreSQL, Discord webhooks, and environment variables.
-
-
-> For local testing, keep API base URL at local backend.  
-> For deployment, switch to your hosted API endpoint (example: `https://your-domain/app/api`).
-
 
 ## 🚀 Local Development
 
@@ -309,7 +330,7 @@ python -m venv .venv
 source .venv/bin/activate      # macOS/Linux
 # .venv\Scripts\activate       # Windows
 pip install -r requirements.txt
-uvicorn main:app --reload
+uvicorn main:app --reload --no-proxy-headers
 ```
 
 ## 3) Run frontend
@@ -323,7 +344,7 @@ npm run dev
 ## 🔒 Security Notes
 
 - Turnstile check before AI init routes
-- Proxy/IP trust strategy to reduce header spoofing risk
+- Forwarded client-IP headers accepted only from configured trusted proxy CIDRs
 - Signed SAS URLs for controlled blob access
 - Strict file validation + capped dimensions/size
 - Public AI uploads use a lower browser-side pixel limit for user experience

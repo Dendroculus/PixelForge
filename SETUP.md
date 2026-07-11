@@ -8,7 +8,7 @@ PixelForge uses:
 |---|---|---|
 | Azure Blob Storage | Temporary uploads and generated results | `AZURE_CONNECTION_STRING` |
 | Replicate | AI model inference | `REPLICATE_API_TOKEN` |
-| Cloudflare Turnstile | Bot protection | `CLOUDFLARE_TURNSTILE_SITE_KEY`, `CLOUDFLARE_TURNSTILE_SECRET_KEY` |
+| Cloudflare Turnstile | Bot protection | `VITE_TURNSTILE_SITE_KEY` (frontend), `CLOUDFLARE_TURNSTILE_SECRET_KEY` (backend) |
 | PostgreSQL | Usage tracking and backend data | `DATABASE_URL` |
 | Discord Webhook | Feedback notifications | `DISCORD_WEBHOOK_URL` |
 
@@ -269,7 +269,7 @@ You need two keys:
 
 | Key | Used in | Secret? |
 |---|---|---|
-| Site key | Frontend and backend config | No, public-safe |
+| Site key | Frontend only | No, public-safe |
 | Secret key | Backend only | Yes, private |
 
 ---
@@ -301,7 +301,6 @@ After creating the widget:
 Backend:
 
 ```env
-CLOUDFLARE_TURNSTILE_SITE_KEY=your_turnstile_site_key
 CLOUDFLARE_TURNSTILE_SECRET_KEY=your_turnstile_secret_key
 ```
 
@@ -405,45 +404,73 @@ Create this file:
 backend/.env
 ```
 
-Template:
+Start from the committed example:
+
+```bash
+cp backend/.env.example backend/.env
+```
+
+Windows PowerShell:
+
+```powershell
+Copy-Item backend/.env.example backend/.env
+```
+
+Core template:
 
 ```env
+ENVIRONMENT=development
+
+DATABASE_URL=
 AZURE_CONNECTION_STRING=
 REPLICATE_API_TOKEN=
-ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
-CLOUDFLARE_TURNSTILE_SITE_KEY=
 CLOUDFLARE_TURNSTILE_SECRET_KEY=
-DATABASE_URL=
 DISCORD_WEBHOOK_URL=
-CLOUDFLARE_SUBNETS=
-ENVIRONMENT=development
-ALLOW_TURNSTILE_TEST_BYPASS=true
-TRUST_PROXY_HEADERS=false
-REQUIRE_CLOUDFLARE_PROXY=false
-STRICT_ENV_VALIDATION=false
-```
-
-### Local backend defaults
-
-```env
-ENVIRONMENT=development
-ALLOW_TURNSTILE_TEST_BYPASS=true
-TRUST_PROXY_HEADERS=false
-REQUIRE_CLOUDFLARE_PROXY=false
-STRICT_ENV_VALIDATION=false
-```
-
-### Production backend defaults
-
-```env
-ENVIRONMENT=production
+ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 ALLOW_TURNSTILE_TEST_BYPASS=false
-TRUST_PROXY_HEADERS=true
+
+TRUST_PROXY_HEADERS=false
+TRUSTED_PROXY_CIDRS=
+CLOUDFLARE_SUBNETS=
 REQUIRE_CLOUDFLARE_PROXY=false
-STRICT_ENV_VALIDATION=true
+
+LOG_LEVEL=INFO
+LOG_TO_FILE=false
+LOG_DIR=logs
+LOG_FILE_NAME=pixelforge.log
+LOG_MAX_BYTES=10485760
+LOG_BACKUP_COUNT=5
 ```
 
-Only set `REQUIRE_CLOUDFLARE_PROXY=true` if your production backend is actually expected to receive traffic through Cloudflare.
+### Safe local and direct-origin defaults
+
+```env
+TRUST_PROXY_HEADERS=false
+TRUSTED_PROXY_CIDRS=
+REQUIRE_CLOUDFLARE_PROXY=false
+```
+
+With these values, PixelForge ignores `CF-Connecting-IP`, `X-Forwarded-For`, and `X-Real-IP` and uses the direct peer reported by the ASGI server. This is the safest default when the backend is directly reachable or the proxy topology has not been verified.
+
+### Trusted proxy mode
+
+Only enable forwarded headers when you know which proxy connects directly to Uvicorn/FastAPI:
+
+```env
+TRUST_PROXY_HEADERS=true
+TRUSTED_PROXY_CIDRS=your_immediate_proxy_cidrs
+CLOUDFLARE_SUBNETS=official_cloudflare_ipv4_and_ipv6_cidrs
+REQUIRE_CLOUDFLARE_PROXY=true
+```
+
+- `TRUSTED_PROXY_CIDRS` must contain the CIDRs of the proxy that directly connects to the application.
+- `CLOUDFLARE_SUBNETS` contains Cloudflare edge networks and is used to validate Cloudflare hops.
+- `REQUIRE_CLOUDFLARE_PROXY=true` prevents forwarded values from being accepted unless the validated chain contains Cloudflare.
+- Never use `0.0.0.0/0` or `::/0`; doing so trusts every client.
+- Refresh Cloudflare ranges from `https://www.cloudflare.com/ips-v4/` and `https://www.cloudflare.com/ips-v6/`.
+- This application check does **not** firewall the origin. Block direct origin access separately when Cloudflare-only traffic is required.
+
+If a managed hosting platform sits between Cloudflare and the application, use that platform's documented ingress CIDRs in `TRUSTED_PROXY_CIDRS`. Do not guess private ranges or enable trust until the platform's `X-Forwarded-For` behavior is confirmed.
 
 ---
 
@@ -504,7 +531,7 @@ pip install -r requirements.txt
 Run the backend:
 
 ```bash
-uvicorn main:app --reload
+uvicorn main:app --reload --no-proxy-headers
 ```
 
 Default backend URL:

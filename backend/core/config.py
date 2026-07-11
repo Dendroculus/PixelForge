@@ -52,7 +52,6 @@ class Settings(BaseSettings):
 
     # --- Environment & Security ---
     ENVIRONMENT: str = "development"
-    STRICT_ENV_VALIDATION: bool = True
 
     DATABASE_URL: str
     AZURE_CONNECTION_STRING: str
@@ -62,6 +61,13 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str
     ALLOW_TURNSTILE_TEST_BYPASS: bool = False
 
+    # Forwarded client-IP headers are untrusted unless proxy trust is enabled
+    # and the connecting proxy belongs to an explicitly configured CIDR.
+    TRUST_PROXY_HEADERS: bool = False
+    TRUSTED_PROXY_CIDRS: str = ""
+    CLOUDFLARE_SUBNETS: str = ""
+    REQUIRE_CLOUDFLARE_PROXY: bool = False
+
     # --- Logging ---
     LOG_LEVEL: str = "INFO"
     LOG_TO_FILE: bool = False
@@ -70,20 +76,29 @@ class Settings(BaseSettings):
     LOG_MAX_BYTES: int = 10_485_760
     LOG_BACKUP_COUNT: int = 5
 
+    @staticmethod
+    def _split_csv(value: str) -> List[str]:
+        """Split a comma-separated setting and remove blank entries."""
+        return [
+            item.strip()
+            for item in (value or "").split(",")
+            if item.strip()
+        ]
+
     @property
     def cors_origins_list(self) -> List[str]:
-        """Return configured CORS origins as a clean list.
+        """Return configured CORS origins as a clean list."""
+        return self._split_csv(self.ALLOWED_ORIGINS)
 
-        Returns:
-            list[str]:
-                Comma-separated origins from ``ALLOWED_ORIGINS`` with empty
-                values removed.
-        """
-        return [
-            origin.strip()
-            for origin in (self.ALLOWED_ORIGINS or "").split(",")
-            if origin.strip()
-        ]
+    @property
+    def trusted_proxy_cidrs_list(self) -> List[str]:
+        """Return CIDRs allowed to supply forwarded client-IP headers."""
+        return self._split_csv(self.TRUSTED_PROXY_CIDRS)
+
+    @property
+    def cloudflare_subnets_list(self) -> List[str]:
+        """Return configured Cloudflare IPv4 and IPv6 networks."""
+        return self._split_csv(self.CLOUDFLARE_SUBNETS)
 
     # --- Storage ---
     UPLOAD_CONTAINER: str = "uploads"
